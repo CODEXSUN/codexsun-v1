@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.58
+Current version: 1.1.59
 
-Release tag: v-1.1.58
+Release tag: v-1.1.59
 
-Changelog label: v 1.1.58
+Changelog label: v 1.1.59
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,20 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.59
+
+### [v 1.1.59] 2026-10-24 11:08 pm - Deploy Data Bridge and audit cloud SUKRAA and ALTEX
+
+#### Database Changes
+
+- Database update: Yes (manual).
+
+#### App Codebase Changes
+
+- Prepare the scoped cloud rollout of the tested Data Bridge repair, preserving live CRM patches and shared services.
+- Record source/target identities, backup requirements, queue verification, invoice checks, and repeat-import proof in [the cloud release log](../../devkits/data-bridge/agent/CLOUD-1.1.59.md).
+- Cloud execution results remain pending until verified.
 
 ## v-1.1.58
 
