@@ -37,6 +37,7 @@ export async function migrateProductInformationModule(database: Kysely<Ecommerce
     seo_description VARCHAR(320) NOT NULL DEFAULT '',
     publication_status VARCHAR(24) NOT NULL DEFAULT 'draft',
     is_featured TINYINT(1) NOT NULL DEFAULT 0,
+    revision INT NOT NULL DEFAULT 1,
     status VARCHAR(24) NOT NULL DEFAULT 'active',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -91,4 +92,17 @@ export async function upgradeProductInformationDetails(database: Kysely<Ecommerc
       )
       .execute(database);
   }
+}
+
+export const productInformationRevisionMigration = {
+  description: "Add optimistic edit revision to product information.",
+  key: "ecommerce.catalog.product-information-revision"
+} as const;
+
+export async function upgradeProductInformationRevision(database: Kysely<EcommerceDatabase>) {
+  await sql
+    .raw(
+      "ALTER TABLE ecommerce_product_information ADD COLUMN IF NOT EXISTS revision INT NOT NULL DEFAULT 1"
+    )
+    .execute(database);
 }

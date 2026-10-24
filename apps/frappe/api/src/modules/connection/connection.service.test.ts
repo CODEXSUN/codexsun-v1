@@ -5,6 +5,19 @@ import { FrappeConnectionService, requestFrappe } from "./connection.service.js"
 import type { FrappeDatabase } from "./connection.types.js";
 
 const originalFetch = globalThis.fetch;
+
+test("Cloudflare tunnel failures retain the actionable cause", async () => {
+  globalThis.fetch = async () => Response.json({ error_code: 1033 }, { status: 530 });
+  await assert.rejects(
+    requestFrappe("/api/method/ping", "GET", {
+      baseUrl: "https://frappe.example",
+      apiKey: "key",
+      apiSecret: "secret",
+      enabled: true
+    }),
+    /Cloudflare Tunnel error.*1033/
+  );
+});
 const emptyDatabase = {
   selectFrom: () => ({
     select: () => ({ where: () => ({ executeTakeFirst: async () => undefined }) }),

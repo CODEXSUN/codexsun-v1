@@ -19,7 +19,17 @@ const deskLabels: Record<Desk, string> = {
   tenant: "app"
 };
 
-export function AuthGate({ children, desk }: { children: ReactElement; desk: Desk }) {
+export function AuthGate({
+  children,
+  desk,
+  loadingMessage = "Checking your session...",
+  steady = false
+}: {
+  children: ReactElement;
+  desk: Desk;
+  loadingMessage?: string;
+  steady?: boolean;
+}) {
   const [serverValid, setServerValid] = useState<boolean | null>(null);
   const [failure, setFailure] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -59,8 +69,8 @@ export function AuthGate({ children, desk }: { children: ReactElement; desk: Des
     return children;
   }
 
-  if (serverValid === null) {
-    return <GlobalLoader message="Checking your session…" />;
+  if (serverValid === null || !failure) {
+    return <GlobalLoader message={loadingMessage} steady={steady} />;
   }
 
   return (

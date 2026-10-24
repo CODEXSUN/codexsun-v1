@@ -19,16 +19,37 @@ export type ProductVariantRecord = {
   weight: number;
   sortOrder: number;
   status: ProductVariantStatus;
+  revision: number;
   createdAt: string;
   updatedAt: string;
 };
-export type ProductVariantSaveInput = Omit<
+export type ProductVariantInput = Omit<
   ProductVariantRecord,
-  "id" | "uuid" | "productTitle" | "createdAt" | "updatedAt"
+  "id" | "uuid" | "productTitle" | "revision" | "createdAt" | "updatedAt"
 >;
+export type ProductVariantSaveInput = ProductVariantInput & { optionSignature: string };
+export type ProductVariantUpdateInput = ProductVariantInput & { expectedRevision: number };
 export type ProductVariantFilters = {
   productInformationId?: number;
   search?: string;
   status?: ProductVariantStatus;
+  sku?: string;
+  title?: string;
+  productTitle?: string;
+  options?: string;
+  page?: number;
+  pageSize?: number;
+};
+export type ProductVariantStatusCounts = {
+  all: number;
+  active: number;
+  inactive: number;
+};
+export type ProductVariantPage = {
+  items: ProductVariantRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+  statusCounts: ProductVariantStatusCounts;
 };
 export type ProductInformationOption = { id: number; title: string };

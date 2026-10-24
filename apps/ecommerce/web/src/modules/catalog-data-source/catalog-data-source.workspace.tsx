@@ -25,7 +25,9 @@ export function CatalogDataSourceWorkspace() {
         onError: (error) => toast.error(error.message),
         onSuccess: (next) => {
           const changed = next.modules.find((item) => item.module === module);
-          toast.success(`${changed?.label ?? "Module"} now reads from ${sourceLabel(provider)}.`);
+          toast.success(
+            `${changed?.label ?? "Module"} now records ${sourceLabel(provider)} as its import source.`
+          );
         }
       }
     );
@@ -52,12 +54,12 @@ export function CatalogDataSourceWorkspace() {
   return (
     <WorkspacePage
       title="Data Source"
-      description="Route each Ecommerce module to local MariaDB or live Frappe. Local is the default and remains available for every module."
+      description="Choose the local projection or a Frappe import source per Ecommerce module. Public storefront reads always use the local tenant projection."
     >
       <div className={`grid ${compact ? "gap-3" : "gap-5"}`}>
         <Card
           title="Module data routing"
-          description="Choose one live read source per module. Changes apply immediately to storefront requests."
+          description="The import source is recorded per module for explicit Pull/Push transfer. It does not change how public storefront reads are served."
         >
           <CatalogDataSourceList
             busy={busy || settings.isLoading}
@@ -142,7 +144,7 @@ function SyncCard({
   return (
     <Card
       title="Catalog synchronization"
-      description="Live Frappe reads refresh the local cache when it is over 15 minutes old. Pull refreshes it now. The storefront uses cached data during an outage and resumes live reads when Frappe recovers."
+      description="Pull copies the Frappe catalog into the local projection. Push sends the local catalog to Frappe. Public reads never call Frappe and never wait for it."
     >
       <div className="grid gap-3 p-4 sm:grid-cols-2">
         <Button
@@ -167,5 +169,5 @@ function SyncCard({
 }
 
 function sourceLabel(provider: CatalogDataSourceProvider) {
-  return provider === "frappe" ? "Frappe Live" : "Local MariaDB";
+  return provider === "frappe" ? "Frappe import" : "Local projection";
 }

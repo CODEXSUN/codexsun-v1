@@ -34,11 +34,11 @@ const comment = {
   request_id: "request-1"
 };
 
-function database(comments: object[] = [comment], events: object[] = [event]) {
+function database(comments: object[] = [comment], events: object[] = [event], linked = true) {
   const tables: Record<string, object[]> = {
     crm_enquiry_sync_events: events,
     crm_enquiry_comments: comments,
-    frappe_enquiry_sync: [{ enquiry_id: 42, remote_name: "Q930" }]
+    frappe_enquiry_sync: linked ? [{ enquiry_id: 42, remote_name: "Q930" }] : []
   };
   return {
     selectFrom: (table: string) => {
@@ -62,6 +62,27 @@ function database(comments: object[] = [comment], events: object[] = [event]) {
     }
   } as unknown as Kysely<FrappeDatabase>;
 }
+
+test("an unlinked comment reports the parent Customer mapping failure without a remote write", async () => {
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests++;
+    throw new Error("Unexpected remote request");
+  };
+  const reason = "This enquiry's Customer has no unique identity on the connected Frappe site.";
+  const upsert = {
+    id: 9,
+    enquiry_id: 42,
+    event_type: "enquiry-upsert",
+    status: "failed",
+    last_error: reason
+  };
+  await assert.rejects(
+    postEnquiryComment(database([comment], [event, upsert], false), event.id, settings),
+    { message: `Enquiry export blocked: ${reason}` }
+  );
+  assert.equal(requests, 0);
+});
 
 test("a lost Job Comments response retries the same document name without a second insert", async () => {
   const stored: Record<string, unknown>[] = [];

@@ -7,6 +7,7 @@ import { createConnection } from "mysql2/promise";
 import { env } from "../../apps/platform/api/src/env.js";
 import { EnquirySyncRepository } from "../../apps/crm/api/src/modules/enquiry/enquiry.sync.repository.js";
 import type { EnquiryDatabase } from "../../apps/crm/api/src/modules/enquiry/enquiry.types.js";
+import { EnquirySyncStateReader } from "../../apps/frappe/api/src/modules/enquiry-sync/enquiry-sync.state.js";
 
 assert.equal(
   env.NODE_ENV,
@@ -97,6 +98,22 @@ test("local enquiry changes enter the Frappe queue in order and coalesce safely"
   ) ENGINE=InnoDB`
     )
     .execute(database);
+  await sql
+    .raw(
+      `CREATE TABLE frappe_enquiry_sync (
+    enquiry_id INT PRIMARY KEY, remote_name VARCHAR(191) NOT NULL
+  ) ENGINE=InnoDB`
+    )
+    .execute(database);
+  await sql`INSERT INTO crm_enquiries (id,enquiry_no,title) VALUES
+    (100,930,'Imported'),(101,931,'Local only')`.execute(database);
+  await sql`INSERT INTO frappe_enquiry_sync (enquiry_id,remote_name) VALUES (100,'Q930')`.execute(
+    database
+  );
+  const reader = new EnquirySyncStateReader(database as never);
+  const importedStates = await reader.read([100, 101]);
+  assert.deepEqual(importedStates.get(100), { status: "synced", error: null, remoteName: "Q930" });
+  assert.deepEqual(importedStates.get(101), { status: "unlinked", error: null, remoteName: null });
   const inserted = await sql<{ id: number }>`INSERT INTO crm_enquiries (enquiry_no,title)
     VALUES (1,'Queue test')`.execute(database);
   const enquiryId = Number(inserted.insertId);
@@ -154,10 +171,13 @@ test("local enquiry changes enter the Frappe queue in order and coalesce safely"
       assert.notEqual(failedUpdate, second);
       assert.equal((await queue.getEvent(second))?.status, "failed");
       assert.ok((await queue.dispatchableEvents(100)).some((event) => event.id === failedUpdate));
+      const originalCorrelation = (await queue.getEvent(second))?.correlation_id;
       await queue.retry(second);
       const retried = await queue.getEvent(second);
       assert.equal(retried?.status, "pending");
       assert.equal(retried?.attempts, 0);
+      assert.equal(retried?.last_error, "Test failure");
+      assert.notEqual(retried?.correlation_id, originalCorrelation);
       const retriedDispatch = await queue.dispatchableEvents(100);
       assert.ok(retriedDispatch.some((event) => event.id === second));
       assert.ok(!retriedDispatch.some((event) => event.id === failedUpdate));
@@ -166,6 +186,7 @@ test("local enquiry changes enter the Frappe queue in order and coalesce safely"
       assert.ok(
         (await queue.listQueue("pending", 1, 100)).items.some((event) => event.id === failedUpdate)
       );
+      const previousGeneration = (await queue.getEvent(failedUpdate))?.correlation_id;
       const coalesced = await queue.enqueueUpsert(
         {
           actorEmail: "sync-test@local.invalid",
@@ -175,6 +196,7 @@ test("local enquiry changes enter the Frappe queue in order and coalesce safely"
         transaction
       );
       assert.equal(coalesced, failedUpdate);
+      assert.notEqual((await queue.getEvent(coalesced))?.correlation_id, previousGeneration);
       assert.equal((await queue.getEvent(failedUpdate))?.event_type, "enquiry-upsert");
       const pendingComment = await queue.enqueue(
         {
@@ -198,6 +220,60 @@ test("local enquiry changes enter the Frappe queue in order and coalesce safely"
       assert.equal((await queue.getEvent(pendingComment))?.event_type, "comment-add");
       assert.equal((await queue.getEvent(pendingComment))?.entity_id, 2);
       assert.equal((await queue.latestStatuses([enquiryId])).get(enquiryId), "pending");
+      const mappingError =
+        "This enquiry's Customer has no unique identity on the connected Frappe site.";
+      await queue.markFailed(laterUpdate, 5, mappingError);
+      const dependency = await queue.enqueue(
+        {
+          actorEmail: "sync-test@local.invalid",
+          correlationId: randomUUID(),
+          enquiryId,
+          eventType: "comment-add",
+          entityId: 3
+        },
+        transaction
+      );
+      await queue.markFailed(dependency, 5, "Sync the enquiry before posting its comments.");
+      assert.equal((await queue.deliveryStates([enquiryId])).get(enquiryId)?.error, mappingError);
+      assert.equal((await queue.latestUpsert(enquiryId))?.id, laterUpdate);
+      const recovered = await queue.enqueueUpsert(
+        {
+          actorEmail: "sync-test@local.invalid",
+          correlationId: randomUUID(),
+          enquiryId
+        },
+        transaction
+      );
+      await queue.markSynced(recovered, "Q930");
+      assert.equal(
+        (await queue.deliveryStates([enquiryId])).get(enquiryId)?.error,
+        "Sync the enquiry before posting its comments."
+      );
+      const pendingLinkedComment = await queue.enqueue(
+        {
+          actorEmail: "sync-test@local.invalid",
+          correlationId: randomUUID(),
+          enquiryId: 100,
+          eventType: "comment-add",
+          entityId: 99
+        },
+        transaction
+      );
+      const completedLinkedUpdate = await queue.enqueueUpsert(
+        {
+          actorEmail: "sync-test@local.invalid",
+          correlationId: randomUUID(),
+          enquiryId: 100
+        },
+        transaction
+      );
+      await queue.markSynced(completedLinkedUpdate, "Q930");
+      const pendingState = (await new EnquirySyncStateReader(transaction as never).read([100])).get(
+        100
+      );
+      assert.equal(pendingState?.status, "pending");
+      assert.equal(pendingState?.remoteName, "Q930");
+      assert.equal((await queue.getEvent(pendingLinkedComment))?.status, "pending");
       throw new Error("rollback sync test");
     }),
     /rollback sync test/

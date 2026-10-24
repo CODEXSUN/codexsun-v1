@@ -283,13 +283,13 @@ class _CallLogCard extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final compact = constraints.maxWidth < 430;
-              final details = _CallLogDetails(entry: entry);
               final actions = _CallLogActions(
                 entry: entry,
                 onSync: onSync,
                 onCreateEnquiry: onCreateEnquiry,
                 onCall: onCall,
               );
+              final details = _CallLogDetails(entry: entry);
               final summary = Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -300,20 +300,19 @@ class _CallLogCard extends StatelessWidget {
                     child: Icon(entry.icon, size: 21),
                   ),
                   const SizedBox(width: 11),
-                  Expanded(child: details),
+                  Expanded(
+                    child: compact
+                        ? _CallLogDetails(
+                            entry: entry,
+                            trailingActions: actions,
+                          )
+                        : details,
+                  ),
                   if (!compact) ...[const SizedBox(width: 8), actions],
                 ],
               );
 
-              if (!compact) return summary;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  summary,
-                  const SizedBox(height: 8),
-                  Align(alignment: Alignment.centerRight, child: actions),
-                ],
-              );
+              return summary;
             },
           ),
         ),
@@ -323,23 +322,42 @@ class _CallLogCard extends StatelessWidget {
 }
 
 class _CallLogDetails extends StatelessWidget {
-  const _CallLogDetails({required this.entry});
+  const _CallLogDetails({required this.entry, this.trailingActions});
 
   final CallLogEntry entry;
+  final Widget? trailingActions;
 
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
-        entry.contactTitle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w800),
+      if (entry.hasSavedName) ...[
+        Text(
+          entry.contactTitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 2),
+      ],
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              entry.number,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: entry.hasSavedName ? null : FontWeight.w800,
+              ),
+            ),
+          ),
+          if (trailingActions != null) ...[
+            const SizedBox(width: 6),
+            trailingActions!,
+          ],
+        ],
       ),
-      const SizedBox(height: 2),
-      if (entry.hasSavedName)
-        Text(entry.number, maxLines: 1, overflow: TextOverflow.ellipsis),
       const SizedBox(height: 5),
       Row(
         children: [

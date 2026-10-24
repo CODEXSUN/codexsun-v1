@@ -13,17 +13,6 @@ import type {
 type Row = Record<string, unknown>;
 
 export class CatalogDataSourceRepository {
-  async cacheAgeMs() {
-    const result = await sql<{
-      age_ms: number;
-    }>`SELECT TIMESTAMPDIFF(SECOND, created_at, CURRENT_TIMESTAMP) * 1000 AS age_ms
-      FROM ecommerce_catalog_sync_runs
-      WHERE direction='frappe-to-own' AND status='completed'
-      ORDER BY id DESC LIMIT 1`.execute(getEcommerceDatabase());
-    const value = result.rows[0]?.age_ms;
-    return value == null ? null : Number(value);
-  }
-
   async moduleProviders() {
     const result = await sql<{
       module_key: CatalogDataSourceModule;

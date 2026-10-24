@@ -37,7 +37,7 @@ Build Mode should:
 - Keep changes small and focused.
 - Respect module boundaries.
 - Add or update tests where needed.
-- Update docs when behavior changes.
+- Update docs only when the user asks, or when a contract, architecture, operation, or release changes.
 
 ### Review Mode
 

@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { Code2Icon, LayoutDashboardIcon, Settings2Icon } from "lucide-react";
+import {
+  Code2Icon,
+  LayersIcon,
+  LayoutDashboardIcon,
+  MessageSquareCodeIcon,
+  PuzzleIcon,
+  Settings2Icon,
+  SparklesIcon
+} from "lucide-react";
 import {
   AppLayout,
   AppHeader,
@@ -10,13 +18,31 @@ import {
   mainLayoutTechnicalNames
 } from "@codexsun/ui/layouts/main-layouts";
 import { CodeitOverview, CodeitSettings } from "./modules/overview";
+import { ConversationWorkspace } from "./modules/conversation";
+import { PluginPanel } from "./modules/plugin";
+import { OrchestrationWorkspace } from "./modules/orchestration";
+import { PersonalizationPanel } from "./modules/personalization";
+import { ProviderWorkspace } from "./modules/provider";
 
 export function CodeitApp() {
-  const [page, setPage] = useState(pageFromLocation);
+  const [page, setPage] = useState<
+    "chat" | "overview" | "supervisor" | "personalization" | "settings" | "plugins"
+  >(pageFromLocation);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const title = page === "settings" ? "Settings" : "Overview";
+  const title =
+    page === "settings"
+      ? "Settings"
+      : page === "plugins"
+        ? "Plugins"
+        : page === "supervisor"
+          ? "Supervisor"
+          : page === "personalization"
+            ? "Personalization"
+            : page === "chat"
+              ? "Workspace"
+              : "Overview";
   const user = { name: "Local developer", email: "Standalone workspace", fallback: "CI" };
 
   useEffect(() => {
@@ -25,7 +51,9 @@ export function CodeitApp() {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  function selectPage(next: "overview" | "settings") {
+  function selectPage(
+    next: "chat" | "overview" | "supervisor" | "personalization" | "settings" | "plugins"
+  ) {
     window.history.pushState(null, "", `/codeit/${next}`);
     setPage(next);
     setSearchOpen(false);
@@ -38,7 +66,15 @@ export function CodeitApp() {
       label: "Codeit",
       icon: Code2Icon,
       items: [
+        { label: "Workspace", icon: MessageSquareCodeIcon, onSelect: () => selectPage("chat") },
         { label: "Overview", icon: LayoutDashboardIcon, onSelect: () => selectPage("overview") },
+        { label: "Supervisor", icon: LayersIcon, onSelect: () => selectPage("supervisor") },
+        {
+          label: "Personalization",
+          icon: SparklesIcon,
+          onSelect: () => selectPage("personalization")
+        },
+        { label: "Plugins", icon: PuzzleIcon, onSelect: () => selectPage("plugins") },
         { label: "Settings", icon: Settings2Icon, onSelect: () => selectPage("settings") }
       ]
     }
@@ -86,7 +122,21 @@ export function CodeitApp() {
           >
             <SideMenu
               navigation={navigation}
-              onSelect={(label) => selectPage(label === "Settings" ? "settings" : "overview")}
+              onSelect={(label) =>
+                selectPage(
+                  label === "Settings"
+                    ? "settings"
+                    : label === "Plugins"
+                      ? "plugins"
+                      : label === "Supervisor"
+                        ? "supervisor"
+                        : label === "Personalization"
+                          ? "personalization"
+                          : label === "Workspace"
+                            ? "chat"
+                            : "overview"
+                )
+              }
               search=""
               selected={title}
               workspaceTitle="Overview"
@@ -105,25 +155,60 @@ export function CodeitApp() {
             className="min-h-0 flex-1 overflow-y-auto"
             data-technical-name={mainLayoutTechnicalNames.workspace}
           >
-            <WorkspaceCanvas>
-              <div className="mx-auto w-full max-w-7xl p-4 sm:p-6">
-                {page === "settings" ? (
-                  <CodeitSettings standaloneUrl={window.location.origin} />
-                ) : (
-                  <CodeitOverview onOpenSettings={() => selectPage("settings")} />
-                )}
-              </div>
-            </WorkspaceCanvas>
+            {page === "chat" ? (
+              <ConversationWorkspace />
+            ) : page === "plugins" ? (
+              <WorkspaceCanvas>
+                <div className="mx-auto w-full max-w-7xl p-4 sm:p-6">
+                  <PluginPanel />
+                </div>
+              </WorkspaceCanvas>
+            ) : page === "supervisor" ? (
+              <WorkspaceCanvas>
+                <div className="mx-auto w-full max-w-7xl p-4 sm:p-6">
+                  <OrchestrationWorkspace />
+                </div>
+              </WorkspaceCanvas>
+            ) : page === "personalization" ? (
+              <WorkspaceCanvas>
+                <div className="mx-auto w-full max-w-7xl p-4 sm:p-6">
+                  <PersonalizationPanel />
+                </div>
+              </WorkspaceCanvas>
+            ) : (
+              <WorkspaceCanvas>
+                <div className="mx-auto w-full max-w-7xl p-4 sm:p-6">
+                  {page === "settings" ? (
+                    <div className="space-y-6">
+                      <CodeitSettings standaloneUrl={window.location.origin} />
+                      <ProviderWorkspace />
+                    </div>
+                  ) : (
+                    <CodeitOverview onOpenSettings={() => selectPage("settings")} />
+                  )}
+                </div>
+              </WorkspaceCanvas>
+            )}
           </div>
         </div>
       </div>
       <div data-technical-name={mainLayoutTechnicalNames.statusBar}>
-        <StatusBar status="Local shell · No data connection" workspace={title} />
+        <StatusBar
+          status={page === "chat" ? "Local runtime · Active" : "Local shell"}
+          workspace={title}
+        />
       </div>
     </AppLayout>
   );
 }
 
-function pageFromLocation(): "overview" | "settings" {
-  return window.location.pathname === "/codeit/settings" ? "settings" : "overview";
+function pageFromLocation():
+  "chat" | "overview" | "supervisor" | "personalization" | "settings" | "plugins" {
+  if (typeof window === "undefined") return "chat";
+  if (window.location.pathname === "/codeit/settings") return "settings";
+  if (window.location.pathname === "/codeit/plugins") return "plugins";
+  if (window.location.pathname === "/codeit/supervisor") return "supervisor";
+  if (window.location.pathname === "/codeit/personalization") return "personalization";
+  if (window.location.pathname === "/codeit/overview") return "overview";
+  return "chat";
 }

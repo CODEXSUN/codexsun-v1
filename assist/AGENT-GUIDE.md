@@ -6,13 +6,23 @@ This is the authoritative working note for every human or AI agent changing CODE
 
 If older planning text conflicts with this guide, `assist/governance/rules.md`, or the current codebase, follow the current guide and governance rules. Historical changelog entries describe past work; they are not current implementation instructions.
 
+## Fast Work Default
+
+For a focused bug or UI fix, read the affected source, direct callers, and the closest public contract. Do not read or update component documentation. Run one relevant check.
+
+Use full documentation, inventory, boundary, build, dependency, database, E2E, or repository-wide checks only for a release, a new module, a refactor, a data, permission, tenancy, contract, or cross-module change, or an explicit audit.
+
+This section overrides older, more detailed Assist and component checklist wording for normal focused work.
+
 ## Required Reading
 
 For every code change, read:
 
 1. `assist/AGENT-GUIDE.md`
 2. `assist/governance/rules.md`
-3. The closest module files and public composition points
+3. The affected source and its closest public composition point
+
+Read component documentation and additional Assist material only when the task changes a contract, architecture, ownership, data, operations, or deployment, or when the user explicitly requests planning, an audit, a release, or documentation work.
 
 Read additionally when relevant:
 
@@ -190,10 +200,9 @@ Reject all of the following:
 
 ### Before changing code
 
-1. Read this guide, governance rules, and the owning module.
-2. Inventory backend/frontend files, public exports, routes, tables, parents, children, and composition points.
-3. Search for wrappers, generic definitions, dynamic paths, centralized CRUD, private imports, stale exports, and files outside the owner.
-4. Identify database compatibility and tenant impact.
+1. For a focused bug or UI fix, read the affected source, its direct callers, and the closest public contract.
+2. Use the full owner inventory only for new modules, cross-module changes, data changes, permissions, or public-contract changes.
+3. Check database compatibility and tenant impact only when the task can affect them.
 
 ### While changing code
 
@@ -204,21 +213,17 @@ Reject all of the following:
 
 ### Before completion
 
-1. Re-inventory the module.
-2. Scan for forbidden patterns and duplicate role hashes.
-3. Run Prettier and focused ESLint.
-4. Run backend and frontend TypeScript.
-5. Run `node tools/check-module-boundaries.mjs <app>`.
-6. Run relevant production builds with the configured root environment.
-7. Run `npm run dependencies:check`.
-8. Run database/E2E verification when available.
-9. Report skipped checks and existing-database migration requirements explicitly.
+1. Run the smallest relevant check for the changed files, such as a focused test, workspace typecheck, lint, or browser check.
+2. Run a full owner build, boundary check, dependency check, database test, or E2E only when the task changes its applicable boundary or the user asks for full verification.
+3. Run the repository-wide `npm run check`, `npm run typecheck`, `npm run lint`, or `npm run build` only for a release, a repository-wide change, or an explicit request.
+4. Report the checks run and concrete blockers. Do not claim checks that did not run.
 
 Never claim that formatting, lint, TypeScript, boundaries, builds, browser behavior, persistence, or E2E passed unless that exact check ran successfully.
 
 ## Documentation And Versions
 
-- Update the closest authoritative document when architecture, ownership, database behavior, public contracts, operations, or agent rules change.
+- Do not update README, TASK, PLAN, SKILLS, changelog, or generated documentation during normal development work.
+- Update documentation only when the user asks, or when a release, architecture, ownership, database behavior, public contract, operation, or agent rule changes.
 - Use only `assist/documentation/CHANGELOG.md` for versioned release history.
 - Do not create task-specific handoff or gap documents inside Assist after work is complete.
 - Version bumps occur only when explicitly requested and must follow `assist/operations/versioning.md`.
@@ -270,10 +275,10 @@ Every app, developer kit, shared package, workspace tool, and add-on integration
 - `SKILLS.md` records component-specific working rules. Documentation never grants runtime permissions.
 - Use exact uppercase filenames so Linux and Windows resolve the same files.
 - Keep component details accurate. A source folder or passing build does not prove a deployed feature.
-- Read these files before component work. Keep existing detailed plans and supporting documents when they remain useful.
+- Read these files only for documentation, contract, architecture, ownership, operations, release, or audit work. Keep existing detailed plans and supporting documents when they remain useful.
 - External npm add-on integration guides live under `addons/<name>`. Vendor code remains in its published package.
 - Zetro is a deliberate runtime distinction: `apps/zetro/agent/SKILLS.md` remains its versioned business rule file.
   Keep developer task instructions in its other documents. Its loader, build collector, backend permissions, and tests must agree.
 
-Run `npm run check:component-docs` and `npm run test:component-docs` before completion.
-The root `npm run check` includes both commands, so CI rejects missing component documents.
+Run `npm run check:component-docs` and `npm run test:component-docs` only when component documentation changes or when release or repository-wide checks are requested.
+The root `npm run check` remains the full CI and release gate.

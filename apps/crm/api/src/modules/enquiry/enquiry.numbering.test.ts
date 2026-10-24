@@ -14,7 +14,7 @@ test("Frappe serials replace CRM serials without losing colliding local records"
   ];
   const plan = planEnquiryNumbers(records, links, 2076);
   assert.equal(plan.moves.find((move) => move.id === 1)?.after, 2060);
-  assert.equal(plan.moves.find((move) => move.id === 2)?.after, 2076);
+  assert.equal(plan.moves.find((move) => move.id === 2)?.after, 2075);
   assert.equal(plan.moves.find((move) => move.id === 3)?.after, 27);
   const final = records.map((row) => ({
     ...row,
@@ -42,6 +42,27 @@ test("swapped serials use distinct temporary numbers and preserve Q930", () => {
   );
   assert.equal(new Set(plan.moves.map((move) => move.temporary)).size, 2);
   assert.ok(plan.moves.every((move) => move.temporary > 930));
+  assert.equal(plan.nextNumber, 931);
+});
+
+test("import collisions reuse the provisional serial without consuming temporary numbers", () => {
+  let records = [{ id: 1, enquiryNo: 2077 }];
+  let nextNumber = 2083;
+  const links: Array<{ enquiryId: number; remoteName: string }> = [];
+  for (let index = 0; index < 4; index++) {
+    const id = index + 2;
+    records.push({ id, enquiryNo: nextNumber++ });
+    links.push({ enquiryId: id, remoteName: `Q${2077 + index}` });
+    const plan = planEnquiryNumbers(records, links, nextNumber);
+    records = records.map((row) => ({
+      ...row,
+      enquiryNo: plan.moves.find((move) => move.id === row.id)?.after ?? row.enquiryNo
+    }));
+    assert.equal(plan.nextNumber, nextNumber);
+    assert.equal(new Set(records.map((row) => row.enquiryNo)).size, records.length);
+  }
+  assert.equal(records.find((row) => row.id === 1)?.enquiryNo, 2083);
+  assert.equal(nextNumber, 2087);
 });
 
 test("ambiguous Q and ENQ serials block renumbering instead of guessing", () => {

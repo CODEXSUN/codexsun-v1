@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { sql, type Kysely } from "kysely";
 import { EnquirySyncRepository, type EnquiryDatabase } from "@codexsun/crm-api/enquiry-sync";
 import { FrappeLiveSyncService, type FrappeDatabase } from "@codexsun/frappe-api";
@@ -5,6 +6,18 @@ import type { TenantDatabase } from "../../database/schema.js";
 import { TenantRepository } from "../tenant/tenant.repository.js";
 import { getTenantDatabase, getTenantDatabaseByName } from "../../database/tenant-database.js";
 import type { QueueManagerService } from "./queue-manager.service.js";
+
+export function crmEnquiryDeliveryKey(
+  tenantId: string,
+  event: {
+    id: number;
+    attempts: number;
+    correlation_id: string;
+  }
+) {
+  const generation = createHash("sha256").update(event.correlation_id).digest("hex").slice(0, 24);
+  return `crm-enquiry-sync:${tenantId}:${event.id}:${event.attempts}:${generation}`;
+}
 
 export async function enqueueCrmEnquirySync(
   queue: QueueManagerService,
@@ -29,8 +42,8 @@ export async function enqueueCrmEnquirySync(
   return queue.enqueue({
     dispatchImmediately: true,
     actorEmail: input.actorEmail,
-    correlationId: input.correlationId ?? `crm-enquiry:${input.eventId}`,
-    idempotencyKey: `crm-enquiry-sync:${input.tenantId}:${input.eventId}:${input.attempts ?? 0}`,
+    correlationId: event.correlation_id,
+    idempotencyKey: crmEnquiryDeliveryKey(input.tenantId, event),
     jobName: "crm.enquiry.frappe-sync",
     maxAttempts: 6,
     payload: { eventId: input.eventId, tenantDatabase: input.tenantDatabase },

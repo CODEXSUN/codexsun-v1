@@ -82,7 +82,7 @@ These rules exist because tenant/common/master form changes recently caused avoi
 
 ## Required Test Commands
 
-Run these after any shared form, common module, master module, lookup, switch, layout, or button change:
+Run these full gates for a shared form refactor, release, or explicit regression audit:
 
 ```bash
 npm run check
@@ -90,7 +90,7 @@ npm run build
 npm run test:e2e:composed-runtime
 ```
 
-For a faster first pass during active development:
+For a focused form or UI fix during active development, use the smallest relevant check:
 
 ```bash
 npm run typecheck -w @codexsun/platform-web

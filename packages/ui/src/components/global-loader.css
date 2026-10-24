@@ -46,6 +46,11 @@
     animation: global-loader-mark-in 160ms ease-out 35ms both;
   }
 
+  .global-loader-fullscreen.global-loader-steady,
+  .global-loader-fullscreen.global-loader-steady .global-loader-mark {
+    animation: none;
+  }
+
   .global-loader-inline {
     min-height: 320px;
     width: 100%;

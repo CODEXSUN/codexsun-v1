@@ -5,6 +5,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { Button } from "@codexsun/ui/components/button";
 import { GlobalLoader } from "@codexsun/ui/components/global-loader";
 import { Toaster } from "@codexsun/ui/components/sonner";
+import { workspaceLoadingMessage } from "../shared/loading/workspace-loading";
 import { AppProviders } from "./providers";
 import { router } from "./router";
 import { applyDesignSystemPreference } from "./design-system";
@@ -20,7 +21,7 @@ export function PlatformWebApp() {
     <React.StrictMode>
       <AppProviders>
         <WorkspaceErrorBoundary>
-          <React.Suspense fallback={<GlobalLoader message="Loading page…" />}>
+          <React.Suspense fallback={<GlobalLoader message={workspaceLoadingMessage} steady />}>
             <PageTitle />
             <RouterProvider router={router} />
             <Toaster />

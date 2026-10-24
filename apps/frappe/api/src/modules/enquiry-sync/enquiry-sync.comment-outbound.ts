@@ -25,7 +25,14 @@ export async function postEnquiryComment(
   const comment = await sync.commentForSync(event.enquiry_id, event.entity_id);
   if (!comment) throw new Error("The enquiry comment was not found.");
   const linked = await new FrappeConnectionRepository(database).get(event.enquiry_id);
-  if (!linked) throw new Error("Sync the enquiry before posting its comments.");
+  if (!linked) {
+    const upsert = await sync.latestUpsert(event.enquiry_id);
+    throw new Error(
+      upsert?.status !== "synced" && upsert?.last_error
+        ? `Enquiry export blocked: ${upsert.last_error}`
+        : "Sync the enquiry before posting its comments."
+    );
+  }
   const comments = await listEnquiryJobComments(settings, [linked.remote_name]);
   let parentName: string | null = null;
   if (comment.parent_id) {

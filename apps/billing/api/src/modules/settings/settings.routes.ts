@@ -89,6 +89,12 @@ const settingsSchema = z.object({
 export async function registerBillingSettingsRoutes(app: FastifyInstance) {
   registerContractRoute(app, {
     method: "GET",
+    url: "/billing/settings/currencies",
+    schemas: { response: z.array(z.object({ id: z.number().int().positive(), name: z.string() })) },
+    handler: ({ request }) => service.currencies(...context(request))
+  });
+  registerContractRoute(app, {
+    method: "GET",
     url: "/billing/settings",
     schemas: { response: settingsSchema },
     handler: ({ request }) => service.getBillingSettings(...context(request))

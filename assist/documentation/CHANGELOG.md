@@ -215,15 +215,13 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Pass seven frontend regressions and real local Nginx coverage of all three templates. Reproduce the old HTML fallback and verify protected JSON responses from the actual local API.
 - Add the scoped proxy repair release log. Leave cloud deployment and web-image rollout to the operator.
 
-- Verified the cloud proxy rollout and the SUKRAA connection pair. Record live import gates in the Data Bridge cloud verification log. Final production acceptance remains pending.
-- Add the Master Tables audit action to reach saved conflict reports and approved fingerprinted corrections.
-- Include the reviewed pending Core favicon migration and CRM timestamp/access fixes. Preserve excluded ecommerce and Codeit work.
-
 ## v-1.1.54
 
 ### [v 1.1.54] 2026-10-24 11:10 am - Data Bridge cloud staging handoff
 
 #### Database Changes
+
+- Repair Rainbow company saves with tracked `core.organisation.company-favicon-v2`: add the missing nullable favicon_path column. Verify a fresh backup and production preflight before applying the scoped step. Migration replay skips safely.
 
 - Database update: No (manual).
 - Add no new schema or data change. Cloud deployments still require the existing Data Bridge v6 migration and target owner schemas.
@@ -231,7 +229,12 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 
 #### App Codebase Changes
 
+- Add an older-schema database regression test for the company favicon upgrade. Live Company 1 update now returns HTTP 200 while preserving its name and ID.
+
 - Bumped workspace version to 1.1.54.
+- Repair Data sync and Data Bridge production proxy paths locally so API requests cannot fall through to the HTML app page.
+- Add Data Migration response validation with safe non-JSON/gateway diagnostics and preserved request IDs.
+- Verify seven transport regressions and real local Nginx routing across CODEXSUN, Billing, and demo templates. Do not deploy this repair to the VPS yet.
 - Add the Data Bridge cloud staging handoff with deployment ownership, backup, connectivity, queue, and invoice verification gates.
 - Record cloud production import acceptance as pending until the operator deploys and configures the exact remote pair.
 - Keep per-table commits, missing-only writes, target preservation, and explicit review of new remote warnings.
@@ -346,10 +349,8 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - On 2026-10-24, commit the two explicitly approved SUKRAA corrections: placeholder product unit ID 2 to 1, default company ID 1 to resolved target ID 2, and landing app application to billing.
 - Fresh verification passes all 47 Core tables with 726 exact business matches, zero warnings/inserts, and no orphan references across 31 foreign keys. Only the two intended records changed. Source checksums, target identities, unrelated fields, and row counts remain unchanged. No schema migration is added.
 
-
 - Data Bridge Core Masters imported 200 missing local SUKRAA rows. Repeat verified 724 exact business matches and preserved two target conflicts: product unit and default company/landing-app settings.
 - ALTEX verified 659 existing business matches with zero warnings or inserts. Both sources remained unchanged. Both targets passed 31 foreign-key checks without orphan references.
-
 
 - Database update: No (manual). No schema migration is required.
 - Completed the approved TECHMEDIA data repair for nine enquiries. Reused existing Customers C2083, C3663, and C9325. Added eight Mobile Contacts and eight Customer associations.
@@ -363,11 +364,9 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Data Bridge now collects readable source parent values and prepares resolved target IDs before import. Add a separate Super Admin correction preview/commit contract with saved before-data, explicit confirmation, stale source/parent/schema/target checks, destination locks, rollback, and idempotent recovery.
 - Verify the approved corrections through authenticated external Chrome and independent saved-data reads. Record proof in devkits/data-bridge/agent/SUKRAA-CORRECTIONS-2026-10-24.md.
 
-
 - Add a separate Core Masters page for contacts, companies, products, work orders, and children. Its scoped queue imports 47 Core tables in parent order while Common Tables retains its 31-table scope.
 - Reuse live table previews, selected rows/columns, report drill-down, and parent resolution. Support business-row duplicate checks without natural unique indexes and shared destination-table locks.
 - Keep conflicting records visible as warnings instead of counting them as existing exact matches. See devkits/data-bridge/agent/CORE-MASTERS-VERIFICATION.md for proof.
-
 
 - Bumped workspace version to 1.1.50.
 

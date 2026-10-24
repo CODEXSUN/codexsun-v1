@@ -340,3 +340,22 @@ The previous blocked checklist records the earlier state. These repairs supersed
 - [x] Retain SOP-14, ASSIGN3, and REPORTING353 with test-completion notes. SOP Item and SOP Assigned have no Closed field.
 
 See [CRM cleanup and emulator evidence](../../crm/agent/RELEASE-1.1.50-VERIFICATION.md). Tasks remain local. Existing business enquiries, Customers, and collection history remain intact.
+## TECHMEDIA Mobile Contact export and current site failure — 2026-10-24
+
+This entry supersedes earlier Customer blockers for the six selected enquiry IDs.
+
+- [x] Use exact Mobile Contact number IDs without forcing a missing Customer association, as requested by the user.
+- [x] Link C9118 and C10604 from exact Customer primary mobile and Contact evidence. Repeated contact imports reused their IDs.
+- [x] Verify Vijay Anand, vijay@techmedia.in, maps to active Employee HR-EMP-00001 for the current connection.
+- [x] Preserve the user's assignment change to Vijay on stable CRM enquiry ID 2663. Do not rename the admin account.
+- [x] Post stable enquiry IDs 2654, 2663, 2655, 2656, 2657, and 2662 as Q2081-Q2086 respectively.
+- [x] Sync their saved opening and follow-up comments through the existing Redis queue.
+- [x] Fix coalesced updates reusing completed delivery keys. Pass the disposable database regression and deploy the scoped API module.
+
+The current Frappe connection returns HTTP 530 with Cloudflare Error 1033, Tunnel error.
+Authenticated ping and Q2082 reads confirmed the failure. The CRM public API remains HTTP 200.
+Later update event 95 is retryable and cannot receive a final remote readback while the tunnel is unavailable.
+Do not claim all green or final remote duplicate verification after this outage.
+Mobile work is separate. This continuation does not build, install, or modify mobile or web bundles.
+
+Evidence: `/home/codexsun-releases/techmedia-exact-mapping-20261024/`.

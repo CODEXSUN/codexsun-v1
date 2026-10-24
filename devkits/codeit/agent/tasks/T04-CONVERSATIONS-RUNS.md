@@ -1,6 +1,6 @@
 # T04: Conversations and run lifecycle
 
-Status: planned. Prerequisites: T02, T03. Owner: run worker.
+Status: done. Verified by independent reviewer (a864163f-6503-45cc-885e-8b304baa4323). Prerequisites: T02, T03. Owner: run worker.
 
 ## Scope
 

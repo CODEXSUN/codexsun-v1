@@ -23,6 +23,11 @@ The first inbound queue job imports history. Later jobs start from the last succ
 The enquiry outbox remains stored while inbound-only mode pauses automatic exports.
 See [Frappe](../frappe/README.md) for the migration, source data contract, and verification limits.
 Enquiry export retries require `crm.enquiry.update`, Frappe connection management, and enquiry view-all access.
+Manual retries create a new outbox correlation ID without changing the record or comment retry identity.
+Queue delivery keys include that correlation generation and the persisted attempt count.
+Repeated scans reuse one delivery. A manual retry cannot reuse a completed job from an earlier retry cycle.
+Platform injects the public Frappe enquiry state reader into CRM after its normal record and sync visibility checks.
+Frappe owns source links. CRM owns delivery events. Platform only composes those contracts.
 
 Active, DNS-verified custom domains select their mapped tenant for login and password
 recovery. Corporate ID is hidden on those forms. Shared-host login, including

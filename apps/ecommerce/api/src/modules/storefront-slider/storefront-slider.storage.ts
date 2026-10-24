@@ -28,18 +28,43 @@ export class StorefrontSliderStorage {
   }
 
   async content(fileName: string) {
+    const publicPath = sliderPublicPath(fileName);
     try {
-      return await readFile(storagePath(sliderPublicPath(fileName)));
+      return await readFile(storagePath(publicPath));
     } catch {
-      throw AppError.notFound("Slider image was not found.");
+      const body = await this.readLegacy(publicPath);
+      if (!body) throw AppError.notFound("Slider image was not found.");
+      return body;
     }
+  }
+
+  /** EC-R09 bridge: idempotently copy a pre-tenant-root slot into the verified tenant root. */
+  private async readLegacy(publicPath: string) {
+    const currentRoot = resolve(ecommerceEnv.ECOMMERCE_SLIDER_IMAGE_ROOT);
+    const legacyRoot = resolve(ecommerceEnv.ECOMMERCE_SLIDER_IMAGE_LEGACY_ROOT);
+    if (legacyRoot === currentRoot) return null;
+    let body: Buffer;
+    try {
+      body = await readFile(storagePath(publicPath, legacyRoot));
+    } catch {
+      return null;
+    }
+    try {
+      await mkdir(currentRoot, { recursive: true });
+      await writeFile(storagePath(publicPath, currentRoot), body, { flag: "wx" });
+    } catch {
+      /* Another request may have copied it, or the tenant root is read-only. */
+    }
+    return body;
   }
 }
 
 export function sliderPublicPath(fileName: string) {
   const normalized = `/${basename(fileName).toLowerCase()}`;
   if (!publicImagePattern.test(normalized)) {
-    throw AppError.validation("Slider image name must contain letters, numbers, or hyphens and end in .webp.");
+    throw AppError.validation(
+      "Slider image name must contain letters, numbers, or hyphens and end in .webp."
+    );
   }
   return normalized;
 }
@@ -50,8 +75,7 @@ export function sliderContentUrl(imageUrl: string) {
     : imageUrl;
 }
 
-function storagePath(publicPath: string) {
-  const root = resolve(ecommerceEnv.ECOMMERCE_SLIDER_IMAGE_ROOT);
+function storagePath(publicPath: string, root = resolve(ecommerceEnv.ECOMMERCE_SLIDER_IMAGE_ROOT)) {
   const path = resolve(root, publicPath.slice(1));
   if (!path.startsWith(`${root}${sep}`)) throw AppError.validation("Slider image path is invalid.");
   return path;

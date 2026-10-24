@@ -20,7 +20,7 @@ Manual quotation conversion links an existing invoice without changing its items
       Existing dates remain unchanged. Use document-date ageing until due dates are available.
 - [ ] Statement ageing: calculate from all confirmed invoices and posted settlements through the statement To date.
       Honor explicit allocations first. Apply remaining credits to undated opening then oldest invoices for report purposes only.
-      Show 0â€“30, 31â€“60, 61â€“90, and 91+ days, undated opening, credit balance, and draft reservations.
+      Show 0ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“30, 31ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“60, 61ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“90, and 91+ days, undated opening, credit balance, and draft reservations.
       Print once after all statement movements. Buckets less credit balance must equal closing balance.
 - [ ] Release audit: fix the existing quotation E2E fixture. Test two tenants, two companies, two years, persistence, and complete printing.
 
@@ -206,10 +206,11 @@ and [standalone E-way API](https://whitebooks.in/developer/e-way-bill-api/post-e
 
 Customer and Supplier Summary, Customer and Supplier Statement, Stock Statement values, and the Billing dashboard support a reporting currency.
 INR is the default. The selector lists currencies configured in the tenant database, including historical inactive currencies.
-Each module owns its currency relation endpoint. Billing view permission is sufficient. Core CRUD permission is not required.
+Billing Settings owns the currency lookup used by the switch. Core CRUD permission is not required.
 
 Financial totals, movements, receipt/payment allocations, ageing, and dashboard balances use one currency at a time.
 The API validates the three-letter `x-billing-report-currency` header and returns `currencyCode` in report results.
+Change the reporting currency in Billing Settings > Reporting. Report pages and the overview do not show currency selectors.
 Selection belongs to the current browser tab, tenant, company, and financial year. Changing currency reloads the view and clears stale results.
 Printed reports show the currency code and format amounts in that currency.
 

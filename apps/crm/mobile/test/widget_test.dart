@@ -1583,7 +1583,7 @@ void main() {
 
     expect(find.byTooltip('Create enquiry'), findsNothing);
     expect(find.text('Write a comment only'), findsOneWidget);
-    expect(find.byIcon(Icons.add_comment_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.send_rounded), findsOneWidget);
     expect(find.byTooltip('Submit comment'), findsOneWidget);
     expect(find.text('Comment'), findsNothing);
     final commentField = tester.widget<TextField>(find.byType(TextField));
@@ -2157,20 +2157,17 @@ class _FakeCrmMobileApi extends CrmMobileApi {
       pendingCollectionIds;
 
   @override
-  Future<List<CrmJob>> assignedJobDetails(String accessToken) async {
-    await enquiries(
-      accessToken: accessToken,
-      scope: 'assigned',
-      filter: 'active',
-    );
-    return [_job];
-  }
-
   @override
   Future<List<CrmDuty>> duties(String accessToken) async => [];
 
   @override
-  Future<List<CrmJob>> createdEnquiries(String accessToken) async => [_job];
+  Future<int> dutiesCount(String accessToken) async => 0;
+
+  @override
+  Future<List<CrmJobExecution>> enquiryJobSessions({
+    required String accessToken,
+    required String enquiryId,
+  }) async => _job.jobs;
 
   @override
   Future<int> activitiesCount(String accessToken) async => 0;

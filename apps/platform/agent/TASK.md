@@ -1,5 +1,15 @@
 # Platform tasks
 
+## Future staged deployment routing
+
+Planning only. No production routing or container change is included in this work.
+
+- [ ] Create an isolated staging environment with its own Tunnel, router, databases, Redis, media storage, secrets, and sandbox integrations.
+- [ ] Add a Traefik router behind Cloudflare Tunnel. Keep Cloudflare Tunnel as the public edge and preserve incoming custom-domain hosts.
+- [ ] Add Blue/Green composed Platform API, Web, and Shop slots with immutable image-digest promotion, readiness checks, controlled upstream switching, and rollback records.
+- [ ] Separate queue worker execution before running concurrent Blue and Green application slots.
+- [ ] Require expand-contract migration review, backup verification, staging evidence, and production smoke checks before a slot switch.
+
 ## Data Bridge combined import queue
 
 - [x] Compose the Data Bridge bulk import processor through its public owner contract, with tenant/run context validation and a fixed Queue Manager payload for database and BullMQ backends.
@@ -606,6 +616,16 @@ Legacy stage URLs remain hidden compatibility routes. Database credentials remai
 - [x] Verify fresh Redis job 2584, zero inserts, all 137 SUKRAA invoices, unchanged source and all 70 target business tables.
 
 See [the Redis delivery log](REDIS-DELIVERY-2026-10-24.md).
+## TECHMEDIA enquiry retry delivery — 2026-10-24
+
+- [x] Include the persisted outbox correlation generation in enquiry delivery keys.
+- [x] Verify the disposable database test resets the retry budget, changes correlation, and retains the last error.
+- [x] Verify key isolation across tenants, automatic attempts, manual retries, and repeated scans.
+- [x] Verify normal live Retry for event 74 through Redis/BullMQ job 3009, without explicit test dispatch.
+
+The worker returned the actual Customer mapping blocker. It created no remote enquiry and changed no local numbers or links.
+This check does not claim successful export for an unresolved mapping.
+
 
 ## Data Bridge credential transfer — local, 2026-10-24
 

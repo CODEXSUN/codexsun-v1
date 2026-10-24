@@ -51,6 +51,7 @@ class _CrmMobileAppState extends State<CrmMobileApp>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _dashboardNavigation.dispose();
+    _api.close();
     super.dispose();
   }
 
@@ -661,6 +662,10 @@ class _AuthenticatedAppShell extends StatelessWidget {
   }
 
   void _selectDockDestination(int index) {
+    if (index == 3) {
+      navigation.selectDockDestination(index);
+      return;
+    }
     navigatorKey.currentState?.popUntil((route) => route.isFirst);
     navigation.selectDockDestination(index);
   }

@@ -1,3 +1,4 @@
+import { SettingsReportingCurrency } from "./settings.reporting-currency";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Save } from "lucide-react";
@@ -104,6 +105,16 @@ function SettingsWorkspaceContent() {
 
   const tabs: WorkspaceAnimatedTab[] = useMemo(
     () => [
+      {
+        label: "Reporting",
+        value: "reporting",
+        content: (
+          <div className="space-y-4 rounded-md border border-border/70 bg-card/95 p-4 shadow-sm">
+            <h2 className="text-base font-semibold">Report settings</h2>
+            <SettingsReportingCurrency />
+          </div>
+        )
+      },
       {
         value: "layout",
         label: "Layout",
@@ -258,7 +269,12 @@ function SettingsWorkspaceContent() {
         </Button>
       }
     >
-      <WorkspaceAnimatedTabs contentPadding tabs={tabs} value={activeTab} onValueChange={setActiveTab} />
+      <WorkspaceAnimatedTabs
+        contentPadding
+        tabs={tabs}
+        value={activeTab}
+        onValueChange={setActiveTab}
+      />
     </WorkspacePage>
   );
 }

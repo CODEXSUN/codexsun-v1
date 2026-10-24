@@ -643,6 +643,7 @@ export class FrappeExportService {
     let mobileLink: Awaited<ReturnType<typeof resolveEnquiryMobile>> | undefined;
     if (!linkedName) {
       let customer: string | null = null;
+      let mobileOnly = false;
       if (enquiry.contact_id) {
         const identities = await this.database
           .selectFrom("frappe_contact_customer_identity")
@@ -663,13 +664,16 @@ export class FrappeExportService {
               )
               .digest("hex")
         );
-        if (matches.length !== 1)
+        if (matches.length > 1)
           throw AppError.conflict(
             "This enquiry's Customer has no unique identity on the connected Frappe site. Verify its Customer mapping before retrying."
           );
-        customer = matches[0]!.remote_name;
+        customer = matches[0]?.remote_name ?? null;
+        mobileOnly = matches.length === 0;
       }
-      mobileLink = await resolveEnquiryMobile(settings, enquiry.captured_phone!, customer);
+      mobileLink = await resolveEnquiryMobile(settings, enquiry.captured_phone!, customer, {
+        mobileOnly
+      });
     }
     const payload = {
       title,

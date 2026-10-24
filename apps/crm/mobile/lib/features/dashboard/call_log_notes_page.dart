@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/api/crm_mobile_api.dart';
 import 'admin_call_log_page.dart';
-import 'home_enquiry_form_page.dart';
 
 class CallLogNotesPage extends StatefulWidget {
   const CallLogNotesPage({
@@ -96,10 +95,6 @@ class _CallLogNotesPageState extends State<CallLogNotesPage> {
                     controller: _controller,
                     focusNode: _composerFocus,
                     isSaving: _isSaving,
-                    onCreateEnquiry:
-                        isCallLogAdministrator(widget.session.profile.role)
-                        ? () => _openEnquiry(_notes.firstOrNull)
-                        : null,
                     onSave: _saveNote,
                   ),
                 ),
@@ -157,25 +152,6 @@ class _CallLogNotesPageState extends State<CallLogNotesPage> {
     }
   }
 
-  Future<void> _openEnquiry(CrmCallLogComment? note) async {
-    final posted = await Navigator.of(context).push<CrmJob>(
-      MaterialPageRoute(
-        builder: (context) => HomeEnquiryFormPage(
-          api: widget.api,
-          session: widget.session,
-          initialMobile: widget.entry.mobile,
-          initialMessage: note?.body ?? '',
-        ),
-      ),
-    );
-    if (posted == null) return;
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Enquiry #${posted.number} posted.')),
-      );
-    }
-  }
-
   void _showMessage(String message) =>
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
@@ -202,14 +178,12 @@ class _CommentComposer extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.isSaving,
-    this.onCreateEnquiry,
     required this.onSave,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool isSaving;
-  final VoidCallback? onCreateEnquiry;
   final VoidCallback onSave;
 
   @override
@@ -222,18 +196,6 @@ class _CommentComposer extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            if (onCreateEnquiry != null) ...[
-              Transform.translate(
-                offset: const Offset(0, -8),
-                child: FloatingActionButton.small(
-                  elevation: 4,
-                  tooltip: 'Create enquiry',
-                  onPressed: onCreateEnquiry,
-                  child: const Icon(Icons.add_rounded),
-                ),
-              ),
-              const SizedBox(height: 2),
-            ],
             Row(
               children: [
                 Expanded(
@@ -269,6 +231,10 @@ class _CommentComposer extends StatelessWidget {
                 IconButton.filled(
                   key: const ValueKey('submit-call-log-comment'),
                   tooltip: 'Submit comment',
+                  style: IconButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                  ),
                   onPressed: isSaving ? null : onSave,
                   icon: isSaving
                       ? const SizedBox.square(
@@ -278,7 +244,7 @@ class _CommentComposer extends StatelessWidget {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.add_comment_outlined),
+                      : const Icon(Icons.send_rounded, color: Colors.white),
                 ),
               ],
             ),

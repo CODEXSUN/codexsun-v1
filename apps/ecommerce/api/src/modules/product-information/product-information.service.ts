@@ -2,13 +2,20 @@ import { AppError } from "@codexsun/framework/errors";
 import { ProductInformationRepository } from "./product-information.repository.js";
 import type {
   ProductInformationFilters,
-  ProductInformationSaveInput
+  ProductInformationSaveInput,
+  ProductInformationUpdateInput
 } from "./product-information.types.js";
+
+const MAX_PAGE_SIZE = 100;
 
 export class ProductInformationService {
   constructor(private readonly repository = new ProductInformationRepository()) {}
   list(filters: ProductInformationFilters = {}) {
-    return this.repository.list(filters);
+    return this.repository.list({
+      ...filters,
+      page: Math.max(1, filters.page ?? 1),
+      pageSize: Math.min(MAX_PAGE_SIZE, Math.max(1, filters.pageSize ?? MAX_PAGE_SIZE))
+    });
   }
   find(id: number) {
     return this.repository.find(id);
@@ -25,12 +32,17 @@ export class ProductInformationService {
     await this.validate(value);
     return this.repository.create(value);
   }
-  async update(id: number, input: ProductInformationSaveInput) {
+  async update(id: number, input: ProductInformationUpdateInput) {
+    const { expectedRevision, ...saveInput } = input;
     if (!(await this.repository.find(id)))
       throw AppError.notFound("Product information was not found.");
-    const value = normalize(input);
+    const value = normalize(saveInput);
     await this.validate(value, id);
-    return this.repository.update(id, value);
+    const updated = await this.repository.update(id, value, expectedRevision);
+    if (!updated) {
+      throw AppError.conflict("This product was changed by someone else. Reload it and try again.");
+    }
+    return updated;
   }
   async archive(id: number) {
     if (!(await this.repository.find(id)))

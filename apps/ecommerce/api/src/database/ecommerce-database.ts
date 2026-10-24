@@ -57,6 +57,10 @@ export function getEcommercePublicStorageRoot() {
   return root;
 }
 
+export function findEcommercePublicStorageRoot() {
+  return requestScope.getStore()?.publicStorageRoot;
+}
+
 export function getEcommerceTenantKey(): string {
   const scope = requestScope.getStore();
   if (!scope) throw AppError.forbidden("Ecommerce tenant context is required.");

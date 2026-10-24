@@ -32,7 +32,8 @@ export type EnquiryRecord = EnquirySavePayload & {
   updatedAt: string;
   assignedToName: string | null;
   closurePending?: boolean;
-  frappeSyncStatus?: "pending" | "processing" | "retry" | "failed" | "synced" | null;
+  frappeSyncStatus?: "pending" | "processing" | "retry" | "failed" | "synced" | "unlinked" | null;
+  frappeRemoteName?: string | null;
   frappeSyncError?: string | null;
   canViewFrappeSync?: boolean;
 };

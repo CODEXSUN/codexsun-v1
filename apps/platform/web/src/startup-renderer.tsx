@@ -1,11 +1,12 @@
 import type { ComponentType } from "react";
 import { createRoot } from "react-dom/client";
 import { GlobalLoader } from "@codexsun/ui/components/global-loader";
+import { workspaceLoadingMessage } from "./shared/loading/workspace-loading";
 
 const root = createRoot(document.getElementById("root") as HTMLElement);
 
 export function showConnecting() {
-  root.render(<GlobalLoader message="Connecting to Platform..." />);
+  root.render(<GlobalLoader message={workspaceLoadingMessage} steady />);
 }
 
 export function showApplication(Application: ComponentType) {

@@ -33,6 +33,16 @@ type BillingSettingsDatabase = {
 };
 
 export class BillingSettingsRepository {
+  async currencies(databaseName: string, companyId: number) {
+    await this.assertCompany(databaseName, companyId);
+    return (
+      await sql<{ id: number; name: string }>`
+        SELECT id, UPPER(name) AS name FROM core_currencies
+        WHERE CHAR_LENGTH(name)=3 ORDER BY name,id
+      `.execute(await getBillingDatabase(databaseName))
+    ).rows;
+  }
+
   async getBillingSettings(databaseName: string, companyId: number): Promise<BillingSettings> {
     await this.assertCompany(databaseName, companyId);
     const companyRow = await (

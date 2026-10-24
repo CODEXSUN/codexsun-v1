@@ -1,5 +1,14 @@
 # Frappe
 
+Enquiry number reconciliation preserves stable CRM IDs and exact Frappe links.
+Temporary swap numbers do not advance the permanent CRM sequence.
+When enquiry export fails, the CRM badge shows that failure before dependent comment errors.
+Comments without a remote enquiry link include the parent export error when available.
+The public enquiry sync state reader combines persisted source links with the CRM-owned outbox.
+It makes no remote requests. Missing export events do not erase a confirmed imported link.
+Unfinished work takes priority over a later event marked successful.
+Transport failures report Cloudflare Error 1033 separately from record mapping problems.
+
 ## Custom app reference
 
 For Frappe schemas and functions, refer to [CODEXSUN/logicx-biz](https://github.com/CODEXSUN/logicx-biz.git).
@@ -126,11 +135,13 @@ Before a new outbound Enquiry is created, CODEXSUN resolves its ten-digit number
 back. A lost response or concurrent duplicate is recovered by looking up the unique number again.
 Each retry looks up the contact before creating it. This minimal contact creation is explicitly
 approved as part of enquiry export; it does not enable standalone Contact exports.
-CODEXSUN sends `mobile`, `mobile_customer`, and `customer` together only when the association is
-unique. A linked local customer must have a saved identity for the connected Frappe site. Without
-a local customer, the mobile must have exactly one association. Missing or ambiguous associations
-block enquiry creation and report the link to fix in Frappe. No Customer or association is created.
-A minimal Mobile Contact can therefore exist after an enquiry export reports a missing association.
+The ten-digit number is the Frappe `Mobile Contact` link identity. When a local contact has no
+Customer identity for the connected site, enquiry export sends only `mobile`. It leaves `customer`
+and `mobile_customer` empty and retains the local Customer fields. It does not invent a Customer.
+A mapped Customer still requires its exact Mobile Contact Customer association. Multiple Customer
+identities or a missing mapped association block export. The legacy no-local-contact lookup still
+requires one unique association. Minimal Mobile Contact creation retains lookup-before-create and
+lost-response recovery behavior.
 
 Frappe-to-CRM imports copy selected Frappe records into local tenant databases. Mobile customers,
 enquiries, activities, and call logs use direct selected-row imports. Enquiry and call-log bulk imports

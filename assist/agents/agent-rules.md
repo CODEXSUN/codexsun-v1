@@ -7,7 +7,7 @@ These rules guide all AI agents working on CODEXSUN.
 ## General Rules
 
 - Read `assist/AGENT-GUIDE.md` first and use its routing table instead of loading all Assist documents.
-- Read relevant `assist/` docs before planning major work.
+- Read only the Assist documents that the task needs. Do not load plans, inventories, or release notes for focused fixes.
 - Preserve tenant isolation.
 - Respect module boundaries.
 - Prefer simple, explicit design.
@@ -55,13 +55,13 @@ Reviewers should check:
 - UI follows the design system.
 - Verification covers important behavior, and unavailable checks are reported explicitly.
 
-## Mandatory Application Boundary Audit
+## Application Boundary Audit
 
-Every AI agent that creates, refactors, reviews, or finalizes an application module must perform a full application boundary audit across its backend and frontend. This applies to every current application and every future application. It cannot be skipped because typecheck, lint, or tests pass.
+A full application boundary audit is required for new modules, refactors, ownership changes, permission or tenant changes, release work, or an explicit audit. Focused bug fixes and UI work inspect the affected owner and direct callers only.
 
 Before implementing CRUD, the agent must read and apply `Mandatory Module-Owned CRUD Pattern` in `assist/governance/rules.md`. Country, State, District, City, and Pincode are the reference ownership tone: one entity per leaf, fixed typed APIs, distinct form/list/workspace roles, public lookup relationships only, backend-enforced lifecycle rules, and no generic entity engine. A request to make modules “the same pattern” means consistent role behavior and interaction tone, not a shared business implementation, metadata registry, wrapper, or dynamic-path CRUD engine.
 
-Before changing code, inventory the application's module folders and identify each composition root, business module, owned entity, owned table, API surface, frontend workspace, and public export. After changing code, repeat the audit and fix every violation.
+For a full audit, inventory the application's module folders and identify each composition root, business module, owned entity, owned table, API surface, frontend workspace, and public export. Repeat the audit after the change.
 
 The audit must detect and reject:
 
@@ -75,7 +75,7 @@ The audit must detect and reject:
 
 Legitimate infrastructure must be distinguished from business logic. `shared/api` transport/session context, environment readers, observability, and reusable controls from `@codexsun/ui` may be shared only when they contain no module-specific fields, validation, persistence, lifecycle, routes, or workflows. Moving business logic into `shared`, `common`, `foundation`, `helpers`, or `utils` does not make it infrastructure.
 
-The task is not complete until the agent has:
+For a full audit, the task is not complete until the agent has:
 
 1. Verified every leaf module against its backend and frontend file contract.
 2. Verified composition roots contain references/composition only.
@@ -89,7 +89,9 @@ If the checker does not understand a new application's approved contract, update
 
 ## Documentation Rules
 
-Docs should be updated when:
+Update docs only when the user asks, or when a release, contract, architecture, operation, or rule changes. Do not update docs for focused fixes.
+
+Documentation changes apply when:
 
 - A module boundary changes.
 - A new industry pack is added.

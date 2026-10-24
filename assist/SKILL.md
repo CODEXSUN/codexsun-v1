@@ -1,16 +1,15 @@
 ---
 name: codexsun-module-owner
-description: Enforce CODEXSUN's strict module-owned architecture and verification workflow. Use when implementing, refactoring, reviewing, debugging, or finalizing CODEXSUN backend/frontend modules, CRUD masters, migrations, seeds, routes, relationships, forms, lists, workspaces, lifecycle actions, application composition, npm workspace structure, or Assist rules. Trigger whenever a request says same pattern, module owned, no shared or centralized code, boundary audit, finalize a module, or move business behavior into its owner.
+description: Enforce CODEXSUN's module-owned architecture for new modules, refactors, CRUD ownership, migrations, routes, composition, boundary audits, and Assist rules. Do not load it for a focused UI or bug fix without a module-boundary change.
 ---
 
 # CODEXSUN Module Owner
 
 ## Load project rules
 
-1. Read `assist/AGENT-GUIDE.md` completely.
-2. Read `assist/governance/rules.md` completely.
-3. Read the owning backend and frontend module files and their public composition points.
-4. Open specialized Assist documents only when routed by `assist/AGENT-GUIDE.md`.
+1. Read the applicable sections of `assist/AGENT-GUIDE.md` and `assist/governance/rules.md`.
+2. Read the owning backend and frontend module files and their public composition points.
+3. Open specialized Assist documents only when routed by `assist/AGENT-GUIDE.md`.
 
 Treat the repository's current authoritative instructions and the user's request as higher priority than stale planning or historical notes.
 
@@ -22,6 +21,8 @@ Treat the repository's current authoritative instructions and the user's request
 - Consume relationships through fixed public lookup contracts. Never borrow private sibling implementation.
 
 ## Audit before editing
+
+Use this full audit only for new modules, refactors, ownership changes, permission or tenant changes, releases, or explicit audits. For focused fixes, inspect the changed owner and direct callers.
 
 Inventory:
 
@@ -88,7 +89,7 @@ Keep behavior concrete:
 
 ## Validate before completion
 
-Run as applicable:
+For a focused change, run the smallest relevant test, lint, typecheck, or browser check. Run the following full set only for a release, ownership or data change, cross-module work, or an explicit audit:
 
 1. Prettier on changed files.
 2. Focused ESLint.
@@ -99,7 +100,7 @@ Run as applicable:
 7. `npm run dependencies:check`.
 8. Database/E2E or browser verification when configured and required.
 
-Repeat the ownership scan after editing. Compare role-file hashes when copied files are suspected. Confirm no nested `node_modules`, `dist`, or `dist-types` were created.
+Repeat the full ownership scan only after a full audit. Compare role-file hashes when copied files are suspected. Confirm layout only after dependency, package, workspace, or build changes.
 
 Never claim a check passed unless it ran successfully. Report unavailable database/E2E checks and existing-database migration requirements explicitly.
 

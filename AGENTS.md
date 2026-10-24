@@ -1,9 +1,10 @@
 # Repository agent entry point
 
-Read `assist/AGENT-GUIDE.md` and `assist/governance/rules.md` before changing this repository.
+For normal work, read the Fast Work Default in `assist/AGENT-GUIDE.md` and `assist/governance/rules.md` before changing this repository.
 
-For component work, also read its `README.md`, `agent/TASK.md`, `agent/PLAN.md`, and `agent/SKILLS.md`.
-This applies to apps, developer kits, shared packages, workspace tools, and add-on integration guides.
+For normal bug fixes and focused UI work, read the affected source and its nearest public contract.
+Do not read or update component `README.md`, `agent/TASK.md`, `agent/PLAN.md`, or `agent/SKILLS.md` unless the task changes a contract, architecture, module ownership, operations, or documentation, or the user asks for an audit or release.
+This fast-work policy overrides older, more detailed agent and Assist checklists for normal focused work.
 
 For Zetro work, also read `apps/zetro/agent/README.md` and `apps/zetro/agent/SKILLS.md`.
 The Zetro API loads `SKILLS.md` for business chat at runtime. Keep the runtime rules,

@@ -1,6 +1,7 @@
 # T09: Supervisor and parallel workers
 
-Status: planned. Prerequisites: T08. Owner: orchestration worker with integrator support.
+Status: done. Prerequisites: T08. Owner: orchestration worker with integrator support.
+Review verdict: PASS (verified by Independent Reviewer `77db0157-b060-413d-a115-1c8615c2ca86` on 24-10-2026).
 
 ## Scope
 
@@ -28,3 +29,18 @@ Run deterministic scheduling tests plus real parallel fixture tasks and fault in
 Cover E10/E13/E14/E15/E16/E20/E22.
 Return dispatch/handoff records, lease and recovery evidence, resource measurements, and templates/HANDOFF.md.
 Prove dependency resolution works without nested installs in the selected workspace strategy.
+
+## Delivered Artifacts & Verification
+
+- [x] Backend Orchestration Module (`devkits/codeit/api/src/modules/orchestration/`): `orchestration.types.ts`, `orchestration.repository.ts`, `orchestration.service.ts`, `orchestration.routes.ts`, `orchestration.module.ts`, `index.ts`.
+- [x] Bounded Concurrency: Enforces default ceiling of 2 concurrent implementation workers (DEC-07) with dynamic capacity recovery on completion or expiry.
+- [x] Disjoint Path Lease Manager (`pathsOverlap`): Evaluates exact matches, wildcards, and directory trees; rejects overlapping leases with `CODEIT_LEASE_CONFLICT` (409).
+- [x] Dependency DAG Validator: Rejects dispatches whose prerequisite tasks are missing or uncompleted with `CODEIT_DEPENDENCY_UNSATISFIED` (409).
+- [x] Heartbeats & Expiry Recovery: Active workers heartbeat to extend leases; missed heartbeats trigger lease expiration (`CODEIT_LEASE_EXPIRED`, 410) and release held paths.
+- [x] Run Cancellation Fencing: Cancelling run cancels active assignments and increments generation; stale workers rejected (E10).
+- [x] Worker Isolation: Prevents sub-worker delegation and self-approval (`CODEIT_WORKER_ISOLATION_VIOLATION`, 403).
+- [x] Integration Gate: Merges disjoint worker artifacts sequentially with pre-apply SHA-256 validation and combined hash calculation.
+- [x] Frontend Supervisor Dashboard (`devkits/codeit/src/modules/orchestration/supervisor-dashboard.tsx`): Built with `@codexsun/ui`, Tailwind CSS, Lucide icons, live concurrency meter, path locks table, and filtered ledger.
+- [x] Automated Tests: 17/17 tests passing in `devkits/codeit/api/test/orchestration.test.mjs`.
+- [x] Integrated into server routes (`api/src/server.ts`), API package exports (`api/src/index.ts`), and Web package exports (`src/index.ts`).
+- [x] Independent review PASS (verified by Reviewer `77db0157-b060-413d-a115-1c8615c2ca86`).

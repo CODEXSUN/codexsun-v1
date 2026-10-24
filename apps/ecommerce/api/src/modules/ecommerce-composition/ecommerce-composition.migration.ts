@@ -7,9 +7,14 @@ import { runMigrationBatch, type MigrationBatch } from "@codexsun/framework/db";
 import type { EcommerceDatabase } from "../../database/ecommerce-database.js";
 import {
   migrateProductInformationModule,
-  upgradeProductInformationDetails
+  upgradeProductInformationDetails,
+  upgradeProductInformationRevision
 } from "../product-information/product-information.migration.js";
-import { migrateProductVariantModule } from "../product-variant/product-variant.migration.js";
+import {
+  migrateProductVariantModule,
+  upgradeProductVariantCanonicalOptions,
+  upgradeProductVariantOptions
+} from "../product-variant/product-variant.migration.js";
 import { migrateProductImageModule } from "../product-image/product-image.migration.js";
 import { migrateStorefrontSliderModule } from "../storefront-slider/storefront-slider.migration.js";
 import {
@@ -49,7 +54,10 @@ import { upgradeStorefrontReadPerformance } from "../storefront/storefront-perfo
 const steps = [
   ["product-information", migrateProductInformationModule],
   ["product-information-details", upgradeProductInformationDetails],
+  ["product-information-revision", upgradeProductInformationRevision],
   ["product-variant", migrateProductVariantModule],
+  ["product-variant-options", upgradeProductVariantOptions],
+  ["product-variant-canonical-options", upgradeProductVariantCanonicalOptions],
   ["product-image", migrateProductImageModule],
   ["storefront-slider", migrateStorefrontSliderModule],
   ["promotion-card", migratePromotionCardModule],
@@ -101,7 +109,7 @@ const batch: MigrationBatch<EcommerceDatabase> = {
   batch: 1,
   scope: "ecommerce.modules",
   description: "Install Ecommerce modules while preserving legacy catalog and quote data.",
-  version: "1.0.83",
+  version: "1.0.85",
   steps: orderedSteps
 };
 

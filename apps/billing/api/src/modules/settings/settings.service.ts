@@ -4,6 +4,10 @@ import { defaultBillingSettings, type BillingSettings } from "./settings.types.j
 export class BillingSettingsService {
   constructor(private readonly repository = new BillingSettingsRepository()) {}
 
+  currencies(databaseName: string, companyId: number) {
+    return this.repository.currencies(databaseName, companyId);
+  }
+
   getBillingSettings(databaseName: string, companyId: number) {
     return this.repository.getBillingSettings(databaseName, companyId);
   }

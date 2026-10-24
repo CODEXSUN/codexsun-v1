@@ -26,8 +26,9 @@ export class ProductImageStorage {
       throw AppError.validation("Product image must be non-empty and within the upload limit.");
     }
     if (!format.signature(body)) throw AppError.validation("Product image content is invalid.");
-    await mkdir(resolve(ecommerceEnv.ECOMMERCE_PRODUCT_IMAGE_ROOT), { recursive: true });
-    await writeFile(storagePath(safeName), body);
+    const root = resolve(ecommerceEnv.ECOMMERCE_PRODUCT_IMAGE_ROOT);
+    await mkdir(root, { recursive: true });
+    await writeFile(resolveMediaPath(root, safeName), body);
     return {
       imageUrl: `/api/platform/storefront/product-images/${encodeURIComponent(safeName)}`,
       sizeBytes: body.length
@@ -36,11 +37,41 @@ export class ProductImageStorage {
 
   async content(fileName: string) {
     const safeName = productImageFileName(fileName);
+    const root = resolve(ecommerceEnv.ECOMMERCE_PRODUCT_IMAGE_ROOT);
     try {
-      return { body: await readFile(storagePath(safeName)), mime: formatFor(safeName).mime };
+      return {
+        body: await readFile(resolveMediaPath(root, safeName)),
+        mime: formatFor(safeName).mime
+      };
     } catch {
-      throw AppError.notFound("Product image was not found.");
+      const body = await this.readLegacy(safeName);
+      if (!body) throw AppError.notFound("Product image was not found.");
+      return { body, mime: formatFor(safeName).mime };
     }
+  }
+
+  /**
+   * EC-R09 bridge: serve bytes from the pre-tenant app root and copy them once into the verified
+   * tenant root. The public URL and record link are unchanged; the copy is idempotent and safe to
+   * repeat. A read-only tenant root still serves the legacy bytes.
+   */
+  private async readLegacy(fileName: string) {
+    const legacyRoot = resolve(ecommerceEnv.ECOMMERCE_PRODUCT_IMAGE_LEGACY_ROOT);
+    const currentRoot = resolve(ecommerceEnv.ECOMMERCE_PRODUCT_IMAGE_ROOT);
+    if (legacyRoot === currentRoot) return null;
+    let body: Buffer;
+    try {
+      body = await readFile(resolveMediaPath(legacyRoot, fileName));
+    } catch {
+      return null;
+    }
+    try {
+      await mkdir(currentRoot, { recursive: true });
+      await writeFile(resolveMediaPath(currentRoot, fileName), body, { flag: "wx" });
+    } catch {
+      /* Another request may have copied it, or the tenant root is read-only. Serving still works. */
+    }
+    return body;
   }
 }
 
@@ -58,8 +89,7 @@ function formatFor(fileName: string) {
   return format;
 }
 
-function storagePath(fileName: string) {
-  const root = resolve(ecommerceEnv.ECOMMERCE_PRODUCT_IMAGE_ROOT);
+function resolveMediaPath(root: string, fileName: string) {
   const path = resolve(root, fileName);
   if (!path.startsWith(`${root}${sep}`))
     throw AppError.validation("Product image path is invalid.");

@@ -1,8 +1,6 @@
-import { AppError, isAppError } from "@codexsun/framework/errors";
+import { AppError } from "@codexsun/framework/errors";
 import { StorefrontRepository } from "../storefront/storefront.repository.js";
-import { getEcommerceTenantKey } from "../../database/ecommerce-database.js";
 import type { StorefrontCatalogFilters } from "../storefront/storefront.types.js";
-import { isFrappeOperatingWindow } from "./catalog-data-source.availability.js";
 import { FrappeCatalogSource } from "./catalog-data-source.frappe.js";
 import { CatalogDataSourceRepository } from "./catalog-data-source.repository.js";
 import type {
@@ -47,16 +45,11 @@ class OwnCatalogSource implements StorefrontCatalogSource {
   }
 }
 
-const cacheRefreshIntervalMs = 15 * 60 * 1_000;
-const cacheRefreshes = new Map<string, Promise<void>>();
 const emptyDiscovery = { brands: [], categories: [], priceRange: { maximum: 0, minimum: 0 } };
 
 export class CatalogDataSourceService implements StorefrontCatalogSource {
   private readonly own = new OwnCatalogSource();
-  private readonly fallback = new OwnCatalogSource(new StorefrontRepository(true));
   private readonly frappe: FrappeCatalogSource;
-  private frappeRetryAfter = 0;
-  private frappeWasUnavailable = false;
   private moduleProvidersCache:
     | {
         expiresAt: number;
@@ -68,9 +61,7 @@ export class CatalogDataSourceService implements StorefrontCatalogSource {
 
   constructor(
     private readonly control: CatalogDataSourceControl,
-    private readonly repository = new CatalogDataSourceRepository(),
-    private readonly now = () => new Date(),
-    private readonly tenantKey = getEcommerceTenantKey
+    private readonly repository = new CatalogDataSourceRepository()
   ) {
     this.frappe = new FrappeCatalogSource(() => control.credentials());
   }
@@ -105,11 +96,6 @@ export class CatalogDataSourceService implements StorefrontCatalogSource {
       ...connection,
       modules: modules.map((module) => ({ ...module, ...moduleDefinition(module.module) }))
     };
-  }
-
-  async hasLiveFrappeModules() {
-    const providers = await this.repository.moduleProviders();
-    return providers.some((module) => module.provider === "frappe");
   }
 
   async switchProvider(
@@ -260,33 +246,12 @@ export class CatalogDataSourceService implements StorefrontCatalogSource {
     operation: (source: StorefrontCatalogSource) => Promise<T>,
     disabledValue: T = [] as T
   ) {
+    // Local-only public reads (EC-R01). A stored `frappe` selection still records the intended import
+    // origin and the direction used by explicit Pull/Push transfer, but it never selects a live read:
+    // the storefront must render from the tenant projection even when the Frappe connection is healthy.
     const providers = await this.moduleProviders();
     if (providers.find((item) => item.module === module)?.enabled === false) return disabledValue;
-    if (providers.find((item) => item.module === module)?.provider !== "frappe") {
-      return operation(this.own);
-    }
-    if (!(await this.control.settings()).frappeConfigured) return this.cached(operation);
-    if (!isFrappeOperatingWindow(this.now()) || Date.now() < this.frappeRetryAfter) {
-      return this.cached(operation);
-    }
-    try {
-      const result = await operation(this.frappe);
-      if (this.frappeWasUnavailable) {
-        console.info("[ecommerce.catalog] Frappe connection recovered; live reads resumed");
-      }
-      this.frappeRetryAfter = 0;
-      this.frappeWasUnavailable = false;
-      await this.refreshLocalCacheIfDue();
-      return result;
-    } catch (error) {
-      if (!isFrappeUnavailable(error)) throw error;
-      if (!this.frappeWasUnavailable) {
-        console.warn("[ecommerce.catalog] Frappe is unavailable; storefront reads use local cache");
-      }
-      this.frappeWasUnavailable = true;
-      this.frappeRetryAfter = Date.now() + 60_000;
-      return this.cached(operation);
-    }
+    return operation(this.own);
   }
 
   private async modulesUseSameProvider(modules: CatalogDataSourceModule[]) {
@@ -315,38 +280,6 @@ export class CatalogDataSourceService implements StorefrontCatalogSource {
       this.moduleProvidersRequest = undefined;
     }
   }
-
-  private async cached<T>(operation: (source: StorefrontCatalogSource) => Promise<T>) {
-    const cached = await operation(this.fallback);
-    if (!isEmptyCatalogResult(cached)) return cached;
-    return operation(this.own);
-  }
-
-  private async refreshLocalCacheIfDue() {
-    const tenantKey = this.tenantKey();
-    const pending = cacheRefreshes.get(tenantKey);
-    if (pending) return pending;
-    const refresh = (async () => {
-      const age = await this.repository.cacheAgeMs();
-      if (age !== null && age < cacheRefreshIntervalMs) return;
-      await this.pullFromFrappe();
-    })()
-      .catch((error: unknown) => {
-        const message = error instanceof Error ? error.message : "Frappe cache refresh failed.";
-        console.warn(`[ecommerce.catalog] local cache refresh failed: ${message}`);
-      })
-      .finally(() => cacheRefreshes.delete(tenantKey));
-    cacheRefreshes.set(tenantKey, refresh);
-    return refresh;
-  }
-}
-
-function isFrappeUnavailable(error: unknown) {
-  return isAppError(error) && error.code === "FRAPPE_CATALOG_UNAVAILABLE";
-}
-
-function isEmptyCatalogResult(value: unknown) {
-  return value == null || (Array.isArray(value) && value.length === 0);
 }
 
 function isFrappeFile(value: unknown): value is string {

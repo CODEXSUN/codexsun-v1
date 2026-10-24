@@ -14,6 +14,29 @@ const settings = {
 };
 const number = "9994885548";
 
+for (const existsInitially of [true, false])
+  test(`mobile-only export preserves the number identity without choosing a Customer (${existsInitially})`, async () => {
+    let exists = existsInitially;
+    let writes = 0;
+    globalThis.fetch = async (input, init) => {
+      assert.equal(
+        decodeURIComponent(new URL(String(input)).pathname),
+        "/api/resource/Mobile Contact"
+      );
+      if (init?.method === "POST") {
+        writes++;
+        exists = true;
+        throw new Error("Lost Mobile Contact response after commit");
+      }
+      return Response.json({ data: exists ? [{ name: number, mobile_number: number }] : [] });
+    };
+    for (let pass = 0; pass < 2; pass++)
+      assert.deepEqual(await resolveEnquiryMobile(settings, number, null, { mobileOnly: true }), {
+        mobile: number
+      });
+    assert.equal(writes, existsInitially ? 0 : 1);
+  });
+
 for (const scenario of ["existing", "create", "timeout", "race"])
   test(`enquiry mobile resolves exact association after ${scenario}`, async () => {
     let exists = scenario === "existing";

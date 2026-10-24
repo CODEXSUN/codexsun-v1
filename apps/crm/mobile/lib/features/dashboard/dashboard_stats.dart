@@ -75,10 +75,10 @@ class _DashboardStatsState extends State<DashboardStats>
 
   Future<void> _loadDutyCount(String token) async {
     try {
-      final duties = await widget.api.duties(token);
+      final count = await widget.api.dutiesCount(token);
       if (!mounted || token != widget.session.accessToken) return;
       setState(() {
-        _counts['Duty'] = duties.length;
+        _counts['Duty'] = count;
         _errors.remove('Duty');
       });
     } catch (_) {

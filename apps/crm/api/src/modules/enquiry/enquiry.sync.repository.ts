@@ -5,6 +5,11 @@ import type { EnquiryDatabase, EnquirySyncEventRow } from "./enquiry.types.js";
 
 export type EnquirySyncEventType = EnquirySyncEventRow["event_type"];
 export type EnquirySyncValidation = "valid" | "invalid" | "warning";
+export type EnquiryDeliveryState = {
+  status: EnquirySyncEventRow["status"] | "unlinked";
+  error: string | null;
+  remoteName?: string | null;
+};
 
 export class EnquirySyncRepository {
   constructor(private readonly database: Kysely<EnquiryDatabase>) {}
@@ -29,7 +34,7 @@ export class EnquirySyncRepository {
           event_type: "enquiry-upsert",
           entity_id: null,
           actor_email: input.actorEmail,
-          correlation_id: input.correlationId,
+          correlation_id: randomUUID(),
           status: "pending",
           attempts: 0,
           available_at: sql`UTC_TIMESTAMP()`,
@@ -157,14 +162,31 @@ export class EnquirySyncRepository {
 
   async deliveryStates(enquiryIds: number[]) {
     const statuses = await this.latestStatuses(enquiryIds);
-    const states = new Map([...statuses].map(([id, status]) => [id, { status, error: null as string | null }]));
+    const states = new Map<number, EnquiryDeliveryState>(
+      [...statuses].map(([id, status]) => [id, { status, error: null as string | null }])
+    );
     if (!enquiryIds.length) return states;
-    const failures = await this.database.selectFrom("crm_enquiry_sync_events")
-      .select(["enquiry_id", "status", "last_error"])
-      .where("enquiry_id", "in", enquiryIds).where("status", "!=", "synced")
-      .where("last_error", "is not", null).orderBy("id", "desc").execute();
+    const failures = await this.database
+      .selectFrom("crm_enquiry_sync_events")
+      .select(["enquiry_id", "status", "last_error", "event_type"])
+      .where("enquiry_id", "in", enquiryIds)
+      .where("status", "!=", "synced")
+      .where(
+        sql<boolean>`event_type <> 'enquiry-upsert' OR NOT EXISTS (
+        SELECT 1 FROM crm_enquiry_sync_events recovered
+        WHERE recovered.enquiry_id = crm_enquiry_sync_events.enquiry_id
+          AND recovered.event_type = 'enquiry-upsert' AND recovered.status = 'synced'
+          AND recovered.id > crm_enquiry_sync_events.id
+      )`
+      )
+      .orderBy(sql`CASE WHEN event_type = 'enquiry-upsert' THEN 0 ELSE 1 END`)
+      .orderBy("id", "desc")
+      .execute();
     for (const row of failures) {
-      if (!states.get(row.enquiry_id)?.error)
+      const current = states.get(row.enquiry_id);
+      if (!current?.error && row.last_error)
+        states.set(row.enquiry_id, { status: row.status, error: row.last_error });
+      else if (!current || current.status === "synced")
         states.set(row.enquiry_id, { status: row.status, error: row.last_error });
     }
     return states;
@@ -223,7 +245,7 @@ export class EnquirySyncRepository {
       .set({
         status: "pending",
         attempts: 0,
-        last_error: null,
+        correlation_id: randomUUID(),
         available_at: sql`UTC_TIMESTAMP()`,
         updated_at: sql`UTC_TIMESTAMP()`
       })
@@ -285,6 +307,16 @@ export class EnquirySyncRepository {
       .selectFrom("crm_enquiry_sync_events")
       .selectAll()
       .where("id", "=", id)
+      .executeTakeFirst();
+  }
+
+  latestUpsert(enquiryId: number) {
+    return this.database
+      .selectFrom("crm_enquiry_sync_events")
+      .selectAll()
+      .where("enquiry_id", "=", enquiryId)
+      .where("event_type", "=", "enquiry-upsert")
+      .orderBy("id", "desc")
       .executeTakeFirst();
   }
 

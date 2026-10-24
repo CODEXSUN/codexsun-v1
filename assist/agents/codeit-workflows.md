@@ -11,8 +11,8 @@ This document gives CODEIT practical workflows for common development activities
 3. Identify tenant, permission, subscription, and offline impact.
 4. Draft small implementation plan.
 5. Build in focused steps.
-6. Add or update tests.
-7. Update docs and changelog when needed.
+6. Add or update tests only when the change has a stable regression signal or the user requests coverage.
+7. Update docs and changelog only when the user asks, or when a release, contract, architecture, or operation changes.
 8. Summarize result and remaining risks.
 
 ## Bug Fix Workflow
@@ -21,9 +21,9 @@ This document gives CODEIT practical workflows for common development activities
 2. Identify affected tenant, module, and workflow.
 3. Find root cause.
 4. Make the smallest safe fix.
-5. Add regression coverage.
-6. Check related events, jobs, and sync behavior.
-7. Document customer impact if needed.
+5. Add regression coverage when practical and relevant.
+6. Check events, jobs, and sync only when the failing path uses them.
+7. Document customer impact only when the user asks or the change affects a public contract.
 
 ## Architecture Review Workflow
 
@@ -41,7 +41,7 @@ This document gives CODEIT practical workflows for common development activities
 2. Use design system components.
 3. Keep business data scannable.
 4. Include empty, loading, error, and permission states.
-5. Verify responsive layout.
+5. Verify responsive layout when the change affects layout or interaction.
 6. Avoid feature explanation text inside the app unless users need it to complete work.
 
 ## Database Change Workflow

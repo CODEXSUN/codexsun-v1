@@ -20,10 +20,29 @@ export type ProductVariantRecord = {
   weight: number;
   sortOrder: number;
   status: VariantStatus;
+  revision: number;
   createdAt: string;
   updatedAt: string;
 };
 export type ProductVariantPayload = Omit<
   ProductVariantRecord,
-  "id" | "uuid" | "productTitle" | "createdAt" | "updatedAt"
+  "id" | "uuid" | "productTitle" | "revision" | "createdAt" | "updatedAt"
 >;
+export type ProductVariantFilters = {
+  sku?: string;
+  title?: string;
+  productTitle?: string;
+  options?: string;
+};
+export type ProductVariantStatusCounts = {
+  all: number;
+  active: number;
+  inactive: number;
+};
+export type ProductVariantPage = {
+  items: ProductVariantRecord[];
+  page: number;
+  pageSize: number;
+  statusCounts: ProductVariantStatusCounts;
+  total: number;
+};

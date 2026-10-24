@@ -277,6 +277,22 @@ export async function requestFrappe<T>(
   if (response.status === 404) {
     throw AppError.validation("Frappe could not find a referenced record or DocType.");
   }
+  if (response.status === 530) {
+    try {
+      const detail: unknown = JSON.parse(await readResponse(response));
+      if (
+        typeof detail === "object" &&
+        detail !== null &&
+        "error_code" in detail &&
+        detail.error_code === 1033
+      )
+        throw upstreamError(
+          "Frappe is unavailable: Cloudflare Tunnel error (HTTP 530, Error 1033). Retry after its tunnel is restored."
+        );
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+    }
+  }
   if (!response.ok) throw upstreamError(`Frappe returned HTTP ${response.status}.`);
   if (response.status === 204) return {} as T;
   const data = await readResponse(response);

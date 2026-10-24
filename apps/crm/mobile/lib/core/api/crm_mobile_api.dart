@@ -12,6 +12,9 @@ class CrmMobileApi {
   CrmMobileApi(String baseUrl) : _baseUri = Uri.parse(baseUrl);
 
   final Uri _baseUri;
+  final http.Client _client = http.Client();
+
+  void close() => _client.close();
 
   String? get hostHeader => _resolveHostHeader(_baseUri);
 
@@ -162,33 +165,21 @@ class CrmMobileApi {
     );
   }
 
-  Future<List<CrmJob>> createdEnquiries(String accessToken) async {
+  Future<List<CrmJobExecution>> enquiryJobSessions({
+    required String accessToken,
+    required String enquiryId,
+  }) async {
     final data = await _request(
-      '/crm/enquiries',
+      '/crm/enquiries/${Uri.encodeComponent(enquiryId)}/jobs',
       accessToken: accessToken,
-      query: const {'scope': 'created', 'page': '1', 'pageSize': '100'},
     );
-    if (data is! Map<String, dynamic> || data['items'] is! List) {
-      throw const CrmMobileApiException(
-        'Unexpected created enquiries response.',
-      );
+    if (data is! List) {
+      throw const CrmMobileApiException('Unexpected job timer response.');
     }
-    return (data['items'] as List)
+    return data
         .whereType<Map<String, dynamic>>()
-        .map(CrmJob.fromJson)
+        .map(CrmJobExecution.fromJson)
         .toList();
-  }
-
-  Future<List<CrmJob>> assignedJobDetails(String accessToken) async {
-    final jobs = await assignedJobs(accessToken);
-    return Future.wait(jobs.map((item) => job(accessToken, item.sourceId)));
-  }
-
-  Future<List<CrmJob>> activityJobs(String accessToken) async {
-    final assigned = await assignedJobDetails(accessToken);
-    if (assigned.isNotEmpty) return assigned;
-    final visible = await enquiries(accessToken: accessToken, scope: 'all');
-    return Future.wait(visible.map((item) => job(accessToken, item.sourceId)));
   }
 
   Future<int> activitiesCount(String accessToken) async {
@@ -235,30 +226,12 @@ class CrmMobileApi {
     );
   }
 
-  Future<List<CrmCustomerReference>> customerReferences({
-    required String accessToken,
-    String search = '',
-  }) async {
-    final data = await _request(
-      '/core/master/contacts',
-      accessToken: accessToken,
-      query: search.trim().isEmpty ? const {} : {'search': search.trim()},
-    );
-    if (data is! List) {
-      throw const CrmMobileApiException('Unexpected customer lookup response.');
-    }
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(CrmCustomerReference.fromJson)
-        .toList();
-  }
-
   Future<List<CrmPartyReference>> partiesByMobile({
     required String accessToken,
     required String mobile,
   }) async {
     final data = await _request(
-      '/core/master/contacts',
+      '/crm/contacts',
       accessToken: accessToken,
       query: {'search': mobile},
     );
@@ -897,6 +870,14 @@ class CrmMobileApi {
     }).toList();
   }
 
+  Future<int> dutiesCount(String accessToken) async {
+    final data = await _request('/crm/duties', accessToken: accessToken);
+    if (data is! List) {
+      throw const CrmMobileApiException('Unexpected duties response.');
+    }
+    return data.length;
+  }
+
   Future<CrmDutyReport> reportDuty({
     required String accessToken,
     required int assignmentId,
@@ -1190,12 +1171,14 @@ class CrmMobileApi {
         request.headers['Content-Type'] = 'application/json';
         request.body = jsonEncode(body);
       }
-      final response = await request.send().timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw const CrmMobileApiException(
-          'The server did not respond. Check your connection and try again.',
-        ),
-      );
+      final response = await _client
+          .send(request)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw const CrmMobileApiException(
+              'The server did not respond. Check your connection and try again.',
+            ),
+          );
       final responseBytes = await response.stream.toBytes().timeout(
         const Duration(seconds: 30),
         onTimeout: () => throw const CrmMobileApiException(

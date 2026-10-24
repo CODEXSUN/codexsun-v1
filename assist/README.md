@@ -19,13 +19,13 @@ and change history.
 The goal is to keep the platform clean, scalable, modular, and understandable while supporting many industries,
 deployment styles, customizations, and online/offline business workflows.
 
-Agents should inspect this reference before changing authentication screens, global loading states, workspace shell
-behavior, super-admin flows, tenant desk flows, and shared design-system primitives. Copy the intent and interaction
+Agents should inspect only the relevant reference before changing authentication screens, global loading states, workspace shell
+behavior, super-admin flows, tenant desk flows, or shared design-system primitives. Copy the intent and interaction
 rhythm into CODEXSUN through `@codexsun/ui`; do not paste unrelated business logic or old module boundaries blindly.
 
 ## Development Standards
 
-Agents must read and follow these standards before changing module UI, backend contracts, or release notes:
+Agents read these standards only when the task changes the listed concern, or when the user requests planning, audit, release, or documentation work:
 
 - Current repository inventory and latest work update: `assist/documentation/project-inventory.md`
 - UI and backend module standard: `assist/documentation/design-system-helper.md`
@@ -316,7 +316,7 @@ Good vibe coding means:
 - Existing patterns first.
 - Tenant, permission, subscription, and offline impact checked.
 - Verification is proportional to risk and every skipped check is reported explicitly.
-- Docs updated when product meaning changes.
+- Docs updated only when the user asks, or when product meaning, a contract, architecture, or release changes.
 - Clean summary after work.
 
 Use `assist/AGENT-GUIDE.md` as the working standard for AI-assisted development. Open specialized documents only when the task touches their subject.

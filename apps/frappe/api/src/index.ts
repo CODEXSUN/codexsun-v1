@@ -20,6 +20,7 @@ export {
   processFrappeEnquiryImportJob
 } from "./modules/enquiry-sync/index.js";
 export { processLocalEnquirySync } from "./modules/enquiry-sync/index.js";
+export { EnquirySyncStateReader } from "./modules/enquiry-sync/index.js";
 export { processCrmDutySync, frappeCrmDutySyncModule } from "./modules/crm-duty-sync/index.js";
 export { processLocalCallLogSync } from "./modules/call-log-sync/index.js";
 export {

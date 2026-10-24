@@ -1,6 +1,6 @@
 import { getReportCurrencyCode } from "../../shared/api/tenant-context";
 import type { ReactNode } from "react";
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, Clock3 } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { cn } from "@codexsun/ui/lib/utils";
 import { formatDate } from "@codexsun/ui/workspace";
 import type {
@@ -286,16 +286,6 @@ export function CashPositionWidget({
         <ValueTile label="Payments" value={money(payment.financialYear)} />
       </div>
     </DashboardWidget>
-  );
-}
-
-export function ProjectionFreshness({ projectedAt }: { projectedAt: string }) {
-  return (
-    <span className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1.5 text-xs text-muted-foreground">
-      <Clock3 className="size-3.5" />
-      Updated{" "}
-      {new Date(projectedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
-    </span>
   );
 }
 

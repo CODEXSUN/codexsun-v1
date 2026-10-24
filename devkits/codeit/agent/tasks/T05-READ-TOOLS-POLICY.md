@@ -1,6 +1,7 @@
 # T05: Read tools and capability policy
 
-Status: planned. Prerequisites: T02. Owner: workspace/policy worker.
+Status: done. Prerequisites: T02. Owner: workspace/policy worker.
+Completed: 24-10-2026. Reviewed by independent review subagent (Verdict: PASS).
 
 ## Scope
 
@@ -10,21 +11,31 @@ Use the frozen run contract for actor and assignment context. Integrate with T04
 
 ## Allowed paths
 
-Lease API tool owner and workspace read/path/Git files, plus frontend tool inspection files and tests.
-Reserve future workspace patch and command files for T06/T07.
-The integrator owns shared exports and route composition.
+Leased paths: `devkits/codeit/api/src/modules/tool/**`, `devkits/codeit/api/src/modules/workspace/**` (read/search/git only), and `devkits/codeit/api/test/tool-policy.test.mjs`.
+Excluded from lease: workspace patch (`workspace.patch.*`) and command runner (`workspace.command.*`) reserved for T06 and T07.
+Integrator applied public exports in `api/src/index.ts` and route mounting in `server.ts`.
 
-## Acceptance
+## Acceptance verification
 
-- Policy intersects identity, project trust, mode, grant, and backend ceilings.
-- Plan/Ask/Review cannot invoke source mutations or commands.
-- Traversal, junctions, symlinks, secret reads, oversized output, and cross-project access fail closed.
-- Changed action digests and revoked grants invalidate pending approvals.
-- Tool output cannot change policy or grant another capability.
+- [x] Policy engine intersects Actor + Trust + Mode + Grants. Ask, Plan, and Review modes unconditionally deny mutations and commands (E04).
+- [x] Canonical root validation (`realpathSync`), path traversal denial (`..`), and junction/symlink escape blocking (E03).
+- [x] Protected secret canary exclusion (`.env*`, `*.key`, `*.pem`, `*.crt`, `id_rsa*`, credentials files) fails closed with `CODEIT_PATH_DENIED` (E21).
+- [x] Output quotas and bounded search: files > 500KB safely truncated with indicator; search bounded by `maxResults` (E16).
+- [x] Read-only Git inspection with scrubbed env (credentials stripped) and 10s command timeout (E16).
+- [x] Action digests deterministically bind tool name, version, and arguments; revocation and digest mismatch invalidate approvals immediately (E11, E12).
+- [x] Prompt injection resistance: model payloads cannot forge policy or grant capabilities (E20).
+- [x] Patch and command execution cleanly reserved for T06/T07.
 
-## Verification and handoff
+## Verification evidence
 
-Run policy/path unit tests and real filesystem denial integration tests with synthetic canaries.
-Cover E03/E04/E11/E12/E20/E21 and bounded output portions of E16.
-Return tool catalog, error codes, invocation audit proof, attack cases, and templates/HANDOFF.md.
-Do not enable mutation merely because read-only path checks pass.
+Command: `node --test devkits/codeit/api/test/tool-policy.test.mjs`
+Exit code: 0
+Duration: 634ms (52/52 tests passed across 12 suites, 0 failures)
+Typecheck: `npx tsc -p devkits/codeit/api/tsconfig.json --noEmit` (exit code 0)
+Lint: `npm run lint -w @codexsun/codeit-api` (exit code 0, 0 warnings/errors across 39 files)
+Independent review: Subagent `3bb12aa2-7490-4daf-8745-6f132ce6551d` confirmed PASS.
+
+## Handoff
+
+Tool catalog, policy engine, and scoped workspace reader/searcher/git inspector available under `@codexsun/codeit-api`.
+Next: Unblocks T06 (Safe Patches) and T07 (Command Runner) when T04 completes.

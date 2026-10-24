@@ -29,6 +29,7 @@ export type ProductInformationRecord = {
   seoDescription: string;
   publicationStatus: PublicationStatus;
   isFeatured: boolean;
+  revision: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -60,6 +61,31 @@ export type ProductInformationSaveInput = {
   isFeatured?: boolean;
 };
 
-export type ProductInformationFilters = { search?: string; status?: PublicationStatus };
+export type ProductInformationUpdateInput = ProductInformationSaveInput & {
+  expectedRevision: number;
+};
+export type ProductInformationFilters = {
+  search?: string;
+  status?: PublicationStatus;
+  storefrontTitle?: string;
+  coreProductName?: string;
+  brandName?: string;
+  slug?: string;
+  page?: number;
+  pageSize?: number;
+};
+export type ProductInformationStatusCounts = {
+  all: number;
+  draft: number;
+  published: number;
+  archived: number;
+};
+export type ProductInformationPage = {
+  items: ProductInformationRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+  statusCounts: ProductInformationStatusCounts;
+};
 export type CoreProductOption = { id: number; name: string };
 export type CoreBrandOption = { id: number; name: string };

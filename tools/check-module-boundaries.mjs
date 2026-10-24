@@ -68,6 +68,10 @@ const moduleRoots = [
   {
     app: "zuno-api",
     path: join(process.cwd(), "devkits", "zuno", "api", "src", "modules")
+  },
+  {
+    app: "codeit-api",
+    path: join(process.cwd(), "devkits", "codeit", "api", "src", "modules")
   }
 ];
 
@@ -241,7 +245,17 @@ const capabilityBackendRoles = new Map([
   [
     "zetro-api/provider",
     ["module", "service", "repository", "routes", "migration", "seed", "types", "secrets"]
-  ]
+  ],
+  ["codeit-api/artifact", ["module", "service", "repository", "routes", "types"]],
+  ["codeit-api/conversation", ["module", "service", "repository", "routes", "types"]],
+  ["codeit-api/orchestration", ["module", "service", "repository", "routes", "types"]],
+  ["codeit-api/personalization", ["module", "service", "repository", "routes", "types"]],
+  ["codeit-api/plugin", ["module", "service", "repository", "routes", "types"]],
+  ["codeit-api/project", ["module", "service", "repository", "routes", "types"]],
+  ["codeit-api/provider", ["module", "service", "routes", "types"]],
+  ["codeit-api/run", ["module", "service", "repository", "routes", "types"]],
+  ["codeit-api/tool", ["module", "service", "routes", "types"]],
+  ["codeit-api/workspace", ["module", "routes", "types"]]
 ]);
 
 const webModuleRoots = [
@@ -322,6 +336,9 @@ const shellOnlyFrontendModules = new Set();
 const shellOnlyFrontendRoles = ["module", "workspace", "services", "hooks", "types"];
 const capabilityFrontendRoles = new Map([
   ["codeit-web/overview", ["workspace"]],
+  ["codeit-web/personalization", ["services", "types"]],
+  ["codeit-web/plugin", ["services", "types"]],
+  ["codeit-web/orchestration", ["workspace", "services", "types"]],
   ["crm-web/lead", ["workspace", "list", "show", "services", "hooks", "types"]],
   ["tconnect-web/conversation", ["workspace", "list", "services", "hooks", "types", "schema"]],
   [

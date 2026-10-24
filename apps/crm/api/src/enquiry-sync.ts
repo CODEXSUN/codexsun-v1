@@ -11,6 +11,7 @@ export type {
 } from "./modules/enquiry/enquiry.types.js";
 export type {
   EnquirySyncEventType,
-  EnquirySyncValidation
+  EnquirySyncValidation,
+  EnquiryDeliveryState
 } from "./modules/enquiry/enquiry.sync.repository.js";
 export type { EnquiryRelations } from "./modules/enquiry/enquiry.service.js";

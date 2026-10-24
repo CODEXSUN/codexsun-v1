@@ -26,14 +26,28 @@ export function planEnquiryNumbers(
   }
   let spare = records.reduce((maximum, row) => Math.max(maximum, row.enquiryNo + 1), nextNumber);
   for (const number of owners.keys()) spare = Math.max(spare, number + 1);
+  const remoteMaximum = Math.max(0, ...owners.keys());
+  const vacated = records
+    .filter((row) => targets.has(row.id) && targets.get(row.id) !== row.enquiryNo)
+    .map((row) => row.enquiryNo)
+    .filter((number) => number > remoteMaximum)
+    .sort((left, right) => left - right);
   const changes = records.flatMap((row) => {
-    const desired = targets.get(row.id) ?? (owners.has(row.enquiryNo) ? spare++ : row.enquiryNo);
+    const desired =
+      targets.get(row.id) ??
+      (owners.has(row.enquiryNo) ? (vacated.shift() ?? spare++) : row.enquiryNo);
     return desired === row.enquiryNo ? [] : [{ id: row.id, before: row.enquiryNo, after: desired }];
   });
   // Temporary numbers permit swaps without breaking the unique serial constraint.
-  const moves = changes.map((change) => ({ ...change, temporary: spare++ }));
-  if (spare > 2147483647) throw AppError.conflict("Enquiry number range is exhausted.");
-  return { moves, nextNumber: Math.max(nextNumber, spare) };
+  let temporary = spare;
+  const moves = changes.map((change) => ({ ...change, temporary: temporary++ }));
+  if (temporary > 2147483647) throw AppError.conflict("Enquiry number range is exhausted.");
+  const finalNumbers = new Map(changes.map((change) => [change.id, change.after]));
+  const finalMaximum = records.reduce(
+    (maximum, row) => Math.max(maximum, finalNumbers.get(row.id) ?? row.enquiryNo),
+    0
+  );
+  return { moves, nextNumber: Math.max(nextNumber, finalMaximum + 1) };
 }
 
 export class EnquiryNumbering {

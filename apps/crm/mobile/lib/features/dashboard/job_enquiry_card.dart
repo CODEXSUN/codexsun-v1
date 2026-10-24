@@ -23,6 +23,7 @@ class JobEnquiryCard extends StatefulWidget {
     this.closurePending = false,
     this.collectionPending = false,
     this.onClosurePendingChanged,
+    this.loadJobSessions,
     super.key,
   });
 
@@ -36,6 +37,8 @@ class JobEnquiryCard extends StatefulWidget {
   final bool closurePending;
   final bool collectionPending;
   final ValueChanged<bool>? onClosurePendingChanged;
+  final Future<List<CrmJobExecution>> Function(String sourceId)?
+  loadJobSessions;
 
   @override
   State<JobEnquiryCard> createState() => _JobEnquiryCardState();
@@ -51,6 +54,22 @@ class _JobEnquiryCardState extends State<JobEnquiryCard> {
   void initState() {
     super.initState();
     _syncJobTimer();
+    if (_job.jobs.isEmpty) _loadJobSessions();
+  }
+
+  Future<void> _loadJobSessions() async {
+    final load = widget.loadJobSessions;
+    if (load == null) return;
+    try {
+      final sessions = await load(_job.sourceId);
+      if (!mounted || sessions.isEmpty) return;
+      setState(() {
+        _job = _job.withJobs(sessions);
+        _syncJobTimer();
+      });
+    } on CrmMobileApiException {
+      // The list stays usable when the optional timer lookup is unavailable.
+    }
   }
 
   @override

@@ -1,4 +1,3 @@
-import { DashboardCurrencySelection } from "./dashboard.currency";
 import {
   FileText,
   IndianRupee,
@@ -19,7 +18,6 @@ import {
   DashboardWidget,
   MonthlyTotalsWidget,
   OutstandingContactsWidget,
-  ProjectionFreshness,
   RecentTransactionsWidget,
   TransactionMovementWidget
 } from "./dashboard.widgets";
@@ -76,12 +74,10 @@ export function BillingDashboardWorkspace({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <DashboardCurrencySelection />
               <span className="inline-flex items-center gap-2 rounded-full border bg-background/90 px-4 py-2 text-sm font-medium">
                 <UserRound className="size-4" />
                 Signed in as {signedInUser.name}
               </span>
-              {dashboard ? <ProjectionFreshness projectedAt={dashboard.projectedAt} /> : null}
               <Button
                 aria-label="Refresh dashboard"
                 onClick={() => void query.refetch()}

@@ -1,0 +1,208 @@
+# Ecommerce delivery review and follow-up tasks
+
+Date: 2026-10-24.
+Scope: review of the pasted EC-T00–EC-T02 delivery report against current local source and evidence.
+This file is a review addendum. It preserves historical task entries and does not implement product changes.
+
+## Verdict
+
+The delivery contains useful groundwork and genuine automated assertions.
+The full Ecommerce solution is not complete. The report correctly lists much of that remaining work.
+However, EC-T02 does not satisfy the original local-only public read requirement.
+Its acceptance must be reopened for that requirement. Removing automatic refresh is only part of the work.
+EC-T01 provides tenant-boundary evidence, not complete company/customer/vendor authorization acceptance.
+The browser results are limited smoke evidence and include an incorrect cart route.
+
+EC-T03, EC-T04 and EC-T05 remain useful next tasks. Do not recreate their entire scope.
+Apply the amendments and prerequisite repairs below, then continue the original dependency graph.
+
+## Evidence checked in this review
+
+Read the submitted report, current task ledger, execution record, frozen contracts, decisions, and EC-T02 packet.
+Inspected catalog service changes, focused tests, tenancy harness, browser harness, storefront route selection, and storage references.
+Read the prior independent review as historical evidence, not as a substitute for this review.
+
+Re-ran:
+
+- Focused catalog service/Frappe mapping tests: 13 tests passed, exit 0.
+- All currently discovered `apps/ecommerce/api/src/**/*.test.ts` files: 21 tests passed, exit 0.
+- `npm run typecheck -w @codexsun/ecommerce-api`: passed, exit 0.
+- `node tools/check-module-boundaries.mjs ecommerce`: passed, exit 0.
+
+The report states 22 unit tests. This review discovered 21 through the source glob.
+Record the exact file list and source revision before comparing counts. This discrepancy alone does not establish a product defect.
+
+Not re-run: disposable database suite, live browser suite, production builds, provider sandboxes, live Frappe, or deployment.
+No current tenant/database inventory is independently certified by this review.
+No product source, permission, database data, or external application changed during this review.
+
+## Findings
+
+| ID  | Priority | Finding and evidence                                                                                                                                                                                                                         | Effect                                                                                                                                                 |
+| --- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| R01 | P1       | `CatalogDataSourceService.read()` still calls `operation(this.frappe)` for configured Frappe modules during the operating window. The recovery test expects `Live product`.                                                                  | Public content remains remote-dependent. EC-T02 acceptance does not meet the original local-only requirement.                                          |
+| R02 | P1       | The test named `a public read never performs a remote Frappe pull` supplies live Frappe responses. It counts snapshot/pull operations, not every remote read.                                                                                | Passing tests allow the exact behavior local-only acceptance should reject.                                                                            |
+| R03 | P2       | Browser harness visits `/shop/cart`. `StorefrontPage` selects the cart only for `/cart` and falls through to catalog otherwise.                                                                                                              | Claimed cart smoke evidence actually covers another catalog render.                                                                                    |
+| R04 | P2       | Browser readiness accepts more than 40 text characters. Product-page coverage is skipped when no slug exists. Only already-complete broken images are checked.                                                                               | Empty/error pages and incomplete image loads can pass. Full product/image/layout acceptance remains unproved.                                          |
+| R05 | P2       | Tenancy A9 creates company/contact fixtures but has no customer/vendor principal routes. The foreign-image assertion requests `tenant-b-only-evidence.png` without creating that asset. The catalog count is only an upper-bound comparison. | Tenant DB isolation is useful. It does not establish portal record scope, real foreign-file denial, or exact paginated counts.                         |
+| R06 | P2       | EXECUTION still says T00 is under review and T01/T02 dispatched. TASK contains both accepted statuses and an initial all-pending table. README retains historical reference-content claims despite the report's empty catalog.               | An agent can follow stale state or mistake old tenant content for current evidence.                                                                    |
+| R07 | P2       | Missing provider contracts are recorded as broad owner blockers, including technical Platform/queue injection choices.                                                                                                                       | Compatible contract design and impact review are still authorized work. Only genuine business/security decisions should stop dependent implementation. |
+
+P1 means a requirement or acceptance blocker. P2 means an important coverage, evidence, or delivery-planning gap.
+This review does not allege tenant data leakage from the observed test weaknesses.
+
+## Follow-up task register
+
+All tasks below are pending. A supervisor must assign exact file leases before implementation.
+Do not treat this review as permission to change another owner's behavior or live data.
+
+### EC-R01 — Complete local-only public catalog behavior
+
+Priority: P1. Amends EC-T02. Owner: Ecommerce catalog-data-source.
+Prerequisites: none beyond the existing verified tenant context and original local-first requirement.
+
+Make ordinary published catalog reads use local tenant projections regardless of retained legacy Frappe provider selections.
+Preserve module enabled/disabled behavior, identifiers, imported records, source links, media, and provider settings.
+Keep remote transfer actions explicit and separately authorized. Do not expose live Frappe reads as a normal purchase dependency.
+Review `hasLiveFrappeModules`, image/logo URL resolution, operating-window logic, and provider UI labels for affected consumers.
+Do not silently discard imported cache rows when selecting the local projection.
+
+Acceptance:
+
+- Seed stored `frappe` selections with a healthy configured connection during the operating window.
+- Invoke catalog, discovery, categories, product, sliders, promotions, featured, brands, seasons, and campaign reads.
+- Assert every remote adapter operation and remote credential/settings dependency is unused by normal reads where unnecessary.
+- Return the intended persisted local data and correct disabled response shapes.
+- Verify behavior with Frappe disabled, unreachable, healthy, and with imported media references.
+- Re-run focused unit tests and disposable route/database tests. Confirm existing provider settings remain unchanged.
+- Replace contradictory live-read expectations and reopen EC-T02 until these checks pass.
+
+### EC-R02 — Make local-first tests enforce the complete requirement
+
+Priority: P1. Companion to EC-R01. Owner: Ecommerce tests. Can be produced by a separate reviewer with disjoint test leases.
+
+Replace narrowly named no-pull assertions with explicit zero-remote-call assertions.
+Use an adapter whose every read and transfer method fails if called. A live adapter success is not a local-only fixture.
+Prove the new regression fails on the current implementation before the fix and passes afterward.
+Retain explicit transfer tests as a distinct contract. Do not remove coverage merely to make the suite green.
+
+Acceptance: record the failing pre-fix result, passing post-fix result, exact test files, and combined review revision.
+
+### EC-R03 — Repair browser route and page identity assertions
+
+Priority: P2. Amends EC-T16/browser smoke evidence. Owner: Ecommerce browser tests.
+
+Visit the actual `/cart` route and assert a cart-specific heading, controls, or semantic landmark.
+For product pages, require the fixture slug and assert its exact product identity and variant/gallery controls.
+Do not accept arbitrary body text as proof that the expected page rendered.
+If `/shop/cart` becomes an intentional alias, implement it as a separate reviewed route change and test both paths.
+
+Acceptance: desktop/mobile cart and product assertions fail on catalog fallback and pass only on the correct page.
+
+### EC-R04 — Add representative fixture-backed visual acceptance
+
+Priority: P2. Amends EC-T03, EC-T04, EC-T05, EC-T06 and EC-T16. Owner: test fixtures and browser reviewer.
+
+Use disposable, published fixture products, variants, portrait/landscape media, sliders and homepage records.
+Do not populate or alter live tenant data merely to produce screenshots.
+Require expected sections, images and controls. Product-page coverage cannot be silently skipped in the acceptance suite.
+Wait for required images to load successfully or fail. Do not check only images that happened to complete.
+Assert image containment, text fit, errors, navigation and persisted staff edits, not only page width.
+Verify the staff List/Show/Upsert journey and 100-record pagination behavior.
+Keep a permissive empty-store smoke suite separate from the mandatory populated acceptance suite.
+
+Acceptance: evidence at 1440, 768, 390 and 320 pixels, required image counts, page identity, no overflow/crop, and successful DB readback.
+Record SEO as a failing/deferred requirement until raw HTML metadata is actually implemented. Do not make lack of headings a permanent success criterion.
+
+### EC-R05 — Strengthen isolation fixtures and qualify EC-T01 evidence
+
+Priority: P2. Amends EC-T01. Owner: Ecommerce tenancy tests.
+
+Create a real tenant-B-only asset and prove it loads under B when published and authorized.
+Request that same asset through A and assert denial without bytes, names, metadata, or private path disclosure.
+Use exact authorized totals and records where the API supports them. Add pagination/count tests as staff list APIs ship.
+Distinguish cross-tenant Core references from same-tenant company and customer/vendor record authorization.
+Add actual portal principal denial cases only after the restricted principal contract exists.
+Keep single-tenant mode and DNS ownership verification as explicit pending tests until exercised.
+
+Acceptance: a positive foreign-resource control, negative A request, exact expected row/count assertions, and truthful coverage labels.
+The current A1–A9 evidence remains historical tenant-boundary evidence; it is not rewritten as portal acceptance.
+
+### EC-R06 — Reconcile execution state and preserve durable evidence
+
+Priority: P2. Owner: supervisor documents. Run before the next worker wave.
+
+Make TASK the single current status source. Label the initial all-pending index as historical or remove its status ambiguity.
+Update EXECUTION to reflect actual reviewed outcomes and this review's reopened EC-T02 requirement.
+Do not erase previous reviewer findings or pretend that this review already repaired product behavior.
+Label README reference-content counts by tenant and historical verification date, or remove unsupported current wording.
+Record exact revisions and test file lists. Use ignored `dist` for raw output and concise tracked packets for durable acceptance summaries.
+Retain effective-model disclosures. A model alias in one runtime does not prove that another runtime lacks the requested model.
+
+Acceptance: all active documents agree on current task state, evidence limits, blocker scope and next ready work.
+
+### EC-R07 — Convert technical contract gaps into executable owner-review tasks
+
+Priority: P2. Owner: supervisor with the applicable provider owner. Amends EC-T00 and EC-T07–EC-T14.
+
+Split missing contracts into independently reviewable packets:
+
+- Platform restricted customer/vendor principal and membership proposal, including abuse cases and backward compatibility.
+- Billing source UUID/idempotency and invoice/receipt handoff proposal, with tax and reversal requirements.
+- Platform queue injection and Ecommerce transactional outbox/inbox proposal, using existing queue infrastructure.
+- Mail/Chat authorized notification/support proposal, including customer participant boundaries.
+- Marketplace merchant-of-record, tax, invoice issuer and settlement decision brief.
+
+Each proposal states existing behavior, exact gap, allowed changes, schemas, permissions, retries, consumers and regression tests.
+Compatible technical proposals may proceed to impact review under the existing authorization.
+Escalate financial policy and security model decisions that remain genuinely unresolved with concrete choices and consequences.
+Do not duplicate identity, financial ledgers, messaging delivery, or queue infrastructure to bypass an owner contract.
+Do not block catalog, media, staff UI, stock-allocation design, or read-only projections solely because a later money contract is unresolved.
+
+Acceptance: separate technical work from human business decisions and update task dependencies with a concrete unblock path.
+
+### EC-R08 — Repair legacy Ecommerce test entry points safely
+
+Priority: P2. Owner: test harness, with reviewed root-script changes.
+
+Reproduce the documented `ecommerce-access` and `ecommerce-modules` failures using disposable test configuration.
+Use the new provisioning approach where appropriate instead of relying on stale default database names or real domain mappings.
+Preserve database-name and destructive-operation guards. Do not change production `.env` values to make tests pass.
+Before recursive fixture cleanup, verify absolute resolved paths, generated ownership, intended root containment and symlink/junction behavior.
+The new tenancy harness currently deletes computed `storage/<key>` paths without an explicit resolved-root assertion.
+Add isolated fixture roots or a safe owner marker so cleanup cannot remove pre-existing tenant storage after an ID collision.
+Exercise failure cleanup and verify no generated databases/files remain.
+
+Acceptance: all supported Ecommerce database suites run under isolated configuration with captured exits and cleanup evidence.
+Document any intentionally retired script and its replacement rather than leaving a misleading green release claim.
+
+### EC-R09 — Carry storage-root debt into the existing media task
+
+Priority: P2. Amends EC-T04, not a second media implementation. Owner: Ecommerce media.
+
+Product and slider storage currently use app-level roots. Organisation logos use the Platform tenant public root.
+Plan a compatible move to the verified tenant-root contract, with reference inventory and URL compatibility.
+Preserve original bytes, URLs or explicit redirects, dimensions, UUID links, and existing ownership validation.
+Keep private return/vendor/delivery evidence outside public storage.
+
+Acceptance: old/new asset URLs and record links survive a repeatable migration; cross-tenant real-asset tests pass.
+
+## Recommended execution order
+
+1. EC-R06 reconciles the ledger. EC-R01/EC-R02 repair the local-only blocker.
+2. EC-R03/EC-R04/EC-R05/EC-R08 strengthen acceptance suites with independent path leases.
+3. Continue EC-T03, EC-T04 with EC-R09, and EC-T05 as complete vertical slices.
+4. Run EC-R07 contract design in parallel with independent local work.
+5. Continue the original transaction/portal phases only after their accepted contracts exist.
+
+Do not restart completed tenant-boundary work from scratch. Reuse its fixtures and add the missing controls.
+No follow-up task is complete merely because this register exists.
+
+## Prompt for the next supervisor
+
+Read this review, E2E-PLAN.md, EXECUTION.md, TASK.md, CONTRACTS.md and DECISIONS.md before continuing.
+Treat EC-T02 as incomplete against the original local-only requirement, despite its historical accepted label.
+Assign EC-R01–EC-R09 with exact leases, dependencies and independent review.
+Preserve useful prior changes and unrelated work. Do not regenerate duplicate services or overwrite historical evidence.
+Repair requirement and test gaps, then continue dependency-ready EC-T03/04/05 and the original task graph.
+Follow repository standards and provider impact reviews. Record exact checks and limits without claiming unrun E2E or browser verification.

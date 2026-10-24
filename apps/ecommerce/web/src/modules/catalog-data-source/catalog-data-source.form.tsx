@@ -25,8 +25,13 @@ export function CatalogDataSourceForm({
       onValueChange={(provider) => onChange(item.module, provider as CatalogDataSourceProvider)}
       value={item.provider}
     >
-      <SourceOption icon={DatabaseIcon} label="Local" value="own" />
-      <SourceOption disabled={!frappeConfigured} icon={ServerIcon} label="Frappe" value="frappe" />
+      <SourceOption icon={DatabaseIcon} label="Local projection" value="own" />
+      <SourceOption
+        disabled={!frappeConfigured}
+        icon={ServerIcon}
+        label="Frappe import"
+        value="frappe"
+      />
     </RadioGroup>
   );
 }

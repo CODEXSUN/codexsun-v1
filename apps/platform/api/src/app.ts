@@ -2,6 +2,7 @@ import { registerMarketingHost } from "./marketing-host.js";
 import { marketingApiModuleKeys } from "@codexsun/marketing-api";
 import { sitesDeliveryHost } from "./sites-delivery-host.js";
 import { canViewCrmEnquiryFrappeSync } from "./crm-enquiry-frappe-sync-access.js";
+import { EnquirySyncStateReader } from "@codexsun/frappe-api";
 import { getDefaultCompanyForDatabase, getCompanyForDatabase } from "@codexsun/core-api";
 import { deliverDutyUpdate } from "@codexsun/crm-api";
 import {
@@ -858,6 +859,10 @@ export async function createApp() {
       actorUserId: actor?.id ?? null,
       canViewAll,
       canViewFrappeSync,
+      readFrappeSync: (ids: number[]) =>
+        new EnquirySyncStateReader(
+          context.database as unknown as import("kysely").Kysely<FrappeDatabase>
+        ).read(ids),
       database: context.database as unknown as import("kysely").Kysely<EnquiryDatabase>,
       relations: enquiryRelations(context),
       listUsers: () =>

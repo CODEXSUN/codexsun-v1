@@ -11,11 +11,24 @@ export default defineConfig(({ mode }) => {
   );
   if (!Number.isInteger(port) || port < 1 || port > 65535)
     throw new Error("Invalid CODEXSUN_CODEIT_WEB_PORT");
+  const apiPort = Number(
+    process.env.CODEXSUN_CODEIT_API_PORT ?? loadEnv(mode, root, "").CODEXSUN_CODEIT_API_PORT ?? 7071
+  );
   return {
-    build: { emptyOutDir: true, outDir: "../../dist/devkits/codeit" },
+    build: { emptyOutDir: true, outDir: "../../dist/devkits/codeit/web" },
     cacheDir: "../../dist/.cache/vite/codeit",
     plugins: [tailwindcss(), react()],
-    server: { host: "127.0.0.1", port, strictPort: true },
+    server: {
+      host: "127.0.0.1",
+      port,
+      strictPort: true,
+      proxy: {
+        "/api/codeit": {
+          target: `http://127.0.0.1:${apiPort}`,
+          changeOrigin: true
+        }
+      }
+    },
     preview: { host: "127.0.0.1", port, strictPort: true }
   };
 });

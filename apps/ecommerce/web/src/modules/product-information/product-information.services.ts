@@ -3,6 +3,8 @@ import type {
   CoreBrandOption,
   CoreProductOption,
   FrappeItemOption,
+  ProductInformationFilters,
+  ProductInformationPage,
   ProductInformationPayload,
   ProductInformationRecord,
   PublicationStatus
@@ -36,32 +38,51 @@ async function request<T>(url: string, options: RequestInit = {}) {
     throw new Error(body.success ? "Ecommerce request failed." : body.error.message);
   return body.data;
 }
-export const listProductInformation = (search = "", status?: PublicationStatus) =>
-  request<ProductInformationRecord[]>(
-    `${base}?search=${encodeURIComponent(search)}${status ? `&status=${status}` : ""}`
-  );
+export const listProductInformation = (
+  search = "",
+  status?: PublicationStatus,
+  page = 1,
+  pageSize = 100,
+  filters: ProductInformationFilters = {}
+) => {
+  const query = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+    search
+  });
+  if (status) query.set("status", status);
+  for (const [key, value] of Object.entries(filters)) if (value) query.set(key, value);
+  return request<ProductInformationPage>(`${base}?${query.toString()}`);
+};
 export const listCoreProductOptions = () => request<CoreProductOption[]>(`${base}/core-products`);
 export const listCoreBrandOptions = () => request<CoreBrandOption[]>(`${base}/core-brands`);
 export const listFrappeItems = async (search = "") =>
-  (await request<FrappeItemResponse[]>(`${frappeItemsBase}?search=${encodeURIComponent(search)}`)).map(
-    toFrappeItem
-  );
+  (
+    await request<FrappeItemResponse[]>(`${frappeItemsBase}?search=${encodeURIComponent(search)}`)
+  ).map(toFrappeItem);
 export const getFrappeItem = async (itemCode: string) =>
-  toFrappeItem(await request<FrappeItemResponse>(`${frappeItemsBase}/${encodeURIComponent(itemCode)}`));
+  toFrappeItem(
+    await request<FrappeItemResponse>(`${frappeItemsBase}/${encodeURIComponent(itemCode)}`)
+  );
 export const createProductInformation = (payload: ProductInformationPayload) =>
   request<ProductInformationRecord>(base, { body: JSON.stringify(payload), method: "POST" });
-export const updateProductInformation = (id: number, payload: ProductInformationPayload) =>
+export const updateProductInformation = (
+  id: number,
+  payload: ProductInformationPayload,
+  expectedRevision: number
+) =>
   request<ProductInformationRecord>(`${base}/${id}`, {
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, expectedRevision }),
     method: "PUT"
   });
 export const archiveProductInformation = (id: number) =>
   request<ProductInformationRecord>(`${base}/${id}/archive`, { body: "{}", method: "POST" });
 
 function toFrappeItem(item: FrappeItemResponse): FrappeItemOption {
-  const rate = item.standard_rate === null || item.standard_rate === undefined
-    ? null
-    : Number(item.standard_rate);
+  const rate =
+    item.standard_rate === null || item.standard_rate === undefined
+      ? null
+      : Number(item.standard_rate);
   return {
     brand: item.brand ?? "",
     description: item.description ?? "",

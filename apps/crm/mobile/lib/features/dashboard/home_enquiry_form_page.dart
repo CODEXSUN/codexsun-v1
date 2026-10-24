@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_footer_dock.dart';
 import '../../app/dashboard_navigation.dart';
 import '../../core/api/crm_mobile_api.dart';
+import 'call_log_picker_sheet.dart';
 import 'inline_select_field.dart';
 
 class HomeEnquiryFormPage extends StatefulWidget {
@@ -117,6 +118,12 @@ class _HomeEnquiryFormPageState extends State<HomeEnquiryFormPage> {
                 labelText: 'Mobile number',
                 counterText: '',
                 helperText: 'Use the 10-digit customer mobile number.',
+                suffixIcon: IconButton(
+                  key: const ValueKey('choose-enquiry-call-log'),
+                  tooltip: 'Choose from call log',
+                  onPressed: _chooseCallLogNumber,
+                  icon: const Icon(Icons.phone_in_talk_outlined),
+                ),
               ),
             ),
             if (_matchedPartyName case final name?) ...[
@@ -285,6 +292,19 @@ class _HomeEnquiryFormPageState extends State<HomeEnquiryFormPage> {
       _customerId = null;
       _matchedPartyName = null;
     });
+  }
+
+  Future<void> _chooseCallLogNumber() async {
+    final mobile = await MobileCallLogPickerSheet.show(context);
+    if (!mounted || mobile == null) return;
+    _clearMatchedParty(mobile);
+    setState(() {
+      _mobile.value = TextEditingValue(
+        text: mobile,
+        selection: TextSelection.collapsed(offset: mobile.length),
+      );
+    });
+    _mobileFocus.unfocus();
   }
 
   Future<void> _lookupContact() async {

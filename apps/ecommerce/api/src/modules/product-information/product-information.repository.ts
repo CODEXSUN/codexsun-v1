@@ -1,12 +1,15 @@
 import { randomBytes } from "node:crypto";
 import { sql } from "kysely";
 import { getEcommerceDatabase } from "../../database/ecommerce-database.js";
+import { resolveCatalogPageWindow } from "../catalog-pagination.js";
 import type {
   CoreBrandOption,
   CoreProductOption,
   ProductInformationFilters,
+  ProductInformationPage,
   ProductInformationRecord,
-  ProductInformationSaveInput
+  ProductInformationSaveInput,
+  ProductInformationStatusCounts
 } from "./product-information.types.js";
 
 type Row = Record<string, unknown> & {
@@ -18,15 +21,41 @@ type Row = Record<string, unknown> & {
 };
 
 export class ProductInformationRepository {
-  async list(filters: ProductInformationFilters = {}) {
-    const search = filters.search?.trim().toLowerCase() ?? "";
-    const status = filters.status ?? "";
-    const result = await sql<Row>`${selectRows()} WHERE
-      (${search}='' OR LOWER(info.storefront_title) LIKE ${`%${search}%`} OR LOWER(core.name) LIKE ${`%${search}%`})
-      AND (${status}='' OR info.publication_status=${status}) ORDER BY info.storefront_title, info.id`.execute(
+  async list(filters: ProductInformationFilters = {}): Promise<ProductInformationPage> {
+    const status = filters.status;
+    const where = filterWhere(filters);
+    const grouped = await sql<{
+      publication_status: keyof ProductInformationStatusCounts;
+      total: number | string;
+    }>`SELECT info.publication_status, COUNT(*) AS total
+      FROM ecommerce_product_information info INNER JOIN core_products core ON core.id=info.core_product_id
+      LEFT JOIN core_brands brand ON brand.id=info.brand_id
+      ${where} GROUP BY info.publication_status`.execute(getEcommerceDatabase());
+    const statusCounts: ProductInformationStatusCounts = {
+      all: 0,
+      archived: 0,
+      draft: 0,
+      published: 0
+    };
+    for (const row of grouped.rows) {
+      const count = Number(row.total ?? 0);
+      statusCounts[row.publication_status] = count;
+      statusCounts.all += count;
+    }
+    const total = status ? statusCounts[status] : statusCounts.all;
+    const window = resolveCatalogPageWindow(total, filters.page, filters.pageSize);
+    const statusWhere = status ? sql`AND info.publication_status=${status}` : sql``;
+    const result = await sql<Row>`${selectRows()} ${where} ${statusWhere}
+      ORDER BY info.storefront_title, info.id LIMIT ${window.pageSize} OFFSET ${(window.page - 1) * window.pageSize}`.execute(
       getEcommerceDatabase()
     );
-    return result.rows.map(toRecord);
+    return {
+      items: result.rows.map(toRecord),
+      page: window.page,
+      pageSize: window.pageSize,
+      statusCounts,
+      total
+    };
   }
   async find(id: number) {
     const result = await sql<Row>`${selectRows()} WHERE info.id=${id} LIMIT 1`.execute(
@@ -68,21 +97,22 @@ export class ProductInformationRepository {
     );
     return this.find(Number(result.insertId));
   }
-  async update(id: number, input: ProductInformationSaveInput) {
+  async update(id: number, input: ProductInformationSaveInput, expectedRevision: number) {
     const v = values(input);
-    await sql`UPDATE ecommerce_product_information SET core_product_id=${v.coreProductId},brand_id=${v.brandId},
+    const result =
+      await sql`UPDATE ecommerce_product_information SET core_product_id=${v.coreProductId},brand_id=${v.brandId},
       storefront_title=${v.storefrontTitle},subtitle=${v.subtitle},slug=${v.slug},short_description=${v.shortDescription},
       description=${v.description},bullet_points_json=${v.bulletPointsJson},material=${v.material},country_of_origin=${v.countryOfOrigin},
       manufacturer=${v.manufacturer},warranty=${v.warranty},return_policy=${v.returnPolicy},shipping_class=${v.shippingClass},
       weight=${v.weight},length=${v.length},width=${v.width},height=${v.height},minimum_order_quantity=${v.minimumOrderQuantity},
       maximum_order_quantity=${v.maximumOrderQuantity},seo_title=${v.seoTitle},seo_description=${v.seoDescription},
-      publication_status=${v.publicationStatus},is_featured=${v.isFeatured},updated_at=CURRENT_TIMESTAMP WHERE id=${id}`.execute(
-      getEcommerceDatabase()
-    );
+      publication_status=${v.publicationStatus},is_featured=${v.isFeatured},revision=revision+1,updated_at=CURRENT_TIMESTAMP
+      WHERE id=${id} AND revision=${expectedRevision}`.execute(getEcommerceDatabase());
+    if (Number(result.numAffectedRows) !== 1) return null;
     return this.find(id);
   }
   async archive(id: number) {
-    await sql`UPDATE ecommerce_product_information SET publication_status='archived',updated_at=CURRENT_TIMESTAMP WHERE id=${id}`.execute(
+    await sql`UPDATE ecommerce_product_information SET publication_status='archived',revision=revision+1,updated_at=CURRENT_TIMESTAMP WHERE id=${id}`.execute(
       getEcommerceDatabase()
     );
     return this.find(id);
@@ -93,6 +123,18 @@ function selectRows() {
   return sql`SELECT info.*,core.name AS core_product_name,brand.name AS brand_name
   FROM ecommerce_product_information info INNER JOIN core_products core ON core.id=info.core_product_id
   LEFT JOIN core_brands brand ON brand.id=info.brand_id`;
+}
+function filterWhere(filters: ProductInformationFilters) {
+  const search = filters.search?.trim().toLowerCase() ?? "";
+  const storefrontTitle = filters.storefrontTitle?.trim().toLowerCase() ?? "";
+  const coreProductName = filters.coreProductName?.trim().toLowerCase() ?? "";
+  const brandName = filters.brandName?.trim().toLowerCase() ?? "";
+  const slug = filters.slug?.trim().toLowerCase() ?? "";
+  return sql`WHERE (${search}='' OR LOWER(info.storefront_title) LIKE ${`%${search}%`} OR LOWER(core.name) LIKE ${`%${search}%`})
+    AND (${storefrontTitle}='' OR LOWER(info.storefront_title) LIKE ${`%${storefrontTitle}%`})
+    AND (${coreProductName}='' OR LOWER(core.name) LIKE ${`%${coreProductName}%`})
+    AND (${brandName}='' OR LOWER(COALESCE(brand.name,'')) LIKE ${`%${brandName}%`})
+    AND (${slug}='' OR LOWER(info.slug) LIKE ${`%${slug}%`})`;
 }
 async function options<T>(table: "core_products" | "core_brands") {
   const extra = table === "core_products" ? sql`deleted_at IS NULL AND` : sql``;
@@ -168,6 +210,7 @@ function toRecord(row: Row): ProductInformationRecord {
     seoDescription: String(row.seo_description ?? ""),
     publicationStatus: row.publication_status,
     isFeatured: Boolean(row.is_featured),
+    revision: Number(row.revision ?? 1),
     createdAt: new Date(row.created_at as string).toISOString(),
     updatedAt: new Date(row.updated_at as string).toISOString()
   };

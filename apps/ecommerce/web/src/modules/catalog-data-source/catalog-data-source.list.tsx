@@ -26,7 +26,7 @@ export function CatalogDataSourceList({
             <th className="px-4 py-3 font-semibold">Module</th>
             <th className="px-4 py-3 font-semibold">Purpose</th>
             <th className="w-44 px-4 py-3 text-center font-semibold">Local MariaDB</th>
-            <th className="w-44 px-4 py-3 text-center font-semibold">Frappe Live</th>
+            <th className="w-44 px-4 py-3 text-center font-semibold">Frappe import</th>
           </tr>
         </thead>
         <tbody>
@@ -58,7 +58,8 @@ export function CatalogDataSourceList({
       </table>
       {!frappeConfigured ? (
         <p className="border-t px-4 py-3 text-sm text-muted-foreground">
-          Enable and verify the connection in the Frappe app before selecting Frappe Live.
+          Enable and verify the connection in the Frappe app before selecting a Frappe import
+          source.
         </p>
       ) : null}
     </div>
@@ -100,7 +101,7 @@ function DataSourceRow({
         <strong className="font-medium">{item.label}</strong>
         <div className="pt-1">
           <WorkspaceStatusBadge
-            label={item.provider === "own" ? "Local priority" : "Live from Frappe"}
+            label={item.provider === "own" ? "Local projection" : "Frappe import"}
             tone={item.provider === "own" ? "success" : "info"}
           />
         </div>

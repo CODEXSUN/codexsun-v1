@@ -127,7 +127,9 @@
     "dev:sites:codexsun": "node tools/preflight.mjs sites-codexsun",
     "dev:sites:logicx": "node tools/preflight.mjs sites-logicx",
     "dev:sites:techmedia": "node tools/preflight.mjs sites-techmedia",
-    "test:e2e:ecommerce": "tsx tools/e2e/ecommerce-access.e2e.ts",
+    "test:e2e:ecommerce": "node --env-file=.env --import tsx tools/e2e/ecommerce-tenancy.e2e.ts",
+    "test:e2e:ecommerce-tenancy": "node --env-file=.env --import tsx tools/e2e/ecommerce-tenancy.e2e.ts",
+    "test:e2e:ecommerce-browser": "node --env-file=.env tools/e2e/ecommerce-storefront-browser.e2e.mjs",
     "dev:storefront": "node tools/preflight.mjs ecommerce-web",
     "dev:uiux": "node tools/preflight.mjs uiux-web",
     "dev:sys-work:api": "npm run dev -w @codexsun/sys-work-api",
@@ -136,7 +138,7 @@
     "start:sys-work": "node dist/devkits/sys-work/api/server.js",
     "test:sys-work": "tsx --test devkits/sys-work/api/src/cleaner.test.ts",
     "dev:project-manager": "node tools/preflight.mjs project-manager-web",
-    "test:e2e:ecommerce-modules": "tsx tools/e2e/ecommerce-modules.e2e.ts",
+    "test:e2e:ecommerce-modules": "node --env-file=.env --import tsx tools/e2e/ecommerce-tenancy.e2e.ts",
     "test:tenant-app-foundations": "node --import tsx --test apps/platform/web/src/app/tenant-app-foundations.test.ts tools/e2e/tenant-app-foundations.test.ts",
     "test:e2e:hrms": "tsx apps/hrms/api/src/modules/employee/employee.e2e.ts",
     "test:e2e:tenant-app-foundations": "tsx tools/e2e/tenant-app-foundations.e2e.ts",
@@ -169,7 +171,12 @@
     "test:e2e:tconnect-buyers": "node --import tsx tools/e2e/tconnect-buyer-access.e2e.ts",
     "test:e2e:tconnect": "node --import tsx tools/e2e/tconnect-member-access.e2e.ts",
     "dev:codeit": "node tools/preflight.mjs codeit-web",
-    "build:codeit": "npm run build -w @codexsun/codeit"
+    "build:codeit": "npm run build -w @codexsun/codeit-api && npm run build -w @codexsun/codeit",
+    "start:codeit": "node dist/devkits/codeit/api/server.js",
+    "test:codeit": "node --test devkits/codeit/api/test/*.test.mjs",
+    "test:e2e:codeit": "node --test devkits/codeit/api/test/e2e-matrix.test.mjs",
+    "test:e2e:codeit:browser": "node tools/e2e/codeit-browser.e2e.mjs",
+    "test:packaging:codeit": "node --test tools/codeit-packaging-smoke.test.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

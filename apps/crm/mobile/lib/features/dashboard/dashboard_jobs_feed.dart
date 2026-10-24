@@ -19,18 +19,46 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
   UserSession session;
   final List<CrmJob> _jobs = [];
   final Map<String, List<CrmJobExecution>> _jobSessions = {};
+  final Map<String, Future<List<CrmJobExecution>>> _sessionRequests = {};
+  final Map<String, CrmJob> _jobsBySourceId = {};
   final Set<String> _pendingClosureIds = {};
   final Set<String> _pendingCollectionIds = {};
   Timer? _timer;
   bool _isLoading = true;
   bool _isRefreshing = false;
-  bool _includeDetailsOnNextLoad = true;
   String? _error;
   var _sessionGeneration = 0;
+  var _disposed = false;
 
   List<CrmJob> get jobs => List.unmodifiable(_jobs);
-  CrmJob? jobFor(String sourceId) =>
-      _jobs.where((job) => job.sourceId == sourceId).firstOrNull;
+  CrmJob? jobFor(String sourceId) => _jobsBySourceId[sourceId];
+
+  Future<List<CrmJobExecution>> jobSessions(String sourceId) {
+    final cached = _jobSessions[sourceId];
+    if (cached != null) return Future.value(cached);
+    return _sessionRequests.putIfAbsent(sourceId, () async {
+      try {
+        final sessions = await api.enquiryJobSessions(
+          accessToken: session.accessToken,
+          enquiryId: sourceId,
+        );
+        if (!_disposed) {
+          _jobSessions[sourceId] = sessions;
+          final index = _jobs.indexWhere((job) => job.sourceId == sourceId);
+          if (index >= 0) {
+            final updated = _jobs[index].withJobs(sessions);
+            _jobs[index] = updated;
+            _jobsBySourceId[sourceId] = updated;
+            notifyListeners();
+          }
+        }
+        return sessions;
+      } finally {
+        _sessionRequests.remove(sourceId);
+      }
+    });
+  }
+
   bool isClosurePending(String sourceId) =>
       _pendingClosureIds.contains(sourceId);
   bool isCollectionPending(String sourceId) =>
@@ -54,63 +82,64 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
     if (_isRefreshing) return;
     _isRefreshing = true;
     final generation = _sessionGeneration;
+    var shouldNotify = _isLoading;
     try {
-      final includeDetails = _includeDetailsOnNextLoad;
-      final updated = await _loadEnquiries(includeDetails: includeDetails);
+      final updated = await _loadEnquiries();
       if (generation != _sessionGeneration) return;
-      Set<String>? pendingClosureIds;
-      try {
-        pendingClosureIds = await api.pendingEnquiryClosureIds(
-          session.accessToken,
-        );
-      } on Exception {
-        // Keep the last confirmed completion state if this lookup is unavailable.
-      }
+      final pendingResults = await Future.wait([
+        _loadPendingIds(
+          () => api.pendingEnquiryClosureIds(session.accessToken),
+        ),
+        _loadPendingIds(
+          () => api.pendingEnquiryCollectionIds(session.accessToken),
+        ),
+      ]);
       if (generation != _sessionGeneration) return;
+      final pendingClosureIds = pendingResults[0];
+      final pendingCollectionIds = pendingResults[1];
+      final closureChanged = !_sameIds(_pendingClosureIds, pendingClosureIds);
+      final collectionChanged = !_sameIds(
+        _pendingCollectionIds,
+        pendingCollectionIds,
+      );
       if (pendingClosureIds != null) {
         _pendingClosureIds
           ..clear()
           ..addAll(pendingClosureIds);
       }
-      Set<String>? pendingCollectionIds;
-      try {
-        pendingCollectionIds = await api.pendingEnquiryCollectionIds(
-          session.accessToken,
-        );
-      } on Exception {
-        // Keep the last confirmed collection state if this lookup is unavailable.
-      }
-      if (generation != _sessionGeneration) return;
       if (pendingCollectionIds != null) {
         _pendingCollectionIds
           ..clear()
           ..addAll(pendingCollectionIds);
       }
-      _includeDetailsOnNextLoad = false;
-      for (final job in updated) {
-        if (job.jobs.isNotEmpty) _jobSessions[job.sourceId] = job.jobs;
-      }
+      final merged = updated.map((job) {
+        final sessions = _jobSessions[job.sourceId];
+        return job.jobs.isEmpty && sessions != null
+            ? job.withJobs(sessions)
+            : job;
+      }).toList();
+      final changed =
+          !_sameJobs(_jobs, merged) || closureChanged || collectionChanged;
       _jobs
         ..clear()
-        ..addAll(
-          updated.map((job) {
-            final sessions = _jobSessions[job.sourceId];
-            return job.jobs.isEmpty && sessions != null
-                ? job.withJobs(sessions)
-                : job;
-          }),
-        );
+        ..addAll(merged);
+      _jobsBySourceId
+        ..clear()
+        ..addEntries(_jobs.map((job) => MapEntry(job.sourceId, job)));
       _error = null;
+      shouldNotify |= changed;
     } on Object catch (error) {
       if (generation != _sessionGeneration) return;
-      _error = error is CrmMobileApiException
+      final nextError = error is CrmMobileApiException
           ? error.message
           : 'Could not refresh live dashboard data.';
+      shouldNotify |= _error != nextError;
+      _error = nextError;
     } finally {
       if (generation == _sessionGeneration) {
         _isLoading = false;
         _isRefreshing = false;
-        notifyListeners();
+        if (!_disposed && shouldNotify) notifyListeners();
       }
     }
   }
@@ -123,6 +152,7 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
     } else if (updated.status.toLowerCase() != 'closed') {
       _jobs.add(updated);
     }
+    _jobsBySourceId[updated.sourceId] = updated;
     notifyListeners();
   }
 
@@ -130,7 +160,9 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
     if (session.accessToken == updatedSession.accessToken) return;
     if (session.profile.email != updatedSession.profile.email) {
       _jobs.clear();
+      _jobsBySourceId.clear();
       _jobSessions.clear();
+      _sessionRequests.clear();
       _pendingClosureIds.clear();
       _pendingCollectionIds.clear();
     }
@@ -138,7 +170,6 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
     _sessionGeneration += 1;
     _isRefreshing = false;
     _isLoading = _jobs.isEmpty;
-    _includeDetailsOnNextLoad = true;
     unawaited(refresh());
   }
 
@@ -160,14 +191,7 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
     _timer ??= Timer.periodic(_refreshInterval, (_) => unawaited(refresh()));
   }
 
-  Future<List<CrmJob>> _loadEnquiries({required bool includeDetails}) async {
-    if (includeDetails) {
-      try {
-        return await api.assignedJobDetails(session.accessToken);
-      } on CrmMobileApiException {
-        // Keep the list available if a detail endpoint is temporarily down.
-      }
-    }
+  Future<List<CrmJob>> _loadEnquiries() async {
     try {
       return await api.enquiries(
         accessToken: session.accessToken,
@@ -179,8 +203,40 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  Future<Set<String>?> _loadPendingIds(
+    Future<Set<String>> Function() load,
+  ) async {
+    try {
+      return await load();
+    } on Exception {
+      return null;
+    }
+  }
+
+  bool _sameIds(Set<String> current, Set<String>? next) =>
+      next == null ||
+      (current.length == next.length && current.containsAll(next));
+
+  bool _sameJobs(List<CrmJob> current, List<CrmJob> next) {
+    if (current.length != next.length) return false;
+    for (var index = 0; index < current.length; index++) {
+      final oldJob = current[index];
+      final newJob = next[index];
+      if (oldJob.sourceId != newJob.sourceId ||
+          oldJob.title != newJob.title ||
+          oldJob.status != newJob.status ||
+          oldJob.priority != newJob.priority ||
+          oldJob.customer != newJob.customer ||
+          oldJob.lastAction != newJob.lastAction ||
+          oldJob.jobs.length != newJob.jobs.length)
+        return false;
+    }
+    return true;
+  }
+
   @override
   void dispose() {
+    _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     super.dispose();

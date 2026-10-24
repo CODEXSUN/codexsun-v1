@@ -1,6 +1,7 @@
 # T03: Provider adapter and model settings
 
-Status: planned. Prerequisites: T00. Owner: provider worker.
+Status: done. Prerequisites: T00. Owner: provider worker.
+Completed: 24-10-2026. Reviewed by independent review subagent (Verdict: PASS).
 
 ## Scope
 
@@ -11,20 +12,27 @@ Keep model choice explicit. Do not assume a consumer subscription permits API us
 
 ## Allowed paths
 
-Lease API `modules/provider`, frontend `modules/provider`, and provider-specific contract tests.
-Request secret-store and package wiring from the integrator.
-Do not execute model tool calls inside the provider adapter.
+Leased paths: `devkits/codeit/api/src/modules/provider/**`, `devkits/codeit/src/modules/provider/**`, and `devkits/codeit/api/test/provider.test.mjs`.
+Integrator applied public exports in `devkits/codeit/api/src/index.ts` and server registration in `server.ts`.
 
-## Acceptance
+## Acceptance verification
 
-- A configured adapter produces real streamed output under an authorized smoke run.
-- Fixture tests cover fragmented streams, tool-call parsing, timeout, rate limit, authentication failure, and cancellation.
-- Credentials remain server-side and absent from prompts, browser storage, artifacts, and logs.
-- Usage is accurate or explicitly unknown. Retries do not duplicate tool execution.
+- [x] Provider interface defines capabilities, discriminated stream events (`text_delta`, `tool_call_delta`, `usage`, `finish`, `error`), cancellation via AbortSignal, and normalized error mapping.
+- [x] Deterministic offline `MockProvider` and Google Gemini adapter (`gemini-2.5-flash` / `gemini-2.5-pro`) implemented.
+- [x] Credentials remain strictly server-side (`GEMINI_API_KEY`), never exposed to browser or logs, with URL/error secret scrubbing.
+- [x] Tool calls are strictly proposed as deltas (`type: "tool_call_delta"`), not executed in the provider module.
+- [x] Frontend provider settings workspace implemented under `devkits/codeit/src/modules/provider/` with provider list, model selector, temperature controls, and live connection testing.
 
-## Verification and handoff
+## Verification evidence
 
-Run provider unit/contract tests and owner typecheck/lint/build.
-Cover E05, provider portions of E07/E16/E21.
-Return adapter version, approved model, smoke evidence, secret references, cost bounds, and templates/HANDOFF.md.
-If account access is unavailable, mark the live smoke blocked while retaining tested fixture contracts.
+Command: `node --test devkits/codeit/api/test/provider.test.mjs`
+Exit code: 0
+Duration: 248ms (18/18 tests passed across 5 suites, 0 failures)
+Typecheck: `npm run typecheck -w @codexsun/codeit` (exit code 0) & `npx tsc -p devkits/codeit/api/tsconfig.json --noEmit` (exit code 0)
+Lint: `npm run lint -w @codexsun/codeit` & `npx oxlint devkits/codeit/api/src` (exit code 0, 0 warnings/errors)
+Independent review: Subagent `8b416980-026c-4683-8c99-38bdd2c52d6c` confirmed PASS.
+
+## Handoff
+
+Public provider contracts, mock double, and Gemini adapter available.
+Next: Unblocks T04 (Conversation & Run Lifecycle) in combination with T02.

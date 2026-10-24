@@ -34,13 +34,29 @@ const payload = z.object({
   publicationStatus: status.default("draft"),
   isFeatured: z.boolean().default(false)
 });
+const updatePayload = payload.extend({
+  expectedRevision: z.number().int().positive()
+});
 const record = payload.extend({
   id: z.number(),
   uuid: z.string().length(8),
   coreProductName: z.string(),
   brandName: z.string().nullable(),
+  revision: z.number().int().positive(),
   createdAt: z.string(),
   updatedAt: z.string()
+});
+const page = z.object({
+  items: z.array(record),
+  page: z.number().int().positive(),
+  pageSize: z.number().int().positive().max(100),
+  statusCounts: z.object({
+    all: z.number().int().nonnegative(),
+    draft: z.number().int().nonnegative(),
+    published: z.number().int().nonnegative(),
+    archived: z.number().int().nonnegative()
+  }),
+  total: z.number().int().nonnegative()
 });
 
 export async function registerProductInformationRoutes(app: FastifyInstance) {
@@ -48,13 +64,28 @@ export async function registerProductInformationRoutes(app: FastifyInstance) {
     method: "GET",
     url: base,
     schemas: {
-      querystring: z.object({ search: z.string().optional(), status: status.optional() }),
-      response: z.array(record)
+      querystring: z.object({
+        search: z.string().max(191).optional(),
+        status: status.optional(),
+        storefrontTitle: z.string().trim().max(191).optional(),
+        coreProductName: z.string().trim().max(191).optional(),
+        brandName: z.string().trim().max(191).optional(),
+        slug: z.string().trim().max(191).optional(),
+        page: z.coerce.number().int().positive().optional(),
+        pageSize: z.coerce.number().int().positive().max(100).optional()
+      }),
+      response: page
     },
     handler: ({ query }) =>
       service.list({
-        ...(query.search ? { search: query.search } : {}),
-        ...(query.status ? { status: query.status } : {})
+        ...(query.search === undefined ? {} : { search: query.search }),
+        ...(query.status === undefined ? {} : { status: query.status }),
+        ...(query.storefrontTitle === undefined ? {} : { storefrontTitle: query.storefrontTitle }),
+        ...(query.coreProductName === undefined ? {} : { coreProductName: query.coreProductName }),
+        ...(query.brandName === undefined ? {} : { brandName: query.brandName }),
+        ...(query.slug === undefined ? {} : { slug: query.slug }),
+        ...(query.page === undefined ? {} : { page: query.page }),
+        ...(query.pageSize === undefined ? {} : { pageSize: query.pageSize })
       })
   });
   registerContractRoute(app, {
@@ -84,7 +115,7 @@ export async function registerProductInformationRoutes(app: FastifyInstance) {
   registerContractRoute(app, {
     method: "PUT",
     url: `${base}/:id`,
-    schemas: { body: payload, params, response: record },
+    schemas: { body: updatePayload, params, response: record },
     handler: async ({ body, params }) => required(await service.update(params.id, body))
   });
   registerContractRoute(app, {

@@ -5,15 +5,21 @@ import {
   listFrappeItems,
   listProductInformation
 } from "./product-information.services";
-import type { PublicationStatus } from "./product-information.types";
+import type { ProductInformationFilters, PublicationStatus } from "./product-information.types";
 export const productInformationQueryKey = ["ecommerce", "catalog", "product-information"] as const;
 export const coreProductOptionsQueryKey = ["ecommerce", "catalog", "core-product-options"] as const;
 export const coreBrandOptionsQueryKey = ["ecommerce", "catalog", "core-brand-options"] as const;
 export const frappeItemOptionsQueryKey = ["ecommerce", "catalog", "frappe-item-options"] as const;
-export function useProductInformation(search: string, status?: PublicationStatus) {
+export function useProductInformation(
+  search: string,
+  status?: PublicationStatus,
+  page = 1,
+  pageSize = 100,
+  filters: ProductInformationFilters = {}
+) {
   return useQuery({
-    queryKey: [...productInformationQueryKey, search, status],
-    queryFn: () => listProductInformation(search, status)
+    queryKey: [...productInformationQueryKey, search, status, page, pageSize, filters],
+    queryFn: () => listProductInformation(search, status, page, pageSize, filters)
   });
 }
 export function useCoreProductOptions() {

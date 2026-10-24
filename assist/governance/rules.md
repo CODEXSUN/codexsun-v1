@@ -1,5 +1,13 @@
 # Governance Rules
 
+## Fast Work Default
+
+For a focused bug or UI fix, inspect the changed owner and direct callers. Do not update documentation or run repository-wide checks by default.
+
+Use the full governance audits and release gates only for a release, new module, refactor, data, permission, tenancy, contract, or cross-module change, or an explicit audit.
+
+This section overrides older, more detailed governance or component checklist wording for normal focused work.
+
 ## Package Manager And Generated Output Rules
 
 - CODEXSUN uses npm only. Agents and developers must run dependency commands with `npm` from the repository root; pnpm, Yarn, workspace-local installs, and alternative lockfiles are prohibited.
@@ -108,6 +116,8 @@ The following are boundary failures:
 
 #### Required completion audit
 
+Use this full audit only when introducing or refactoring a module, changing ownership, data, permissions, tenancy, or public contracts, preparing a release, or completing an explicit audit. For a focused fix, inspect the affected owner and direct callers, then run proportionate verification.
+
 Before a module is declared final, the agent must:
 
 1. Inventory every backend and frontend file in the leaf.
@@ -132,7 +142,7 @@ Passing TypeScript or lint alone does not prove module ownership. The ownership 
 - Role files must not be one-line aliases, empty arrays, metadata-only placeholders, “reserved for future” declarations, or exports of another role under a new name. A list owns list rendering, a form owns form rendering and validation display, events own typed event construction, workers own executable job dispatch, sync owns an explicit sync policy and decision behavior, and seeds/migrations execute or expose callable database behavior.
 - A module that intentionally has no UI or no lifecycle concern must document the exemption in its module definition and must not create fake role files merely to satisfy naming.
 - `npm run check:module-boundaries` is mandatory and must reject missing required files, alias-only wrappers, placeholder roles, and cross-module placement.
-- Every current and future application must pass a full backend/frontend ownership audit before completion. Inventory module folders; detect wrapper/alias files, private cross-module imports, centralized CRUD, stale exports/proxies, composition roots containing business behavior, and files outside their owner; distinguish infrastructure sharing from business logic; repair all violations; and validate the application plus Platform composition. Use `node tools/check-module-boundaries.mjs <app>` as the app-scoped gate.
+- New modules, refactors, ownership changes, permission or tenant changes, releases, and explicit audits must pass a full backend/frontend ownership audit. Focused fixes inspect the changed owner and direct callers only. Use `node tools/check-module-boundaries.mjs <app>` when the task changes an application boundary or explicitly requests it.
 - Shared infrastructure is limited to transport/session API context, environment access, observability, and reusable design-system controls. Module fields, validation, persistence, lifecycle, routes, workflows, forms, lists, workspaces, print behavior, settings, and tests are business logic and must not be centralized under `shared`, `common`, `foundation`, `helpers`, or `utils` merely for reuse.
 - Composition roots are references only. They may register modules and orchestrate module-owned migrations, seeds, and exports, but must not own generic repositories, services, CRUD routes, record types, forms, lists, schemas, hooks, or workspaces.
 - Cross-module writes are not allowed without an approved application service or event.
@@ -250,10 +260,10 @@ Every app, developer kit, shared package, workspace tool, and add-on integration
 - `SKILLS.md` records component-specific working rules. Documentation never grants runtime permissions.
 - Use exact uppercase filenames so Linux and Windows resolve the same files.
 - Keep component details accurate. A source folder or passing build does not prove a deployed feature.
-- Read these files before component work. Keep existing detailed plans and supporting documents when they remain useful.
+- Read these files only for documentation, contract, architecture, ownership, operations, release, or audit work. Keep existing detailed plans and supporting documents when they remain useful.
 - External npm add-on integration guides live under `addons/<name>`. Vendor code remains in its published package.
 - Zetro is a deliberate runtime distinction: `apps/zetro/agent/SKILLS.md` remains its versioned business rule file.
   Keep developer task instructions in its other documents. Its loader, build collector, backend permissions, and tests must agree.
 
-Run `npm run check:component-docs` and `npm run test:component-docs` before completion.
-The root `npm run check` includes both commands, so CI rejects missing component documents.
+Run `npm run check:component-docs` and `npm run test:component-docs` only when component documentation changes or when release or repository-wide checks are requested.
+The root `npm run check` remains the CI and release gate.

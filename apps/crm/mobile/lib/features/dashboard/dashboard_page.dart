@@ -165,19 +165,6 @@ class _DashboardPageState extends State<DashboardPage> {
           },
         ),
         body: SafeArea(top: false, child: _buildBody()),
-        floatingActionButton: switch (_selectedIndex) {
-          0 => FloatingActionButton(
-            tooltip: 'Add',
-            onPressed: _showHomeAddMenu,
-            child: const Icon(Icons.add_rounded),
-          ),
-          1 => FloatingActionButton(
-            tooltip: 'New job',
-            onPressed: _openNewEnquiryFromTab,
-            child: const Icon(Icons.add_rounded),
-          ),
-          _ => null,
-        },
       ),
     );
   }
@@ -277,34 +264,6 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  Future<void> _showHomeAddMenu() async {
-    final action = await showModalBottomSheet<_HomeAddAction>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: ListTile(
-          leading: const Icon(Icons.note_add_outlined),
-          title: const Text('New job'),
-          subtitle: const Text('Create a new job.'),
-          onTap: () => Navigator.pop(context, _HomeAddAction.newEnquiry),
-        ),
-      ),
-    );
-    if (action == _HomeAddAction.newEnquiry && mounted) {
-      final created = await Navigator.of(context).push<CrmJob>(
-        MaterialPageRoute(
-          builder: (context) =>
-              HomeEnquiryFormPage(api: widget.api, session: widget.session),
-        ),
-      );
-      if (created != null && mounted) {
-        await _myEnquiriesKey.currentState?.refresh();
-        await _jobsFeed.refresh();
-        setState(() => _homeRefreshKey += 1);
-      }
-    }
-  }
-
   void _handleHomeMenuAction(_HomeMenuAction action) {
     if (action == _HomeMenuAction.signOut) {
       widget.onSignOut();
@@ -331,6 +290,15 @@ class _DashboardPageState extends State<DashboardPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.note_add_outlined),
+                  title: const Text('New enquiry'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _openNewEnquiryFromTab();
+                  },
+                ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.call_outlined),
@@ -377,8 +345,6 @@ class _DashboardPageState extends State<DashboardPage> {
 }
 
 enum _HomeMenuAction { resetPin, changePassword, checkForUpdates, signOut }
-
-enum _HomeAddAction { newEnquiry }
 
 class _HomeMenuItem extends StatelessWidget {
   const _HomeMenuItem({required this.icon, required this.label});

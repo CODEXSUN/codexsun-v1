@@ -24,12 +24,14 @@ export function FrappeSyncIndicator({
   status,
   onVerify,
   error,
-  unsupported = false
+  unsupported = false,
+  remoteName
 }: {
   status: FrappeSyncStatus;
   error?: string | null | undefined;
   onVerify: () => Promise<FrappeSyncStatus>;
   unsupported?: boolean;
+  remoteName?: string | null | undefined;
 }) {
   const [checking, setChecking] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(error ? "failed" : status);
@@ -59,10 +61,19 @@ export function FrappeSyncIndicator({
         : currentStatus === "processing"
           ? "Frappe sync is processing"
           : currentStatus === "unlinked"
-            ? "No matching record was found in Frappe"
+            ? "Local only. No saved Frappe link."
             : currentStatus === "pending"
               ? "Waiting for Frappe sync confirmation"
               : "Not verified with Frappe";
+  const failureLabel = /Cloudflare Tunnel|HTTP 530/u.test(error ?? "")
+    ? "Frappe unavailable"
+    : /Customer/u.test(error ?? "")
+      ? "Customer mapping"
+      : /assignee|Employee/u.test(error ?? "")
+        ? "Employee mapping"
+        : remoteName
+          ? "Update failed"
+          : "Export failed";
 
   async function verify() {
     if (checking || unsupported) return;
@@ -83,7 +94,7 @@ export function FrappeSyncIndicator({
   return (
     <span
       className="inline-flex flex-wrap items-center gap-1.5"
-      title={error || label}
+      title={[remoteName, error || label].filter(Boolean).join(" · ")}
       onClick={(event) => event.stopPropagation()}
     >
       <Icon
@@ -91,12 +102,17 @@ export function FrappeSyncIndicator({
         aria-label={label}
       />
       <span className="sr-only">{label}</span>
+      {remoteName ? <span className="text-xs text-muted-foreground">{remoteName}</span> : null}
+      {currentStatus === "unlinked" ? (
+        <span className="text-xs text-muted-foreground">Local only</span>
+      ) : null}
       {currentStatus === "failed" ? (
         <span
           role="status"
-          className="max-w-72 rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-700"
+          className="whitespace-nowrap rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-700"
         >
-          Export error{error ? `: ${error}` : ""}
+          {failureLabel}
+          {error ? <span className="sr-only">: {error}</span> : null}
         </span>
       ) : null}
       <Button

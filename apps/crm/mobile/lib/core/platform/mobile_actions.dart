@@ -29,8 +29,14 @@ class MobileActions {
   static Future<bool> hasCallLogAccess() async =>
       await _channel.invokeMethod<bool>('hasCallLogAccess') ?? false;
 
-  static Future<List<Map<String, dynamic>>> callLogs() async {
-    final rows = await _channel.invokeListMethod<dynamic>('callLogs') ?? [];
+  static Future<List<Map<String, dynamic>>> callLogs() =>
+      _readCallLogs('callLogs');
+
+  static Future<List<Map<String, dynamic>>> enquiryCallLogs() =>
+      _readCallLogs('enquiryCallLogs');
+
+  static Future<List<Map<String, dynamic>>> _readCallLogs(String method) async {
+    final rows = await _channel.invokeListMethod<dynamic>(method) ?? [];
     return rows
         .whereType<Map<dynamic, dynamic>>()
         .map((row) => row.map((key, value) => MapEntry('$key', value)))

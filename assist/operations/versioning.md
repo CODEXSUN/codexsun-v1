@@ -179,9 +179,9 @@ Use `npm run check:versions` to verify package versions and the changelog Versio
 
 ## Documentation Progress Rule
 
-Documentation is part of implementation, not final optional cleanup.
+This rule applies only to explicit version and release work.
 
-At every meaningful stage, update the closest active documentation before marking the stage complete.
+During a release, update the closest active documentation before marking the stage complete.
 
 Local module docs must be created or updated in the same patch as module code when a module is added, migrated, renamed, or given new routes, events, queue jobs, sync tags, tables, or tests.
 
@@ -200,7 +200,7 @@ Rules:
 - Release tags use the `v-` prefix.
 - Validate before tagging a release.
 - Version bumps only happen as explicit release tasks.
-- Run `npm run check` before finalizing work that changes code, service boundaries, rules, documentation workflow, changelog policy, or package versions.
+- Run `npm run check` before finalizing a release that changes code, service boundaries, rules, documentation workflow, changelog policy, or package versions.
 
 ### Windows release
 

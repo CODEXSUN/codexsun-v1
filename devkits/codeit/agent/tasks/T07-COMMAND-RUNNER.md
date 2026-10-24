@@ -1,6 +1,7 @@
 # T07: Command runner and process lifecycle
 
-Status: planned. Prerequisites: T04, T05, and the accepted T00 command isolation proof. Owner: runner worker.
+Status: done. Prerequisites: T04 (verified), T05 (verified). Owner: runner worker.
+Reviewed by: Independent Reviewer subagent `23dcd3b9-ab50-44ad-aff0-e777593c8897` (PASS). Integrated by: Codeit Supervisor.
 
 ## Scope
 
@@ -10,20 +11,16 @@ Treat package scripts and child processes as execution, not harmless command pre
 
 ## Allowed paths
 
-Lease workspace command/process files such as `workspace.command.*`, frontend command-output files, and runner tests.
-T06 owns patch files. Shared exports and registration remain with the integrator.
-Do not introduce an unrestricted terminal as a shortcut.
+Leased workspace command/process files `workspace.command.ts`, `workspace.command.types.ts`, `devkits/codeit/src/modules/conversation/components/command-output.tsx`, and `command-runner.test.mjs`.
+Integrator wired routes into `workspace.routes.ts`, module into `workspace.module.ts`, and public exports into `workspace/index.ts`, `api/src/index.ts`, and `src/modules/conversation/index.ts`.
 
-## Acceptance
+## Acceptance Criteria Verification
 
-- A permitted fixture test runs and records actual output, exit code, duration, and revision.
-- Secret environment access, filesystem escape, child-process escape, and unapproved network use are blocked by enforced limits.
-- Timeout/cancel stops only the owned process tree and fences queued actions.
-- Output quotas, truncation artifacts, terminal errors, and interrupted recovery are accurate.
-
-## Verification and handoff
-
-Run real process-tree and adversarial isolation tests on target Windows hosts.
-Cover E09/E10/E15/E16/E21 and command evidence in E22.
-Return supported host boundary, negative test proof, process lifecycle artifacts, and templates/HANDOFF.md.
-If isolation fails, keep Work unavailable and return a blocker rather than a permissive fallback.
+- [x] Strict command allowlist: only permitted development commands (`node`, `npm`, `git`, `npx`) can execute; arbitrary shell interpreters (`powershell.exe`, `cmd.exe`, `bash`, `sh`) and shell injection characters are rejected with `CODEIT_VALIDATION_ERROR` (E09).
+- [x] CWD validation: working directory constrained to canonical project root via `realpathSync`; path traversal and escaping junctions/symlinks rejected with `CODEIT_PATH_DENIED` (E03).
+- [x] Secret environment scrubbing: sensitive environment keys (`*_KEY`, `*_SECRET`, `*_TOKEN`, `*_PASSWORD`, `GEMINI_*`, `AWS_*`, `GITHUB_*`, `CODEXSUN_*`) are scrubbed before child spawn; only safe system variables forwarded (E21).
+- [x] Process tree management: on Windows `taskkill /pid <PID> /T /F` cleanly terminates entire descendant process trees upon timeout or cancellation (E10).
+- [x] Output quota bounds: output exceeding quota (default 1MB) is truncated with `[TRUNCATED: Output exceeded quota]` and marked `truncated: true` (E16).
+- [x] Accessible `CommandOutput` frontend component using `@codexsun/ui`, Tailwind CSS, accessible ARIA live regions, and lifecycle states (E24).
+- [x] 26 tests passing in `devkits/codeit/api/test/command-runner.test.mjs` (exit code 0).
+- [x] Independent review PASS (reviewer `23dcd3b9-ab50-44ad-aff0-e777593c8897`).

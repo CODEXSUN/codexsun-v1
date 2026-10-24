@@ -1,46 +1,37 @@
 # Decisions and assumptions
 
-Status: planning defaults, not user confirmation of undisclosed personal facts.
-T00 records accepted decisions before dependent implementation begins.
+Status: accepted baseline. Updated 24-10-2026 by Codeit Supervisor/Integrator for T00 Foundation.
+Contract revision: 1.0.0-frozen.
 
 ## Established constraints
 
-- The current request is documentation only, inside `devkits/codeit/agent`.
-- Codeit is a coding/development assistant workspace with chat, tools, plugins, and personalization.
-- Preserve standalone operation and the existing UIUX/CODEXSUN design pattern.
+- The human authorized implementation of tasks T00–T13 on 24-10-2026.
+- Codeit is a coding and development assistant workspace with chat, tools, plugins, and personalization.
+- Preserve standalone operation and the existing UIUX/CODEXSUN design system pattern.
 - Prepare supervisor/worker delivery for Antigravity and OpenCode.
-- Preserve repository ownership, dependency, output, tenancy, and evidence rules.
+- Preserve repository ownership, dependency layout, root output, tenant isolation, and verification evidence rules.
 
-## Proposed defaults
+## Accepted decisions record
 
-| Decision               | Proposed default                                                                    | Owner and blocking point                           |
-| ---------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Initial operator model | One local human, several isolated projects                                          | Supervisor accepts at T00                          |
-| Runtime                | One local Codeit API and bounded runners                                            | Architecture review at T00                         |
-| Port                   | Web 7070, proposed API 7071                                                         | Integrator verifies availability at T00            |
-| Storage                | Private embedded SQLite metadata plus artifact files                                | T00 adapter and migration proof                    |
-| Provider               | Provider-neutral interface, one approved initial adapter                            | User/account choice before T03 live smoke          |
-| Personal facts         | Explicit save, scoped retrieval, edit and forget                                    | Product review before T11                          |
-| Worker count           | Maximum two implementation workers initially                                        | T00 resource ceiling, T09 stress verification      |
-| File ownership         | Separate checkouts when compatible, otherwise disjoint leases and serialized writes | T00 repository/dependency proof                    |
-| Code execution         | Only after OS-enforced boundary is proved                                           | Hard gate before T06/T07                           |
-| Cross-IDE integration  | Portable manual dispatch first                                                      | Automatic adapter requires later approval          |
-| Tenant behavior        | Local-only data first, optional navigation bridge                                   | Separate identity design before tenant data access |
+| ID     | Decision                         | Accepted choice                                                                                                                                                                                                                                      | Evidence / Proof                                                                                                                                                                                                    | Affected tasks     | Status                                                                                                                      |
+| ------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| DEC-01 | Operator model                   | One local human operator, multiple isolated projects                                                                                                                                                                                                 | Product spec; single-user local trust model verified in `tools/codeit-foundation.test.mjs`                                                                                                                          | T00–T13            | Accepted                                                                                                                    |
+| DEC-02 | Runtime topology & ports         | Web on port 7070 (loopback), API on port 7071 (loopback)                                                                                                                                                                                             | Port check on Windows: 7070 active (Vite loopback), 7071 verified free; host header check passes                                                                                                                    | T00, T01, T02      | Accepted                                                                                                                    |
+| DEC-03 | Metadata & artifact storage      | Node.js built-in `node:sqlite` (DatabaseSync) for metadata and migration ledger `migration_schema`; `.codeit/storage/artifacts` for binary artifacts                                                                                                 | Verified on Node v26.10.0 on Windows in `tools/codeit-foundation.test.mjs`: zero external C++ deps, <0.04ms transaction avg, ACID compliant                                                                         | T00, T02, T04      | Accepted                                                                                                                    |
+| DEC-04 | Provider adapter                 | Provider-neutral interface with Gemini adapter (`gemini-2.5-flash` / `gemini-2.5-pro`) and controlled offline test double                                                                                                                            | Verified provider contract schemas in `tools/codeit-foundation.test.mjs`; credentials strictly server-side                                                                                                          | T00, T03, T04      | Accepted                                                                                                                    |
+| DEC-05 | Windows runner boundary          | Cooperative application-level filtering: canonical path verification (`realpathSync`), traversal denial, secret env scrubbing, and process-tree termination. OS-enforced sandbox boundary (filesystem/network/child process jail) is NOT yet proven. | Feasibility tests in `tools/codeit-foundation.test.mjs` prove application-level path and env filtering, but child process can still read files outside cwd if accessed directly. Hard OS boundary remains unproven. | T00, T05, T06, T07 | Partially accepted for safe read-only/storage; full sandbox gate and E09 NOT passed; Work/mutation and command runner gated |
+| DEC-06 | Local pairing & session boundary | High-entropy pairing token in `.codeit/pairing.token`, strict loopback Host/Origin validation, CSRF tokens on all mutations, HttpOnly SameSite=Strict cookies                                                                                        | Loopback origin and host validation tests pass in `tools/codeit-foundation.test.mjs`; rebinding and external origins blocked (403)                                                                                  | T00, T02           | Accepted                                                                                                                    |
+| DEC-07 | Concurrency & resource budgets   | Maximum 2 concurrent implementation workers; budgets: 60s command timeout, 100KB output buffer, 5MB artifact limit, 3 repair attempts per issue                                                                                                      | Hardware benchmarks: SQLite <0.04ms/tx, path resolution <1ms, spawn/kill <180ms in `tools/codeit-foundation.test.mjs`                                                                                               | T00, T08, T09      | Accepted                                                                                                                    |
+| DEC-08 | Workspace & file ownership       | Single repository checkout with disjoint file leases; shared manifests, lockfiles, routing, and exports reserved for supervisor/integrator                                                                                                           | Repository rule compliance (single root node_modules and single lockfile); worktree dependency sharing analyzed                                                                                                     | T00–T13            | Accepted                                                                                                                    |
+| DEC-09 | Cross-IDE worker protocol        | Standardized `SUPERVISOR-WORKERS.md` protocol with explicit `templates/DISPATCH.md` and `templates/HANDOFF.md`                                                                                                                                       | Handoff and dispatch templates verified portable across Antigravity and manual UI operator creation                                                                                                                 | T00, T09           | Accepted                                                                                                                    |
+| DEC-10 | Tenant boundary & isolation      | Standalone local-first runtime; zero access to live tenant databases or credentials; optional Platform launcher is navigation-only                                                                                                                   | Architecture review confirms Codeit does not import Platform database connection or tenant session tokens                                                                                                           | T00, T12           | Accepted                                                                                                                    |
+| DEC-11 | Personalization facts            | Explicit user save only; starts empty; scoped retrieval (user/project/conversation); edit/forget capabilities                                                                                                                                        | Schema validation verified; memory never widens execution grants                                                                                                                                                    | T00, T11           | Accepted                                                                                                                    |
 
-## Required unresolved choices
+## Unresolved choices status
 
-Select a real provider and model with an authorized account. Do not invent credentials or assume a consumer subscription grants API use.
-Prove a maintained SQLite adapter under current Node, Windows, root workspaces, and target packaging.
-Choose and test the Windows runner boundary, including filesystem, child process, secret, and network isolation.
-Choose local pairing/session storage and OS secret storage that satisfy host and port separation requirements.
-Define token, time, output, storage, and concurrency budgets from target hardware and account limits.
-Confirm whether a hosted/tenant product is required before designing a tenant data bridge.
-Collect the user's actual personalization facts before seeding any personal profile.
+- **DEC-05 (OS Runner Sandbox)**: Application-level path validation and environment scrubbing are verified, but an OS-enforced boundary (e.g. Windows Job Object with memory/network limits or AppContainer sandbox) has not been demonstrated. Unrestricted commands, plugin execution, and autonomous mutation remain gated. Safe read-only inspection, UI work (T01), local runtime & storage (T02), and provider adapters (T03) proceed with their reviewed prerequisites.
+- **DEC-06 (Endpoint pairing & CSRF)**: Unit/feasibility logic tested in `tools/codeit-foundation.test.mjs`; real endpoint authorization will be proven once the actual API host is deployed in T02.
 
-These choices block only dependent implementation. Independent planning and read-only inspection can continue.
+## Change control log
 
-## Change control
-
-Record decision ID, date, author, evidence, accepted choice, alternatives, affected tasks, and contract revision.
-If a decision changes, invalidate incompatible worker assignments and stale verification evidence.
-Do not treat inferred preferences, old source snapshots, or another agent's suggestion as current user authority.
+- **24-10-2026**: T00 Foundation updated by Codeit Supervisor following independent audit. Clarified that `tools/codeit-foundation.test.mjs` provides unit/feasibility evidence. Gated OS-enforced runner boundary (DEC-05); full sandbox gate and E09 remain unverified. Contracts frozen at `1.0.0-frozen`. Safe Wave A scope (T01, T02) authorized for native worker launch.

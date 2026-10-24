@@ -1,6 +1,7 @@
 # T08: Single-worker coding loop
 
-Status: planned. Prerequisites: T01, T04, T05, T06, T07. Owner: integrator.
+Status: done. Prerequisites: T01, T04, T05, T06, T07. Owner: integrator.
+Review verdict: PASS (verified by Independent Reviewer `ed99ed23-281f-4a74-9547-b38a91481ce8` on 24-10-2026).
 
 ## Scope
 
@@ -8,6 +9,13 @@ Join chat, plans, grants, provider tool proposals, workspace operations, diff re
 Implement the bounded reproduce/write/test/review/repair loop from DEVELOPMENT-LOOP.md.
 Use one worker until the full golden path passes.
 Keep model-produced plans separate from backend-controlled state and permissions.
+
+## Delivered Artifacts
+
+- `devkits/codeit/api/src/modules/run/coding-loop.service.ts`: Coding loop orchestrator implementing reproduce -> propose patch -> approval gate -> apply atomic patch -> verify test -> bounded repair cycle.
+- `devkits/codeit/api/src/modules/run/run.routes.ts`: `POST /api/codeit/runs/:uuid/loop` endpoint with streaming events and approval control.
+- `devkits/codeit/src/modules/conversation/components/artifact-viewer.tsx`: Unified diff preview rendering with `PatchReview` for inspectable change review.
+- `devkits/codeit/api/test/single-worker-loop.test.mjs`: Golden path test suite (7/7 pass).
 
 ## Allowed paths
 

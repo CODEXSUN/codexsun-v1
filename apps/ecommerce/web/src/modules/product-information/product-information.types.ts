@@ -5,7 +5,7 @@ export type ProductInformationRecord = {
   coreProductId: number;
   coreProductName: string;
   brandId: number | null;
-  brandName: string;
+  brandName: string | null;
   storefrontTitle: string;
   subtitle: string;
   slug: string;
@@ -28,13 +28,33 @@ export type ProductInformationRecord = {
   seoDescription: string;
   publicationStatus: PublicationStatus;
   isFeatured: boolean;
+  revision: number;
   createdAt: string;
   updatedAt: string;
 };
 export type ProductInformationPayload = Omit<
   ProductInformationRecord,
-  "id" | "uuid" | "coreProductName" | "brandName" | "createdAt" | "updatedAt"
+  "id" | "uuid" | "coreProductName" | "brandName" | "revision" | "createdAt" | "updatedAt"
 >;
+export type ProductInformationFilters = {
+  storefrontTitle?: string;
+  coreProductName?: string;
+  brandName?: string;
+  slug?: string;
+};
+export type ProductInformationStatusCounts = {
+  all: number;
+  draft: number;
+  published: number;
+  archived: number;
+};
+export type ProductInformationPage = {
+  items: ProductInformationRecord[];
+  page: number;
+  pageSize: number;
+  statusCounts: ProductInformationStatusCounts;
+  total: number;
+};
 export type CoreProductOption = { id: number; name: string };
 export type CoreBrandOption = { id: number; name: string };
 export type FrappeItemOption = {

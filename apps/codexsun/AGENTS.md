@@ -1,6 +1,6 @@
 # CODEXSUN workspace ownership
 
-Read the root agent instructions, Assist guide and governance, and this app's README.
+Read the root agent instructions, then the affected source and public contract. Read this app's README and specialized Assist material only for contract, architecture, permission, tenancy, operations, release, audit, or documentation work.
 
 - Keep requirements, approvals, and activity in the requirements leaf.
 - Keep device presence and device lifecycle in the devices leaf.

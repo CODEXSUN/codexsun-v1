@@ -166,6 +166,7 @@ export function EnquiryList({
         return (
           <FrappeSyncIndicator
             error={row.original.frappeSyncError}
+            remoteName={row.original.frappeRemoteName}
             status={status === "retry" ? "pending" : status}
             onVerify={() => verifyFrappeRecord("enquiries", Number(row.original.id))}
           />

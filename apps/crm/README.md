@@ -5,6 +5,13 @@ are pending. Web views refresh these states every second. Tasks remain local and
 **Not configured**. Supported contact-mobile and enquiry exports dispatch after the local save;
 the durable queue remains the recovery source. See [Frappe](../frappe/README.md) for the contract.
 
+Enquiry sync indicators combine saved Frappe links with unfinished export events.
+Imported enquiries retain their confirmed state even when they have no outbound events.
+The list shows the saved remote name. A later failed update preserves that name and shows its error.
+Local records without a link or outbox event show Local only. Error badges keep rows compact.
+Hover over the indicator or open the enquiry to read the complete failure reason.
+Green records show the last successful sync, not a fresh remote read on every list refresh.
+
 ## Marketing integration planning — 2026-10-23
 
 Marketing owns Campaign, raw capture submissions, promotional consent, subscriptions, and nurturing.
@@ -101,6 +108,15 @@ assignment page.
 
 Bidirectional Frappe enquiry sync exports mapped assignees and adopts the serial Frappe returns after posting.
 Number changes keep stable record IDs and append activity history. Unknown remote Employee mappings block import without clearing allocation.
+Number reconciliation reuses a free provisional serial above the linked Frappe range when a local record collides.
+Temporary swap numbers do not advance the permanent number sequence. Existing gaps require a separate backed-up identity audit.
+Enquiry export failures take priority over dependent comment failures in the sync badge.
+An unlinked comment reports the parent export error when available.
+Manual retries retain the last error until delivery succeeds and start a fresh queue correlation generation.
+The stable enquiry and comment retry identities remain unchanged.
+Enquiry export can link the exact Mobile Contact number without a Frappe Customer identity.
+It leaves unmapped Customer fields empty in Frappe and preserves the local contact and history.
+Coalesced edits also receive a fresh delivery generation so earlier completed jobs cannot hide an update.
 Remote source snapshots retain fields that have no CRM editor. Tasks remain local with no Frappe contract.
 
 Enquiries use the same Core contact IDs as the CRM contact form.

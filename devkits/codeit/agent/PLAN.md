@@ -1,9 +1,8 @@
 # Codeit delivery plan
 
-Status: documentation only. Updated 24-10-2026.
-The user requested planning, task preparation, and plan verification only.
-Do not start implementation, workers, installations, or IDE configuration from this document.
-A later user instruction must authorize a named implementation packet or milestone.
+Status: implementation active. Updated 24-10-2026.
+Implementation scope for T00–T13 explicitly authorized by human user on 24-10-2026.
+M0 (Foundation & Contract Freeze) completed and verified; Wave A (T01, T02, T03) ready for dispatch.
 
 ## Product direction and current state
 
@@ -28,14 +27,14 @@ Codeit must not become a shared business CRUD engine.
 
 ## Milestones
 
-| Milestone | Result                                         | Packets | Exit gate                                                       |
-| --------- | ---------------------------------------------- | ------- | --------------------------------------------------------------- |
-| M0        | Agreed contracts and baseline                  | T00     | Decisions, ownership, threat model, fixtures reviewed           |
-| M1        | Persistent chat and supervised read-only tools | T01–T05 | Real provider stream, durable history, policy denial, recovery  |
-| M2        | Bounded coding and verification                | T06–T08 | Safe patch, isolation, cancellation, one-worker golden path     |
-| M3        | Parallel supervisor/worker delivery            | T09     | Isolated tasks, dependency gates, stale-worker rejection        |
-| M4        | Plugins, personalization, integration          | T10–T12 | Revocation, fact isolation, optional bridge, complete E2E suite |
-| M5        | Release candidate                              | T13     | Independent review, packaging, restore, documented limits       |
+| Milestone | Result                                         | Packets | Exit gate                                                                         |
+| --------- | ---------------------------------------------- | ------- | --------------------------------------------------------------------------------- |
+| M0        | Agreed contracts and baseline                  | T00     | Decisions, ownership, schemas, storage fixtures verified; OS runner sandbox gated |
+| M1        | Persistent chat and supervised read-only tools | T01–T05 | Real provider stream, durable history, policy denial, recovery                    |
+| M2        | Bounded coding and verification                | T06–T08 | Safe patch, isolation, cancellation, one-worker golden path                       |
+| M3        | Parallel supervisor/worker delivery            | T09     | Isolated tasks, dependency gates, stale-worker rejection                          |
+| M4        | Plugins, personalization, integration          | T10–T12 | Revocation, fact isolation, optional bridge, complete E2E suite                   |
+| M5        | Release candidate                              | T13     | Independent review, packaging, restore, documented limits                         |
 
 ## Parallel delivery
 

@@ -744,6 +744,32 @@ Marketing database tests verify exact UTC timestamps and near-expiry rejection a
 - [x] Verify Show all retains three Closed tasks. Restore the active view and normal search.
 
 See [the cleanup and emulator verification report](RELEASE-1.1.50-VERIFICATION.md) for identities, scope protection, evidence, and limits.
+# TECHMEDIA enquiry number repair — 2026-10-24
+
+- [x] Verify erp1.techmedia.in has 2,071 Enquiry records and Q2080 is the highest serial.
+- [x] Match all 2,071 saved links to their exact remote names and serials. Check mobiles for Q2074-Q2080.
+- [x] Back up TECHMEDIA and verify the gzip checksum before repair.
+- [x] Preserve 2,083 CRM enquiries, all source links, and every non-number enquiry field during the transaction.
+- [x] Correct ten local-only numbers to 2083-2092. Keep local-only 2081 and 2082. Set the next number to 2093.
+- [x] Replay the repair plan with zero changes. Confirm Closed 2082 appears in the web All statuses list.
+- [x] Deploy four patched API modules on the existing 1.1.57 image. Keep web, shop, and shared services unchanged.
+- [x] Verify Redis/BullMQ jobs 2990-2993. Two deliveries reuse synced comment event 56 and its remote identity.
+- [x] Retry blocked comment 73 and enquiry export 72. Both report the Customer mapping failure.
+- [x] Confirm no new remote enquiry or comment identities. Preserve local numbers and links across retries.
+- [x] Fix manual Retry reusing completed queue keys. Verify normal relay delivery through Redis/BullMQ job 3009 without explicit test dispatch.
+
+Five recent local enquiries, now 2083-2086 and 2091, still need a unique Customer mapping.
+The user-created enquiry 2092 needs an active Frappe Employee mapping for its assignee.
+These blockers remain visible. This repair does not create or guess those mappings.
+
+Focused numbering, comment retry, and sync repository tests pass. The disposable database queue test passes.
+CRM and Frappe API builds, lint, owner boundaries, and dependency layout checks pass.
+Production API health and authenticated enquiry responses pass. Web shows corrected numbers and the actual mapping errors.
+This verification does not claim a mobile emulator check or successful export for blocked records.
+
+Evidence and backup: `/home/codexsun-releases/techmedia-number-repair-20261024/`.
+The first API restart omitted prior Compose configuration layers. Restoring those layers recovered the patched API.
+
 
 ## Standard User draft access — local, 2026-10-24
 
@@ -753,3 +779,26 @@ See [the cleanup and emulator verification report](RELEASE-1.1.50-VERIFICATION.m
 - [x] Verify persisted grants and actual draft/published revision update behavior in disposable local MariaDB databases.
 
 Existing tenant-wide visibility and operational work scopes remain in force. No cloud deployment ran.
+## TECHMEDIA number and status audit — 2026-10-24
+
+- [x] Audit all 2,083 enquiry numbers and 2,077 saved Frappe links. Find zero duplicate numbers, duplicate links, or mismatched linked serials.
+- [x] Confirm maximum CRM serial 2092 and next serial 2093. Preserve every number and link during this audit.
+- [x] Identify five older active local enquiries, 2087-2091, with no export event. Queue events 97-101 through the public CRM outbox.
+- [x] Keep the closed local test enquiry 2092 out of that backfill.
+- [x] Confirm Redis processes all five events and update event 95. They report the actual Cloudflare Tunnel error, HTTP 530 / Error 1033.
+- [x] Merge saved Frappe link state with unfinished outbox work through public owner contracts. Imported records no longer appear unverified solely because they lack export events.
+- [x] Show remote names, Local only, compact errors, and full error details on hover and in the record view.
+
+Linked serials match Frappe. A local-only serial can still change when its first successful export adopts a Frappe serial.
+This preserves the user's requested numbering policy. It does not promise one immutable serial across two independent writers.
+Stable record IDs, links, comments, and history remain intact.
+
+The Frappe tunnel is still unavailable. The queued records are not successfully exported, and update 95 is not green.
+Do not substitute a green badge for an unresolved export. No mobile work was performed in this audit.
+
+The isolated web build uses production source 1a4816b8 plus only three CRM web files.
+The local full Platform API build is blocked by an unrelated Ecommerce TS2554 error in catalog-data-source.service.ts.
+The patched production API import check passes. CRM/Frappe API builds and CRM web typecheck pass.
+Numbering, transport, and disposable database state tests pass. Lint, owner boundaries, and dependency layout pass.
+
+Evidence and verified backup: `/home/codexsun-releases/techmedia-status-audit-20261024/`.

@@ -21,7 +21,7 @@ import { StatusRepository } from "../status/status.repository.js";
 import { PriorityService } from "../priority/priority.service.js";
 import { PriorityRepository } from "../priority/priority.repository.js";
 import { localViewRecord, localViewComment, type EnquiryViewInput } from "./enquiry.view-model.js";
-import { EnquirySyncRepository } from "./enquiry.sync.repository.js";
+import { EnquirySyncRepository, type EnquiryDeliveryState } from "./enquiry.sync.repository.js";
 
 const nullableText = z.string().trim().nullable();
 const inputSchema = z.object({
@@ -58,11 +58,12 @@ const recordSchema = inputSchema.extend({
   updatedAt: z.string(),
   closurePending: z.boolean().optional(),
   frappeSyncStatus: z
-    .enum(["pending", "processing", "retry", "failed", "synced"])
+    .enum(["pending", "processing", "retry", "failed", "synced", "unlinked"])
     .nullable()
     .optional(),
-  canViewFrappeSync: z.boolean().optional()
-  , frappeSyncError: z.string().nullable().optional()
+  canViewFrappeSync: z.boolean().optional(),
+  frappeSyncError: z.string().nullable().optional(),
+  frappeRemoteName: z.string().nullable().optional()
 });
 const referenceSchema = z.string().trim().min(1).max(191);
 const viewInputSchema = inputSchema
@@ -204,6 +205,7 @@ export type EnquiryRequestContext = {
   actorUserId: number | null;
   canViewAll: boolean;
   canViewFrappeSync?: boolean;
+  readFrappeSync?: (ids: number[]) => Promise<Map<number, EnquiryDeliveryState>>;
   relations: EnquiryRelations;
   listUsers: () => Promise<Array<{ id: number; name: string; email: string; status: string }>>;
   pendingClosureLookup?: PendingClosureLookup;
@@ -359,17 +361,23 @@ export function registerEnquiryRoutes(
       const page = await current.read.list(query);
       const canViewFrappeSync = current.scope.canViewFrappeSync === true;
       const statuses = canViewFrappeSync
-        ? await new EnquirySyncRepository(current.scope.database).deliveryStates(
-            page.items.map((item) => Number(item.id))
-          )
+        ? await (
+            current.scope.readFrappeSync ??
+            ((ids) => new EnquirySyncRepository(current.scope.database).deliveryStates(ids))
+          )(page.items.map((item) => Number(item.id)))
         : new Map();
       return {
         ...page,
         items: page.items.map((item) => ({
           ...item,
           canViewFrappeSync,
-          ...(canViewFrappeSync ? { frappeSyncStatus: statuses.get(Number(item.id))?.status ?? null,
-            frappeSyncError: statuses.get(Number(item.id))?.error ?? null } : {})
+          ...(canViewFrappeSync
+            ? {
+                frappeSyncStatus: statuses.get(Number(item.id))?.status ?? null,
+                frappeSyncError: statuses.get(Number(item.id))?.error ?? null,
+                frappeRemoteName: statuses.get(Number(item.id))?.remoteName ?? null
+              }
+            : {})
         }))
       };
     }
@@ -455,14 +463,16 @@ export function registerEnquiryRoutes(
       const current = await service(request);
       const record = localViewRecord(await current.enquiry.get(localId(params.id)));
       if (!current.scope.canViewFrappeSync) return { ...record, canViewFrappeSync: false };
-      const statuses = await new EnquirySyncRepository(current.scope.database).deliveryStates([
-        Number(params.id)
-      ]);
+      const statuses = await (
+        current.scope.readFrappeSync ??
+        ((ids) => new EnquirySyncRepository(current.scope.database).deliveryStates(ids))
+      )([Number(params.id)]);
       return {
         ...record,
         canViewFrappeSync: true,
         frappeSyncStatus: statuses.get(Number(params.id))?.status ?? null,
-        frappeSyncError: statuses.get(Number(params.id))?.error ?? null
+        frappeSyncError: statuses.get(Number(params.id))?.error ?? null,
+        frappeRemoteName: statuses.get(Number(params.id))?.remoteName ?? null
       };
     }
   });

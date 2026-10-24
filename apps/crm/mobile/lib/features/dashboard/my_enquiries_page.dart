@@ -4,7 +4,6 @@ import 'package:geolocator/geolocator.dart';
 import '../../core/api/crm_mobile_api.dart';
 import 'dashboard_list_page.dart';
 import 'dashboard_jobs_feed.dart';
-import 'home_enquiry_form_page.dart';
 import 'job_enquiry_card.dart';
 import 'job_duration.dart';
 
@@ -118,11 +117,6 @@ class MyEnquiriesPageState extends State<MyEnquiriesPage> {
       appBar: AppBar(
         title: const Text('Jobs'),
         actions: [
-          IconButton(
-            tooltip: 'New job',
-            onPressed: _openNewEnquiry,
-            icon: const Icon(Icons.add_rounded),
-          ),
           _buildListFilterButton(),
           _buildStatusFilterButton(),
           if (widget.onSignOut != null)
@@ -152,11 +146,6 @@ class MyEnquiriesPageState extends State<MyEnquiriesPage> {
         ],
       ),
       body: content,
-      floatingActionButton: FloatingActionButton(
-        tooltip: 'New job',
-        onPressed: _openNewEnquiry,
-        child: const Icon(Icons.add_rounded),
-      ),
     );
   }
 
@@ -253,47 +242,25 @@ class MyEnquiriesPageState extends State<MyEnquiriesPage> {
             }
             return RefreshIndicator(
               onRefresh: refresh,
-              child: ListView(
+              child: ListView.builder(
                 padding: EdgeInsets.fromLTRB(
                   16,
                   6,
                   16,
                   widget.embedded ? 84 : 28,
                 ),
-                children: [
-                  if (enquiries.isEmpty)
-                    const Padding(
+                itemCount: enquiries.isEmpty
+                    ? 1
+                    : enquiries.length + (result.total > 100 ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (enquiries.isEmpty) {
+                    return const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
                       child: Center(child: Text('No jobs are in this list.')),
-                    ),
-                  ...enquiries.map((cardJob) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: JobEnquiryCard(
-                        api: widget.api,
-                        session: widget.session,
-                        enquiry: DashboardListItem.fromCrmJob(cardJob),
-                        job: cardJob,
-                        onJobChanged: refresh,
-                        capturePosition: widget.capturePosition,
-                        onJobUpdated: widget.onJobUpdated,
-                        closurePending:
-                            widget.jobsFeed?.isClosurePending(
-                              cardJob.sourceId,
-                            ) ??
-                            false,
-                        collectionPending:
-                            widget.jobsFeed?.isCollectionPending(
-                              cardJob.sourceId,
-                            ) ??
-                            false,
-                        onClosurePendingChanged: (pending) => widget.jobsFeed
-                            ?.updateClosurePending(cardJob.sourceId, pending),
-                      ),
                     );
-                  }),
-                  if (result.total > 100)
-                    _CrmPageControls(
+                  }
+                  if (index == enquiries.length) {
+                    return _CrmPageControls(
                       page: result.page,
                       pageCount: result.pageCount,
                       total: result.total,
@@ -304,8 +271,39 @@ class MyEnquiriesPageState extends State<MyEnquiriesPage> {
                       onNext: result.hasNext
                           ? () => _changePage(result.page + 1)
                           : null,
+                    );
+                  }
+                  final cardJob = enquiries[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: JobEnquiryCard(
+                      key: ValueKey(cardJob.sourceId),
+                      api: widget.api,
+                      session: widget.session,
+                      enquiry: DashboardListItem.fromCrmJob(cardJob),
+                      job: cardJob,
+                      onJobChanged: refresh,
+                      capturePosition: widget.capturePosition,
+                      onJobUpdated: widget.onJobUpdated,
+                      closurePending:
+                          widget.jobsFeed?.isClosurePending(cardJob.sourceId) ??
+                          false,
+                      collectionPending:
+                          widget.jobsFeed?.isCollectionPending(
+                            cardJob.sourceId,
+                          ) ??
+                          false,
+                      onClosurePendingChanged: (pending) => widget.jobsFeed
+                          ?.updateClosurePending(cardJob.sourceId, pending),
+                      loadJobSessions:
+                          widget.jobsFeed?.jobSessions ??
+                          ((sourceId) => widget.api.enquiryJobSessions(
+                            accessToken: widget.session.accessToken,
+                            enquiryId: sourceId,
+                          )),
                     ),
-                ],
+                  );
+                },
               ),
             );
           },
@@ -385,16 +383,6 @@ class MyEnquiriesPageState extends State<MyEnquiriesPage> {
           .toList();
     }
     return filtered;
-  }
-
-  Future<void> _openNewEnquiry() async {
-    final created = await Navigator.of(context).push<CrmJob>(
-      MaterialPageRoute(
-        builder: (context) =>
-            HomeEnquiryFormPage(api: widget.api, session: widget.session),
-      ),
-    );
-    if (created != null && mounted) await _refresh();
   }
 }
 

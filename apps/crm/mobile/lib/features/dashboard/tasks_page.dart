@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../core/api/crm_mobile_api.dart';
 import 'task_detail_page.dart';
 import 'task_enquiry_card.dart';
-import 'task_form_page.dart';
 import 'work_action_sheet.dart';
 
 class TasksPage extends StatefulWidget {
@@ -24,7 +23,6 @@ class _TasksPageState extends State<TasksPage> with WidgetsBindingObserver {
   String? _error;
   Timer? _timer;
   bool _includeClosed = false;
-  bool _canCreate = false;
   bool _loading = false;
   bool _initialLoad = true;
   @override
@@ -32,7 +30,6 @@ class _TasksPageState extends State<TasksPage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _load();
-    _loadCreatePermission();
     _startPolling();
   }
 
@@ -95,12 +92,6 @@ class _TasksPageState extends State<TasksPage> with WidgetsBindingObserver {
     appBar: AppBar(
       title: const Text('Tasks'),
       actions: [
-        if (_canCreate)
-          IconButton(
-            tooltip: 'New task',
-            onPressed: _createTask,
-            icon: const Icon(Icons.add_task_outlined),
-          ),
         IconButton(
           tooltip: _includeClosed ? 'Show active tasks' : 'Show all tasks',
           onPressed: () {
@@ -185,25 +176,6 @@ class _TasksPageState extends State<TasksPage> with WidgetsBindingObserver {
       ),
     ),
   );
-
-  Future<void> _loadCreatePermission() async {
-    try {
-      final options = await widget.api.taskOptions(widget.session.accessToken);
-      final capabilities = options['capabilities'] as Map<String, dynamic>?;
-      if (mounted) setState(() => _canCreate = capabilities?['create'] == true);
-    } catch (_) {
-      // The task list remains available even if form capabilities cannot load.
-    }
-  }
-
-  Future<void> _createTask() async {
-    final created = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => TaskFormPage(api: widget.api, session: widget.session),
-      ),
-    );
-    if (created == true && mounted) await _load();
-  }
 
   Future<void> _openTask(Map<String, dynamic> row) async {
     _pausePolling();

@@ -43,6 +43,7 @@ class MainActivity : FlutterFragmentActivity() {
     private lateinit var documentScannerLauncher: ActivityResultLauncher<IntentSenderRequest>
     private lateinit var callLogPermissionLauncher: ActivityResultLauncher<String>
     private var pendingCallLogResult: MethodChannel.Result? = null
+    private var pendingCallLogReadMode = CallLogReadMode.FULL
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,7 +57,7 @@ class MainActivity : FlutterFragmentActivity() {
             pendingCallLogResult = null
             if (granted) {
                 rememberCallLogDisclosure()
-                deliverCallLogs(result)
+                deliverCallLogs(result, pendingCallLogReadMode)
             }
             else result.error("permission_denied", "Call log permission was denied.", null)
         }
@@ -80,6 +81,10 @@ class MainActivity : FlutterFragmentActivity() {
         }
         if (call.method == "callLogs") {
             openCallLogs(result)
+            return
+        }
+        if (call.method == "enquiryCallLogs") {
+            openCallLogs(result, CallLogReadMode.NUMBERS_ONLY)
             return
         }
         if (call.method == "scanDocument") {
@@ -112,13 +117,16 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
-    private fun openCallLogs(result: MethodChannel.Result) {
+    private fun openCallLogs(
+        result: MethodChannel.Result,
+        readMode: CallLogReadMode = CallLogReadMode.FULL,
+    ) {
         if (!packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
             result.error("unsupported_device", "This device does not provide telephone call history.", null)
             return
         }
         if (hasCallLogAccess()) {
-            deliverCallLogs(result)
+            deliverCallLogs(result, readMode)
             return
         }
         if (pendingCallLogResult != null) {
@@ -126,13 +134,23 @@ class MainActivity : FlutterFragmentActivity() {
             return
         }
         pendingCallLogResult = result
+        pendingCallLogReadMode = readMode
         callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
     }
 
-    private fun deliverCallLogs(result: MethodChannel.Result) {
+    private fun deliverCallLogs(
+        result: MethodChannel.Result,
+        readMode: CallLogReadMode = CallLogReadMode.FULL,
+    ) {
         try {
             rememberCallLogDisclosure()
-            result.success(readCallLogs())
+            result.success(
+                if (readMode == CallLogReadMode.NUMBERS_ONLY) {
+                    readEnquiryCallLogs()
+                } else {
+                    readCallLogs()
+                },
+            )
         } catch (_: SecurityException) {
             result.error(
                 "restricted_permission",
@@ -167,11 +185,8 @@ class MainActivity : FlutterFragmentActivity() {
             CallLog.Calls.DATE,
             CallLog.Calls.DURATION,
         )
-        val uri = CallLog.Calls.CONTENT_URI.buildUpon()
-            .appendQueryParameter(CallLog.Calls.LIMIT_PARAM_KEY, "200")
-            .build()
         contentResolver.query(
-            uri,
+            CallLog.Calls.CONTENT_URI,
             projection,
             null,
             null,
@@ -182,13 +197,47 @@ class MainActivity : FlutterFragmentActivity() {
             val typeIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.TYPE)
             val dateIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DATE)
             val durationIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DURATION)
-            while (cursor.moveToNext() && records.size < 200) {
+            while (cursor.moveToNext()) {
                 records += mapOf(
                     "name" to if (nameIndex >= 0) cursor.getString(nameIndex).orEmpty() else "",
                     "number" to cursor.getString(numberIndex).orEmpty(),
                     "type" to cursor.getInt(typeIndex),
                     "timestamp" to cursor.getLong(dateIndex),
                     "durationSeconds" to cursor.getLong(durationIndex),
+                )
+            }
+        }
+        return records
+    }
+
+    private fun readEnquiryCallLogs(): List<Map<String, Any?>> {
+        val records = mutableListOf<Map<String, Any?>>()
+        val projection = arrayOf(
+            CallLog.Calls.NUMBER,
+            CallLog.Calls.TYPE,
+            CallLog.Calls.DATE,
+        )
+        val uri = CallLog.Calls.CONTENT_URI.buildUpon()
+            .appendQueryParameter(
+                CallLog.Calls.LIMIT_PARAM_KEY,
+                ENQUIRY_CALL_LOG_LIMIT.toString(),
+            )
+            .build()
+        contentResolver.query(
+            uri,
+            projection,
+            "${CallLog.Calls.NUMBER} IS NOT NULL AND ${CallLog.Calls.NUMBER} != ''",
+            null,
+            "${CallLog.Calls.DATE} DESC",
+        )?.use { cursor ->
+            val numberIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.NUMBER)
+            val typeIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.TYPE)
+            val dateIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DATE)
+            while (cursor.moveToNext() && records.size < ENQUIRY_CALL_LOG_LIMIT) {
+                records += mapOf(
+                    "number" to cursor.getString(numberIndex).orEmpty(),
+                    "type" to cursor.getInt(typeIndex),
+                    "timestamp" to cursor.getLong(dateIndex),
                 )
             }
         }
@@ -246,3 +295,10 @@ class MainActivity : FlutterFragmentActivity() {
         result.success(null)
     }
 }
+
+private enum class CallLogReadMode {
+    FULL,
+    NUMBERS_ONLY,
+}
+
+private const val ENQUIRY_CALL_LOG_LIMIT = 10

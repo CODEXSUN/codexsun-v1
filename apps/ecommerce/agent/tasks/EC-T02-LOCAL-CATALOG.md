@@ -1,0 +1,94 @@
+# EC-T02: Local-authoritative catalog migration
+
+Status: accepted 2026-10-24 (implemented by t02-local-catalog, supervisor-verified, independently reviewed; EC-T01 prerequisite dispatched in parallel under a recorded exception). Phase: P1. Prerequisites: T00, T01.
+Owner: assigned by the supervisor after verifying prerequisites and write leases.
+
+## Required reading
+
+Read ../SUPERVISOR-PROMPT.md, ../EXECUTION.md, ../E2E-PLAN.md, ../CONTRACTS.md and ../DECISIONS.md.
+Read the owning component documents and exact current source before writing.
+The complete E2E plan remains authoritative for scope, boundaries and acceptance.
+
+## Concrete deliverable
+
+Make normal catalog reads local and remove mandatory remote dependencies through reviewed composition. Preserve imported IDs, UUIDs, SKUs, slugs, media and history.
+
+Deliver backend persistence, validated contracts, permission checks, activity, frontend and tests together where applicable.
+Do not replace concrete leaf modules with generic CRUD metadata, arbitrary paths or shared business repositories.
+
+## Allowed scope and leases
+
+Candidate scope: catalog-data-source and owned migration/tests.
+The supervisor must replace this scope with exact allowed paths before dispatch. This packet alone is not a write lease.
+Reserve shared exports, manifests, lockfile, routes, styles, migration registration and task ledgers for the integrator.
+Record cross-owner impact and compatibility before requesting any provider change.
+Preserve unrelated work and current records. Use disposable databases/storage for mutation tests.
+
+## Acceptance
+
+Fresh/existing schema, repeat upgrade, Frappe disabled/offline, no automatic remote refresh, preservation counts and unaffected CRM sync.
+
+Enforce tenant/company and applicable customer/vendor scope on every returned record, count, export, file and event.
+Use the approved Core references, integer internal IDs, eight-hex UUIDs, unique constraints and repeatable migrations.
+Money/quantity transitions require concurrency, idempotency and recovery evidence, not just happy-path tests.
+For staff screens verify List/Show/Upsert, App Header actions, inline filters, search, columns and the 100-row paging contract.
+For public screens verify real backend content, publication, complete images, loading/empty/error/denied states and accessibility.
+
+## Test suite and review
+
+Run focused unit/contract tests and disposable MariaDB integration/E2E for changed behavior.
+Run owner formatting, lint, API/web typecheck, boundaries and relevant builds from the repository root.
+Run provider/consumer regression tests after public contract or shared UI changes.
+Run 1440/768/390/320 browser checks for changed interfaces. Save live screenshots and verify persisted data.
+The supervisor assigns a separate reviewer, repairs findings and reruns checks after integration.
+Use the complete E2E-PLAN section 11 cases applicable to this task. Record exact case IDs in the dispatch.
+
+## Evidence - executed 2026-10-24
+
+- Base/source revision and dirty baseline: `61710dd91c9716b767101e47b0e289b2cc2e8ce0` (the tree advanced
+  from `fec76ade` by an unrelated Data Migration commit while this session ran). The recorded 62-entry
+  dirty baseline is preserved (see EC-T00).
+- Worker, effective model, exact paths and lease generation: `t02-local-catalog`
+  (`deepseek-flash`), lease L2 generation 1, allowed paths
+  `apps/ecommerce/api/src/modules/catalog-data-source/**`. Three files changed, all inside the lease.
+- Accepted contract revisions and prerequisites: EC-C01, EC-C06, EC-C09, EC-D01 v1. EC-T00 accepted.
+  The packet prerequisite on EC-T01 was dispatched in parallel; the recorded exception in TASK.md
+  covers it and the final integrated state includes both tasks.
+- Changed files and database compatibility: `catalog-data-source.service.ts` (read path),
+  `catalog-data-source.repository.ts` (dead `cacheAgeMs` removed),
+  `catalog-data-source.service.test.ts` (coverage replaced and extended). No schema, migration, seed or
+  stored provider-selection change; existing imported data is untouched.
+- Behaviour now: every public catalog read resolves the stored module provider and either reads the
+  local projection, the local Frappe-imported cache, or (only when the tenant explicitly selected
+  `frappe` and it is configured and inside the IST window) a live Frappe read with local fallback. No
+  public read calls `integrationSnapshot`, `replaceFromFrappe` or `pullFromFrappe`; the automatic
+  15-minute cache refresh was removed. Explicit `pullFromFrappe`/`pushToFrappe` remain, reachable only
+  through the authenticated data-source routes.
+- Commands, exit codes and exact observed results:
+  - `node --import tsx --test .../catalog-data-source.service.test.ts
+.../catalog-data-source.frappe.test.ts` -> exit 0, 13 tests pass, 0 fail (worker and supervisor
+    runs). New coverage: "a public read never performs a remote Frappe pull" (all ten reads; pull and
+    snapshot calls counted and asserted 0), Frappe app disabled, connection unconfigured, unreachable
+    host falling back to the local projection, empty local projection returning the module's empty
+    result, stored provider selections preserved, explicit pull and explicit push still working,
+    disabled-module response shapes, IST window, fallback/resume.
+  - `npm run typecheck -w @codexsun/ecommerce-api` -> exit 0 (worker and supervisor).
+  - `npm run lint -w @codexsun/ecommerce-api` -> exit 0, 0 warnings / 0 errors on 131 files.
+  - `node tools/check-module-boundaries.mjs ecommerce` -> exit 0.
+  - Full combined gates after integration: boundaries, API/web/storefront typecheck, lint, and the
+    three builds all exit 0 (see TASK.md acceptance evidence).
+- Database fixture IDs, screenshots and recovery evidence: none required; no database was written by
+  this change. Database-level evidence for the combined tree comes from EC-T01 and from the existing
+  Ecommerce E2E scripts.
+- Independent reviewer, findings and repairs: `review-t00` reviewed the diff and re-ran typecheck and
+  lint; report `dist/ecommerce-scratch/reviews/ec-t01-t02-review.md`. No finding required a code change
+  beyond the recorded interpretation below.
+- Interpretation recorded: "local-authoritative" removes the _automatic remote dependency and refresh_
+  and makes the local projection the normal source. An explicit per-module `frappe` selection still
+  performs a live read (existing behaviour, preserved deliberately). Removing the live-read branch
+  would be a contract change that deletes fallback/resume and IST-window behaviour; it was NOT done
+  and is not claimed.
+- Remaining limits: no browser UI change was made by this task; provider sandbox and live Frappe
+  evidence are out of scope (deferred EC-T17).
+- Status and supervisor acceptance: accepted after supervisor re-verification of all four gates and
+  inspection of the diff; independent review recorded.

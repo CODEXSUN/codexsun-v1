@@ -1,6 +1,6 @@
 # Billing tasks
 
-## Marketing integration backlog — 2026-10-23
+## Marketing integration backlog â€” 2026-10-23
 
 Planning alignment is complete. The following implementation tasks remain open.
 See [Marketing contracts and gaps](../../marketing/agent/PLAN.md#phase-0-decisions-and-contract-review), G08.
@@ -204,6 +204,19 @@ These corrections require no new database migration. They do not modify producti
 - Rendered and visually checked Customer Summary and Supplier Summary A4 PDFs. Customer totals and supplier empty-state totals are visible without clipping.
 - Verified the Platform web production bundle with the new QR dependency.
 - Restored the original company and INR selection after browser verification.
+
+## Reporting currency control, October 24, 2026
+
+- Moved the reporting currency switch to Billing Settings > Reporting in both settings entry points.
+- Removed selectors and unused currency components from all five selectable report pages.
+- Settings owns its currency lookup endpoint and validates the selected company before reading available currencies.
+- Currency changes apply immediately with the existing tab, tenant, company and financial-year scope.
+- Report and overview requests continue to use the selected currency. GST and normal Sales remain INR-only.
+- No database migration or change to company-wide published settings is required.
+
+- Passed Billing API/web type checks, lint and builds, module boundaries, component documentation checks/tests and dependency layout.
+- Passed the currency scope, formatting and request-header regression with a test-only CSS loader in root dist.
+- Browser interaction was not repeated for this settings relocation.
 
 ## Standard User draft policy — local, 2026-10-24
 

@@ -1,5 +1,14 @@
 # Ecommerce plan
 
+## Complete local Ecommerce delivery — 2026-10-24
+
+The proposed [end-to-end delivery plan](E2E-PLAN.md) defines local commerce first and Frappe synchronization last.
+It covers ownership, Core extensions, shared-service reuse, staff and portal UI, orders, fulfillment, returns, refunds, vendors, and tenant tests.
+Its source baseline supersedes earlier assumptions about the scope of the planned Ecommerce solution.
+Existing runtime capabilities and completed task evidence remain unchanged.
+Cross-owner changes require a documented impact review. No shared behavior change is authorized by this plan alone.
+Implementation must resolve the Phase 0 contracts before claiming transactional commerce readiness.
+
 ## Marketing integration planning — 2026-10-23
 
 Status: design only. No runtime capability or provider access is added.
@@ -22,6 +31,15 @@ Core owns shared product identity and Frappe owns connection credentials. Public
 The root Agent Guide and governance rules remain authoritative.
 Keep one root dependency installation, lockfile, and generated output tree.
 Keep business roles inside their owner and compose other components through public contracts.
+
+## Local-first read behavior (EC-T02, repaired by EC-R01/EC-R02, 2026-10-24)
+
+Normal catalog reads are local-authoritative. A public catalog read resolves the stored per-module
+provider and returns the local projection; it never calls `integrationSnapshot`, `replaceFromFrappe` or
+`pullFromFrappe`. The former live Frappe window, automatic 15-minute cache refresh, and remote
+fallback are removed: a stored Frappe selection alone cannot cause a public remote call.
+`pullFromFrappe`/`pushToFrappe` remain available only from the authenticated Data Source actions, and
+the staff Frappe item picker remains an explicit authenticated remote read.
 
 ## Current source surfaces
 
@@ -52,6 +70,8 @@ Source presence is not release evidence. Confirm executable behavior before desc
 - `npm run typecheck -w @codexsun/ecommerce-web`
 - `npm run lint -w @codexsun/ecommerce-web`
 - `npm run build -w @codexsun/ecommerce-web`
+- `npm run test:e2e:ecommerce-tenancy`
+- `npm run test:e2e:ecommerce-browser`
 
 Use `npm run check:component-docs` and the relevant root checks.
 Run database, browser, native, and deployment checks when the changed behavior needs them.

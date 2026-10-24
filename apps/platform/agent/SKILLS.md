@@ -3,7 +3,8 @@
 ## Apply this guidance
 
 Use this file when planning, implementing, debugging, or reviewing Platform.
-Read [the README](../README.md), [TASK.md](TASK.md), and [PLAN.md](PLAN.md) first.
+For normal focused work, read the affected source and its public composition contract first.
+Read the Platform README, TASK, and PLAN only for architecture, permissions, tenancy, operations, release, audit, or documentation work.
 This file is component guidance. It does not install a global Codex skill or grant a runtime capability.
 
 ## Domain responsibilities
@@ -20,9 +21,11 @@ Composition registers public app contracts. Business CRUD stays in each owner. P
 - Add worker, event, or sync roles only when they contain real implemented behavior.
 - Keep secrets, generated files, and local runtime data out of source control.
 - Run npm commands from the repository root. Write generated output under root `dist`.
-- Update this owner documentation when scope, contracts, or supported operations change.
+- Do not update owner documentation for normal bug fixes or UI work. Update it only for contract, architecture, operations, or explicitly requested documentation changes.
 
 ## Review and evidence
+
+Use the smallest relevant check for focused work. The full list below is for release, architectural, tenancy, permission, or cross-module changes, and for an explicit full verification request.
 
 - `node tools/check-module-boundaries.mjs platform`
 - `npm run typecheck -w @codexsun/platform-api`

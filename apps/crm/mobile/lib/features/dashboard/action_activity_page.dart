@@ -193,9 +193,7 @@ class _ActionActivityPageState extends State<ActionActivityPage> {
   Future<void> _openQuickActions() async {
     setState(() => _openingActions = true);
     try {
-      final jobs = await widget.api.assignedJobDetails(
-        widget.session.accessToken,
-      );
+      final jobs = await widget.api.assignedJobs(widget.session.accessToken);
       if (!mounted) return;
       final changed = await showActionQuickActionSheet(
         context: context,
@@ -203,6 +201,12 @@ class _ActionActivityPageState extends State<ActionActivityPage> {
         session: widget.session,
         jobs: jobs,
         onEnquiryUpdated: widget.jobsFeed?.updateJob,
+        loadJobSessions:
+            widget.jobsFeed?.jobSessions ??
+            ((sourceId) => widget.api.enquiryJobSessions(
+              accessToken: widget.session.accessToken,
+              enquiryId: sourceId,
+            )),
       );
       if (changed && mounted) {
         setState(() => _activities = _loadActivities());

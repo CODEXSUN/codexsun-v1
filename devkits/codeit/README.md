@@ -25,21 +25,31 @@ For hosted launch links, set `CODEXSUN_CODEIT_WEB_URL` to the separately hosted 
 Hosted Platform pages do not infer a loopback address for remote users.
 Existing databases need the normal Platform registry seed to create the catalog row. No new table or migration is required.
 
-## Ownership and supported scope
+## Architecture and Module Ownership
 
-`src/codeit-app.tsx` owns standalone navigation and history.
-`src/modules/overview` owns the overview and runtime settings content.
-The public `@codexsun/codeit` entry exports only `CodeitOverview` and `CodeitSettings`.
-Platform composes these read-only pages without embedding the standalone app shell.
+Codeit is structured as a standalone local-first development workspace with an independent Node.js API runtime (`devkits/codeit/api`) and a React/Tailwind frontend (`devkits/codeit`):
+
+- **`artifact`**: Bounded local artifact persistence, content-addressable SHA-256 digests, and streaming downloads.
+- **`conversation`**: Chat interface, message persistence, run initiation, cursor-based event replay, and approval interactions.
+- **`orchestration`**: Parallel worker coordination, bounded concurrency (max 2 workers), disjoint path leases, dependency DAG validation, and lease heartbeats.
+- **`personalization`**: Scoped context memories (user/project/conversation), explicit-save confirmation, fact precedence, and secret canary filtering.
+- **`plugin`**: Model Context Protocol (MCP) plugin lifecycle, manifest verification, JSON-RPC broker, and process-fenced revocation.
+- **`project`**: Workspace project registration, root canonicalization, trust states (`trusted` / `untrusted`), and isolation.
+- **`provider`**: Multi-provider LLM adapters (Mock, Gemini 2.5 Flash/Pro) with streaming SSE responses, usage accounting, and token budgeting.
+- **`run`**: 11-state execution lifecycle machine, transactional state transitions, cancellation generation fencing, and coding loop coordination.
+- **`tool`**: Capability policy enforcement (Actor + Trust + Mode + Grants), approval binding, canary redaction, and tool execution audit logging.
+- **`workspace`**: Canonical path sandboxing, atomic `.tmp` patch application, secret-scrubbed command execution with process-tree cleanup.
+
+The public `@codexsun/codeit` entry exports `CodeitApp`, `CodeitOverview`, `CodeitSettings`, `ConversationWorkspace`, `SupervisorDashboard`, `PersonalizationPanel`, and `PluginPanel`.
+Platform composes these pages without embedding the standalone app shell.
 `@codexsun/ui` supplies reusable layout and controls. React and Lucide supply rendering and icons.
-
-This release is a read-only app shell, with no API, database, authentication, file access, or command execution.
-The local shell contains no tenant records and does not treat Platform activation as runtime authorization.
-Future tenant data capabilities need server-side identity, activation, and permission checks before they can ship.
-The overview module is exempt from CRUD roles because it has no persistence or data operations.
 
 ## Verification
 
-Run `npm run typecheck -w @codexsun/codeit`, `npm run lint -w @codexsun/codeit`, and `npm run build:codeit`.
-Run `node tools/check-module-boundaries.mjs codeit` and the component documentation checks.
-See [tasks](agent/TASK.md), [plan](agent/PLAN.md), and [working rules](agent/SKILLS.md).
+- `npm run check:module-boundaries`: Architecture and capability role verification.
+- `npm run lint -w @codexsun/codeit` & `npm run lint -w @codexsun/codeit-api`: Linting across frontend and API.
+- `npm run typecheck -w @codexsun/codeit` & `npm run typecheck -w @codexsun/codeit-api`: TypeScript typecheck.
+- `npm run test:codeit`: Unit and module contract test suites.
+- `npm run test:e2e:codeit`: Complete E01–E25 end-to-end integration matrix.
+- `npm run test:packaging:codeit`: Clean packaging, standalone startup, upgrade persistence, and restore sandbox tests (E23, E26).
+- See [tasks](agent/TASK.md), [plan](agent/PLAN.md), and [working rules](agent/SKILLS.md).

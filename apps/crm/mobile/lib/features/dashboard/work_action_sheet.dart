@@ -22,6 +22,7 @@ Future<bool> showWorkActionSheet({
   bool closed = false,
   Future<Position> Function()? capturePosition,
   ValueChanged<CrmJob>? onEnquiryUpdated,
+  Future<List<CrmJobExecution>> Function(String sourceId)? loadJobSessions,
   ValueChanged<bool>? onClosurePendingChanged,
   VoidCallback? onCollectionSaved,
 }) async =>
@@ -47,6 +48,7 @@ Future<bool> showWorkActionSheet({
         closed: closed,
         capturePosition: capturePosition,
         onEnquiryUpdated: onEnquiryUpdated,
+        loadJobSessions: loadJobSessions,
         onClosurePendingChanged: onClosurePendingChanged,
         onCollectionSaved: onCollectionSaved,
       ),
@@ -68,6 +70,7 @@ class WorkActionSheet extends StatefulWidget {
     this.closed = false,
     this.capturePosition,
     this.onEnquiryUpdated,
+    this.loadJobSessions,
     this.onClosurePendingChanged,
     this.onCollectionSaved,
     super.key,
@@ -86,6 +89,8 @@ class WorkActionSheet extends StatefulWidget {
   final bool closed;
   final Future<Position> Function()? capturePosition;
   final ValueChanged<CrmJob>? onEnquiryUpdated;
+  final Future<List<CrmJobExecution>> Function(String sourceId)?
+  loadJobSessions;
   final ValueChanged<bool>? onClosurePendingChanged;
   final VoidCallback? onCollectionSaved;
 
@@ -116,6 +121,26 @@ class _WorkActionSheetState extends State<WorkActionSheet> {
         (_enquiry?.jobs.any((job) => job.isRunning) ?? false);
     _jobStartedAt = widget.jobStartedAt ?? _runningEnquiryStart();
     _syncTimer();
+    if (_enquiry != null && _enquiry!.jobs.isEmpty) {
+      unawaited(_loadSelectedJobSessions(_enquiry!));
+    }
+  }
+
+  Future<void> _loadSelectedJobSessions(CrmJob selected) async {
+    final load = widget.loadJobSessions;
+    if (load == null) return;
+    try {
+      final sessions = await load(selected.sourceId);
+      if (!mounted || _enquiry?.sourceId != selected.sourceId) return;
+      setState(() {
+        _enquiry = selected.withJobs(sessions);
+        _jobRunning = sessions.any((job) => job.isRunning);
+        _jobStartedAt = _runningEnquiryStart();
+        _syncTimer();
+      });
+    } on CrmMobileApiException {
+      // Action controls remain available if the optional timer lookup fails.
+    }
   }
 
   @override
@@ -579,7 +604,20 @@ class _WorkActionSheetState extends State<WorkActionSheet> {
                         .toList(),
                     onChanged: _busy
                         ? null
-                        : (job) => setState(() => _enquiry = job),
+                        : (job) {
+                            if (job == null) return;
+                            setState(() {
+                              _enquiry = job;
+                              _jobRunning = job.jobs.any(
+                                (execution) => execution.isRunning,
+                              );
+                              _jobStartedAt = _runningEnquiryStart();
+                              _syncTimer();
+                            });
+                            if (job.jobs.isEmpty) {
+                              unawaited(_loadSelectedJobSessions(job));
+                            }
+                          },
                   ),
                   const SizedBox(height: 12),
                 ],

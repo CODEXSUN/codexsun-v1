@@ -1,5 +1,4 @@
 import { useSupplierSummaryControls } from "./supplier-summary.controls";
-import { SupplierSummaryCurrencySelection } from "./supplier-summary.currency";
 import { Printer } from "lucide-react";
 import { Button } from "@codexsun/ui/components/button";
 import { cn } from "@codexsun/ui/lib/utils";
@@ -19,7 +18,6 @@ export function SupplierSummaryWorkspace() {
       className="billing-document-print-page"
       actions={
         <div className="flex gap-2 print:hidden">
-          <SupplierSummaryCurrencySelection />
           <Button
             disabled={!summary || query.isFetching || query.isError}
             onClick={() => window.print()}

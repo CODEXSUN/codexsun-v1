@@ -61,6 +61,7 @@ import {
 import { Button } from "@codexsun/ui/components/button";
 import { Card } from "@codexsun/ui/components/card";
 import { GlobalLoader } from "@codexsun/ui/components/global-loader";
+import { workspaceLoadingMessage } from "../../shared/loading/workspace-loading";
 import { Label } from "@codexsun/ui/components/label";
 import { RadioGroup, RadioGroupItem } from "@codexsun/ui/components/radio-group";
 import { StatusBadge } from "@codexsun/ui/components/StatusBadge";
@@ -89,7 +90,7 @@ import {
 } from "@codexsun/core-web/modules/organisation/default-company/services";
 import type { LandingAppOption } from "@codexsun/core-web/modules/organisation/default-company/types";
 import { listFinancialYears } from "@codexsun/core-web/modules/organisation/financial-year/services";
-import { getSessionIdentity, logout } from "../../shared/api/platform-api";
+import { getSessionIdentity, logout, PlatformApiError } from "../../shared/api/platform-api";
 import { setPlatformDocumentTitle, setPlatformFavicon } from "../../shared/document/PageTitle";
 import { publishDesktopWorkspace } from "../../shared/desktop/desktop-bridge";
 import { publishAccountingYear, publishCompanyContext } from "../../shared/tenant/runtime-context";
@@ -115,6 +116,15 @@ import {
 
 function lazyWorkspace<Props>(loader: () => Promise<ComponentType<Props>>) {
   return lazy(async () => ({ default: await loader() }));
+}
+
+function retryWorkspaceBootstrap(failureCount: number, error: unknown) {
+  if (error instanceof PlatformApiError && error.statusCode < 500) return false;
+  return failureCount < 2;
+}
+
+function workspaceBootstrapRetryDelay(attemptIndex: number) {
+  return 300 * (attemptIndex + 1);
 }
 
 const TconnectWorkspace = lazyWorkspace(() =>
@@ -1018,28 +1028,34 @@ export function AppDesk() {
   const runtimeQuery = useQuery({
     queryFn: getTenantRuntime,
     queryKey: ["tenant", "runtime"],
+    retry: retryWorkspaceBootstrap,
+    retryDelay: workspaceBootstrapRetryDelay,
     staleTime: 5 * 60 * 1_000
   });
   const companiesQuery = useQuery({
     enabled: Boolean(runtimeQuery.data?.tenant?.uuid),
     queryFn: () => listCompanies(),
     queryKey: ["core", "organisation", "companies", runtimeQuery.data?.tenant?.uuid],
+    retry: retryWorkspaceBootstrap,
+    retryDelay: workspaceBootstrapRetryDelay,
     staleTime: 5 * 60 * 1_000
   });
   const financialYearsQuery = useQuery({
     enabled: Boolean(runtimeQuery.data?.tenant?.uuid),
     queryFn: listFinancialYears,
     queryKey: ["core", "organisation", "financial-years", runtimeQuery.data?.tenant?.uuid],
+    retry: retryWorkspaceBootstrap,
+    retryDelay: workspaceBootstrapRetryDelay,
     staleTime: 5 * 60 * 1_000
   });
   const defaultCompanyQuery = useQuery({
     enabled: Boolean(runtimeQuery.data?.tenant?.uuid),
     queryFn: getDefaultCompany,
     queryKey: [...defaultCompanyQueryKey, runtimeQuery.data?.tenant?.uuid],
+    retry: retryWorkspaceBootstrap,
+    retryDelay: workspaceBootstrapRetryDelay,
     staleTime: 5 * 60 * 1_000
   });
-  const [companyContextId, setCompanyContextId] = useState<number | null>(null);
-  const [financialYearContextId, setFinancialYearContextId] = useState<number | null>(null);
   const runtime = runtimeQuery.data;
   const moduleKeys = runtime?.tenant?.enabledModuleKeys ?? ["platform.application"];
   const enabledApps = enabledAppIds(moduleKeys);
@@ -1072,12 +1088,16 @@ export function AppDesk() {
     activeFinancialYears.find((year) => year.id === activeDefaultCompany?.financialYearId) ?? null;
   const billingSettingsQuery = useQuery({
     enabled:
-      activeApp === "billing" && enabledApps.includes("billing") && Boolean(companyContextId),
+      activeApp === "billing" &&
+      enabledApps.includes("billing") &&
+      Boolean(activeDefaultCompany?.companyId),
     queryFn: async () => {
       const module = await import("@codexsun/billing-web/modules/settings/services");
       return module.getBillingSettings();
     },
-    queryKey: ["billing", "settings", companyContextId],
+    queryKey: ["billing", "settings", activeDefaultCompany?.companyId],
+    retry: retryWorkspaceBootstrap,
+    retryDelay: workspaceBootstrapRetryDelay,
     staleTime: 5 * 60 * 1_000
   });
   const appSafePage =
@@ -1219,21 +1239,13 @@ export function AppDesk() {
   }, [billingSettingsQuery.data?.features, page]);
 
   useEffect(() => {
-    if (!selectedCompany) {
-      setCompanyContextId(null);
-      return;
-    }
+    if (!selectedCompany) return;
     publishCompanyContext(selectedCompany.id);
-    setCompanyContextId(selectedCompany.id);
   }, [selectedCompany]);
 
   useEffect(() => {
-    if (!selectedFinancialYear) {
-      setFinancialYearContextId(null);
-      return;
-    }
+    if (!selectedFinancialYear) return;
     publishAccountingYear(selectedFinancialYear.id);
-    setFinancialYearContextId(selectedFinancialYear.id);
   }, [selectedFinancialYear]);
 
   useEffect(() => {
@@ -1496,11 +1508,11 @@ export function AppDesk() {
   ];
 
   const contextError =
-    !defaultCompanyQuery.isLoading && runtime?.tenant && !activeDefaultCompany
+    defaultCompanyQuery.isSuccess && runtime?.tenant && !activeDefaultCompany
       ? new Error("Configure an active Default Company before opening the tenant workspace.")
-      : !companiesQuery.isLoading && runtime?.tenant && !selectedCompany
+      : companiesQuery.isSuccess && runtime?.tenant && !selectedCompany
         ? new Error("No active company is available for this tenant.")
-        : !financialYearsQuery.isLoading && runtime?.tenant && !selectedFinancialYear
+        : financialYearsQuery.isSuccess && runtime?.tenant && !selectedFinancialYear
           ? new Error("No active financial year is available for this tenant.")
           : null;
 
@@ -1509,23 +1521,34 @@ export function AppDesk() {
     companiesQuery.isLoading ||
     financialYearsQuery.isLoading ||
     defaultCompanyQuery.isLoading ||
-    (!companyContextId && !contextError) ||
-    (!financialYearContextId && !contextError) ||
+    (!selectedCompany && !contextError) ||
+    (!selectedFinancialYear && !contextError) ||
     (activeApp === "billing" && billingSettingsQuery.isLoading);
   const bootstrapError =
-    runtimeQuery.error ??
-    companiesQuery.error ??
-    financialYearsQuery.error ??
-    defaultCompanyQuery.error ??
-    (activeApp === "billing" ? billingSettingsQuery.error : null) ??
+    (runtimeQuery.isError && !runtimeQuery.isFetching ? runtimeQuery.error : null) ??
+    (companiesQuery.isError && !companiesQuery.isFetching ? companiesQuery.error : null) ??
+    (financialYearsQuery.isError && !financialYearsQuery.isFetching ? financialYearsQuery.error : null) ??
+    (defaultCompanyQuery.isError && !defaultCompanyQuery.isFetching
+      ? defaultCompanyQuery.error
+      : null) ??
+    (activeApp === "billing" && billingSettingsQuery.isError && !billingSettingsQuery.isFetching
+      ? billingSettingsQuery.error
+      : null) ??
     contextError;
+  const bootstrapRequestsSettled =
+    !runtimeQuery.isFetching &&
+    !companiesQuery.isFetching &&
+    !financialYearsQuery.isFetching &&
+    !defaultCompanyQuery.isFetching &&
+    (activeApp !== "billing" || !billingSettingsQuery.isFetching);
+  const showBootstrapError = Boolean(bootstrapError) && bootstrapRequestsSettled;
 
-  if (bootstrapError) {
+  if (showBootstrapError) {
     return <TenantBootstrapErrorScreen error={bootstrapError} />;
   }
 
   if (bootstrapLoading) {
-    return <GlobalLoader message="Preparing your workspaceâ€¦" />;
+    return <GlobalLoader message={workspaceLoadingMessage} steady />;
   }
 
   return (
@@ -1817,7 +1840,7 @@ export function AppDesk() {
               <GlobalLoader
                 className="min-h-[32rem]"
                 fullScreen={false}
-                message={`Loading ${activeWorkspaceTitle.toLowerCase()}â€¦`}
+                message={`Loading ${activeWorkspaceTitle.toLowerCase()}...`}
               />
             }
           >

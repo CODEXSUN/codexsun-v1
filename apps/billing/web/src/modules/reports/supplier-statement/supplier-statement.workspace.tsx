@@ -1,6 +1,5 @@
 import { useWorkspaceQueryValue } from "@codexsun/ui/workspace/navigation";
 import { useSupplierStatementControls } from "./supplier-statement.controls";
-import { SupplierStatementCurrencySelection } from "./supplier-statement.currency";
 import { useEffect, useState } from "react";
 import { Printer } from "lucide-react";
 import { toast } from "sonner";
@@ -77,7 +76,6 @@ export function SupplierStatementWorkspace() {
       className="billing-document-print-page"
       actions={
         <div className="flex gap-2 print:hidden">
-          <SupplierStatementCurrencySelection />
           <Button
             disabled={!contactId || printing}
             onClick={() => void handlePrint()}

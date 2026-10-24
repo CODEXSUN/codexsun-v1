@@ -1,16 +1,26 @@
 import { sql } from "kysely";
 import { getEcommerceDatabase } from "../../database/ecommerce-database.js";
+import { canonicalOptionSignatureFor } from "./product-variant.identity.js";
 export async function seedProductVariantModule() {
   await sql`UPDATE ecommerce_product_variants SET status='inactive' WHERE status NOT IN ('active','inactive')`.execute(
     getEcommerceDatabase()
   );
   for (let index = 0; index < variants.length; index += 1) {
     const item = variants[index]!;
+    const optionSignature = canonicalOptionSignatureFor({
+      option1Name: "Configuration",
+      option1Value: item.configuration,
+      option2Name: "",
+      option2Value: "",
+      option3Name: "",
+      option3Value: ""
+    });
     await sql`INSERT INTO ecommerce_product_variants
-      (uuid,product_information_id,sku,title,barcode,option_1_name,option_1_value,
+      (uuid,product_information_id,sku,title,barcode,option_1_name,option_1_value,option_signature,
        price_adjustment,compare_at_adjustment,cost_adjustment,weight,sort_order,status,created_by)
       SELECT LOWER(HEX(RANDOM_BYTES(4))),product.id,${item.sku},${item.title},${item.barcode},
-        'Configuration',${item.configuration},0,${item.compareAtAdjustment},0,0,${index + 1},'active','system:catalog-seed'
+        'Configuration',${item.configuration},${optionSignature},
+        0,${item.compareAtAdjustment},0,0,${index + 1},'active','system:catalog-seed'
       FROM ecommerce_product_information product WHERE product.slug=${item.slug}
         AND NOT EXISTS (SELECT 1 FROM ecommerce_product_variants WHERE sku=${item.sku}) LIMIT 1`.execute(
       getEcommerceDatabase()

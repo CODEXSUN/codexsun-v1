@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 import { GlobalLoader } from "@codexsun/ui/components/global-loader";
 import { AuthGate } from "../../shared/auth/AuthGate";
+import { workspaceLoadingMessage } from "../../shared/loading/workspace-loading";
 
 let deskRequest: ReturnType<typeof importDesk> | undefined;
 function importDesk() {
@@ -17,8 +18,8 @@ export function TenantAppDeskRoute() {
     void loadDesk().catch(() => undefined);
   }, []);
   return (
-    <AuthGate desk="tenant">
-      <Suspense fallback={<GlobalLoader message="Loading your workspace…" />}>
+    <AuthGate desk="tenant" loadingMessage={workspaceLoadingMessage} steady>
+      <Suspense fallback={<GlobalLoader message={workspaceLoadingMessage} steady />}>
         <TenantAppDesk />
       </Suspense>
     </AuthGate>

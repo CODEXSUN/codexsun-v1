@@ -1,6 +1,5 @@
 import { useWorkspaceQueryValue } from "@codexsun/ui/workspace/navigation";
 import { useStockStatementControls } from "./stock-statement.controls";
-import { StockStatementCurrencySelection } from "./stock-statement.currency";
 import { useEffect, useState } from "react";
 import { Printer } from "lucide-react";
 import { Button } from "@codexsun/ui/components/button";
@@ -46,7 +45,6 @@ export function StockStatementWorkspace() {
       className="billing-document-print-page"
       actions={
         <div className="flex gap-2 print:hidden">
-          <StockStatementCurrencySelection />
           <Button disabled={!statement || query.isFetching} onClick={handlePrint} type="button">
             <Printer className="size-4" />
             Print

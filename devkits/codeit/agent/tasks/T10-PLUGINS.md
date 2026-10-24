@@ -1,6 +1,9 @@
 # T10: Plugin lifecycle and MCP broker
 
-Status: planned. Prerequisites: T09. Owner: plugin worker.
+Status: done. Prerequisites: T09. Owner: plugin worker.
+Completed At: 2026-10-24
+Reviewer: T10 Independent Reviewer (`c7be4b2d-eac8-458c-a20d-aaced848659f`) - Verdict: PASS
+Integrated By: Codeit Supervisor
 
 ## Scope
 
@@ -24,7 +27,8 @@ T11 owns personalization. Do not share write leases.
 
 ## Verification and handoff
 
-Cover E12/E17/E18/E20/E21 through real broker integration and adversarial plugin fixtures.
-Run owner checks and cancellation/reconnect regression tests.
-Return manifest/protocol versions, integrity proof, revocation evidence, and templates/HANDOFF.md.
-Do not claim a public marketplace or IDE extension compatibility from a working MCP fixture.
+- Covered E10/E12/E16/E17/E18/E20/E21 through real broker integration and adversarial plugin fixtures.
+- Test Suite: `node --test devkits/codeit/api/test/plugin.test.mjs` (19/19 pass, 0 fail).
+- Typecheck: `npx tsc --noEmit -p devkits/codeit/api/tsconfig.json` (exit 0) and `npm run typecheck -w @codexsun/codeit` (exit 0).
+- Full API Suite: 224/224 pass across 87 suites.
+- Do not claim a public marketplace or IDE extension compatibility from a working MCP fixture.

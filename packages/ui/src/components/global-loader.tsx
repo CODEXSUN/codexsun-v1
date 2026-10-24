@@ -5,18 +5,21 @@ type GlobalLoaderProps = {
   className?: string;
   fullScreen?: boolean;
   message?: string;
+  steady?: boolean;
 };
 
 export function GlobalLoader({
   className,
   fullScreen = true,
-  message = "Loading…"
+  message = "Loading…",
+  steady = false
 }: GlobalLoaderProps) {
   return (
     <div
       className={cn(
         "global-loader",
         fullScreen ? "global-loader-fullscreen" : "global-loader-inline",
+        steady && "global-loader-steady",
         className
       )}
     >

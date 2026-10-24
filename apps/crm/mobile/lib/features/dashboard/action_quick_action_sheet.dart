@@ -9,6 +9,7 @@ Future<bool> showActionQuickActionSheet({
   required UserSession session,
   required List<CrmJob> jobs,
   ValueChanged<CrmJob>? onEnquiryUpdated,
+  Future<List<CrmJobExecution>> Function(String sourceId)? loadJobSessions,
 }) async {
   if (jobs.isEmpty) return false;
   return showWorkActionSheet(
@@ -17,5 +18,6 @@ Future<bool> showActionQuickActionSheet({
     session: session,
     enquiries: jobs,
     onEnquiryUpdated: onEnquiryUpdated,
+    loadJobSessions: loadJobSessions,
   );
 }

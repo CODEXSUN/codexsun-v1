@@ -7,7 +7,8 @@ type CustomerAssociation = { name: string; mobile_contact: string; customer: str
 export async function resolveEnquiryMobile(
   settings: FrappeSettings,
   number: string,
-  customer: string | null
+  customer: string | null,
+  options: { mobileOnly?: boolean } = {}
 ) {
   const mobile = number.trim().replace(/[\s()-]/gu, "");
   if (!/^\d{10}$/u.test(mobile))
@@ -30,6 +31,7 @@ export async function resolveEnquiryMobile(
     contact ??= await findMobile(settings, mobile);
     if (!contact) throw AppError.conflict("The new Frappe Mobile Contact could not be confirmed.");
   }
+  if (options.mobileOnly) return { mobile: contact.name };
   const filters: string[][] = [["mobile_contact", "=", contact.name]];
   if (customer) filters.push(["customer", "=", customer]);
   const query = new URLSearchParams({

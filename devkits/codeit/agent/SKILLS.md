@@ -2,10 +2,8 @@
 
 ## Current authorization
 
-The current request authorizes plans and instructions inside `devkits/codeit/agent` only.
-Do not implement features, configure IDEs, install plugins, start workers, or modify runtime files for this planning request.
-Future implementation requires a later user instruction with an allowed scope.
-Follow [README.md](README.md), [PLAN.md](PLAN.md), and the selected packet when that authorization exists.
+The human explicitly invoked SUPERVISOR-PROMPT.md and authorized full implementation of tasks T00–T13 through local packaging and verified release readiness.
+Follow [README.md](README.md), [PLAN.md](PLAN.md), and the active task packets under supervisor coordination.
 
 ## Future agent behavior
 
