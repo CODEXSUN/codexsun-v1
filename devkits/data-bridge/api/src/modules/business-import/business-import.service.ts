@@ -108,7 +108,8 @@ export class BusinessImportService {
           tables: run.tables.filter((t) => !["pending", "running"].includes(t.status)).length,
           totalTables: run.tables.length,
           inserted: run.tables.reduce((n, t) => n + t.imported, 0),
-          warnings: run.tables.reduce((n, t) => n + t.warnings, 0),
+          warnings: run.tables.reduce((n, t) => n + t.warnings, 0) + (run.users?.warnings ?? 0),
+          updated: run.tables.reduce((n, t) => n + (t.updated ?? 0), 0),
           invoices: run.invoiceCount
         });
       };
@@ -143,11 +144,52 @@ export class BusinessImportService {
           await new BusinessIntegrity(this.host, from, to).verify(run, progress);
           await new BusinessInvoiceAudit(from, to, this.reports, run).verify(progress);
         });
+        if (this.host.copyUsers && !run.users) {
+          run.phase = "users";
+          run.message =
+            "Copying missing tenant users with preserved credentials and target User-role access.";
+          await progress();
+          const companyContext = ["core_companies", "core_default_company_settings"].every(
+            (table) => {
+              const entry = run.tables.find((item) => item.table === table);
+              return (
+                entry &&
+                entry.sourceRows > 0 &&
+                entry.status === "success" &&
+                entry.verified &&
+                !entry.blocked
+              );
+            }
+          );
+          run.users = companyContext
+            ? await this.host.copyUsers({
+                sourceId: run.sourceId,
+                targetTenantId: run.targetTenantId,
+                actor: run.actor
+              })
+            : {
+                imported: 0,
+                existing: 0,
+                warnings: 1,
+                rows: [
+                  {
+                    sourceId: 0,
+                    targetId: null,
+                    email: "",
+                    status: "warning",
+                    message:
+                      "Resolve and verify company/default-company mapping before copying user accounts. No users were copied."
+                  }
+                ]
+              };
+          await progress();
+        }
         run.phase = "complete";
         run.status =
           run.tables.some((t) => t.status === "warning") ||
           run.invoiceWarnings ||
           run.orphans ||
+          run.users?.warnings ||
           run.issues.length
             ? "warning"
             : "success";

@@ -21,11 +21,33 @@ export async function authorizeBillingRequest(
   const canEditEntries = roleResult.rows.some((row) =>
     ["admin", "super-admin", "super_admin"].includes(row.role_key)
   );
-  if ((request.method === "PUT" || request.method === "PATCH") && !canEditEntries) {
-    throw AppError.forbidden("Only a tenant Admin or Super Admin can edit Billing entries.");
-  }
+  const route = request.routeOptions.url ?? request.url.split("?")[0]!;
+  if (
+    !canEditEntries &&
+    (request.method === "PUT" || request.method === "PATCH") &&
+    !/\/billing\/(sales|purchases|quotations|export-sales|receipts|payments)\/[^/]+$/u.test(route)
+  )
+    throw AppError.forbidden(
+      "Only an administrator can change Billing settings or non-draft resources."
+    );
+  if (
+    !canEditEntries &&
+    [
+      "billing.application.records.delete",
+      "billing.application.records.lifecycle",
+      "billing.application.records.compliance"
+    ].includes(permission)
+  )
+    throw AppError.forbidden(
+      "Only an administrator can delete or change Billing lifecycle/compliance."
+    );
+  const draftAccess = await sql<{
+    id: number;
+  }>`SELECT rp.id FROM app_users u JOIN app_user_roles ur ON ur.user_id=u.id AND ur.status='active' JOIN app_roles r ON r.id=ur.role_id AND r.status='active' JOIN app_role_permissions rp ON rp.role_id=r.id AND rp.status='active' JOIN app_permissions p ON p.id=rp.permission_id AND p.status='active' WHERE u.email=${actorEmail} AND u.status='active' AND p.\`key\`='billing.application.records.update' LIMIT 1`.execute(
+    database
+  );
   return {
-    canEditEntries,
+    canEditEntries: canEditEntries || Boolean(draftAccess.rows.length),
     canEditFinalizedEntries: canEditEntries
   };
 }

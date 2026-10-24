@@ -9,7 +9,7 @@ export function BusinessStatus({ status }: { status: string }) {
           ? "warning"
           : status === "failed"
             ? "danger"
-            : ["success", "imported", "existing"].includes(status)
+            : ["success", "imported", "updated", "existing"].includes(status)
               ? "success"
               : "info"
       }

@@ -75,6 +75,7 @@ export class SalesService {
   }
 
   async createSale(databaseName: string, input: SaleSavePayload) {
+    assertBillingEntryEditable("draft", "sales", input.status);
     if (
       input.einvoice?.irn ||
       input.einvoice?.status === "generated" ||
@@ -137,7 +138,7 @@ export class SalesService {
     if (!current) return null;
     if (current.einvoice.irn || current.eway.status === "generated")
       throw AppError.conflict("Invoices with generated compliance cannot be edited.");
-    assertBillingEntryEditable(current.status, "sales");
+    assertBillingEntryEditable(current.status, "sales", input.status);
     const normalized = normalizeSaleInput({
       ...input,
       einvoice: current.einvoice,

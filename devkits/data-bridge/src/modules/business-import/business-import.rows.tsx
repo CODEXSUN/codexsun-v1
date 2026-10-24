@@ -52,7 +52,7 @@ export function BusinessRows({
           }}
         >
           <option value="all">All rows</option>
-          <option value="imported">Imported</option>
+          <option value="imported">Imported / updated</option>
           <option value="existing">Existing</option>
           <option value="warning">Warnings</option>
         </select>
@@ -75,7 +75,9 @@ export function BusinessRows({
                 <tr className="border-b" key={row.sourceId}>
                   <td className="p-3">{row.sourceId}</td>
                   <td className="p-3">
-                    <BusinessStatus status={row.status} />
+                    <BusinessStatus
+                      status={row.reuse && row.status === "imported" ? "updated" : row.status}
+                    />
                   </td>
                   <td className="p-3">{row.message}</td>
                   <td className="p-3">
@@ -107,7 +109,11 @@ export function BusinessRows({
           </DialogHeader>
           {selected ? (
             <>
-              <BusinessStatus status={selected.status} />
+              <BusinessStatus
+                status={
+                  selected.reuse && selected.status === "imported" ? "updated" : selected.status
+                }
+              />
               <div className="grid gap-4 lg:grid-cols-3">
                 {[
                   ["Extracted source", selected.source],

@@ -1,3 +1,16 @@
+import { selectUserRole } from "./modules/tenant-user-role/index.js";
+import { CredentialRecoveryRepository } from "./modules/credential-recovery/index.js";
+import { copyBridgeUsers } from "./modules/tenant-user/index.js";
+import { getTenantDatabase } from "./database/tenant-database.js";
+import { createConnection } from "mysql2/promise";
+import type { Kysely } from "kysely";
+import { seedBillingStandardUserAccess } from "@codexsun/billing-api";
+import { seedCrmUserAccess } from "@codexsun/crm-api";
+import {
+  hasActiveTransferCompanyContext,
+  seedCoreStandardUserAccess,
+  isUntouchedCompanySeed
+} from "@codexsun/core-api";
 import {
   createDataMigrationBridgeAccess,
   type DataMigrationHost
@@ -26,6 +39,60 @@ export async function registerDataBridgeHost(
   const queue = new QueueManagerService();
   const host: CommonTableImportHost = {
     database: migrationHost.database,
+    isCompanySeed: isUntouchedCompanySeed,
+    async copyUsers(input) {
+      const authorize = async () => {
+        if (!(await new CredentialRecoveryRepository().isActiveSuperAdmin(input.actor)))
+          throw AppError.forbidden("An active Super Admin must authorize tenant user transfer.");
+      };
+      await authorize();
+      const tenant = await tenants.findByIdOrCode(String(input.targetTenantId));
+      if (
+        !tenant ||
+        tenant.id !== input.targetTenantId ||
+        tenant.status !== "active" ||
+        tenant.dbType !== "mariadb"
+      )
+        throw AppError.forbidden("The registered target tenant is unavailable.");
+      const source = await createDataMigrationBridgeAccess(migrationHost).resolveSource(
+        input.sourceId
+      );
+      const connection = await createConnection({
+        host: source.host,
+        port: source.port,
+        user: source.user,
+        password: source.password,
+        database: source.database,
+        timezone: "Z",
+        ...(source.tlsMode === "required" ? { ssl: { rejectUnauthorized: true } } : {})
+      });
+      try {
+        const database = getTenantDatabase(tenant);
+        const accessDatabase = database as unknown as Kysely<unknown>;
+        if (!(await hasActiveTransferCompanyContext(accessDatabase)))
+          return {
+            imported: 0,
+            existing: 0,
+            warnings: 1,
+            rows: [
+              {
+                sourceId: 0,
+                targetId: null,
+                email: "",
+                status: "warning" as const,
+                message:
+                  "Configure an active mapped default company and financial year before copying accounts. No users were copied."
+              }
+            ]
+          };
+        await seedCoreStandardUserAccess(accessDatabase);
+        await seedBillingStandardUserAccess(accessDatabase);
+        await seedCrmUserAccess(accessDatabase);
+        return await copyBridgeUsers(connection, database, authorize, selectUserRole);
+      } finally {
+        await connection.end();
+      }
+    },
     dataMigration: createDataMigrationBridgeAccess(migrationHost),
     authorize(request) {
       const payload = request.authContext?.payload;
@@ -162,7 +229,9 @@ export async function registerDataBridgeHost(
       status: result.status,
       tables: result.tables.length,
       inserted: result.tables.reduce((n, t) => n + t.imported, 0),
-      warnings: result.tables.reduce((n, t) => n + t.warnings, 0),
+      warnings: result.tables.reduce((n, t) => n + t.warnings, 0) + (result.users?.warnings ?? 0),
+      updated: result.tables.reduce((n, t) => n + (t.updated ?? 0), 0),
+      usersImported: result.users?.imported ?? 0,
       invoices: result.invoiceCount,
       invoiceWarnings: result.invoiceWarnings
     };

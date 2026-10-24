@@ -6,7 +6,7 @@ import { CommonTableImportService } from "../import-review/index.js";
 import type { BulkImportReport, BulkTableReport } from "./report.types.js";
 
 const excluded =
-  /^(id|uuid|created_by|created_at|updated_at|deleted_at)$|password|secret|token|credential|api.?key|private.?key|cookie|authorization/iu;
+  /^(id|uuid|created_by|created_at|updated_at|deleted_at)$|seed_placeholder|password|secret|token|credential|api.?key|private.?key|cookie|authorization/iu;
 
 export class CommonBulkEngine {
   constructor(

@@ -1,3 +1,4 @@
+import { useBillingAccess } from "../../shared/auth/billing-access";
 import { Button } from "@codexsun/ui/components/button";
 import { Dialog, DialogContent } from "@codexsun/ui/components/dialog";
 import {
@@ -45,6 +46,7 @@ import { createSaleLookup, type SaleLookupOption } from "./sales.services";
 import { type SaleSavePayload, type SaleTaxType } from "./sales.types";
 
 export function SalesFormView({ model }: { model: ReturnType<typeof useSalesFormController> }) {
+  const canChangeWorkflow = useBillingAccess().data?.canEditFinalizedEntries ?? false;
   const {
     contactsQuery,
     form,
@@ -576,7 +578,7 @@ export function SalesFormView({ model }: { model: ReturnType<typeof useSalesForm
                     workflowAction === "revoke" &&
                       "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
                   )}
-                  disabled={loading}
+                  disabled={loading || !canChangeWorkflow}
                   title="Sale workflow action"
                   type="button"
                   variant="outline"

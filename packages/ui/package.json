@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/ui",
-  "version": "1.1.57",
+  "version": "1.1.58",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",

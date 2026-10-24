@@ -21,6 +21,10 @@ const record = z.record(z.string(), z.unknown());
 const row = z
   .object({
     sourceId: z.number().int(),
+    reuse: z
+      .object({ targetId: z.number().int(), before: record, sourceCount: z.number().int() })
+      .strict()
+      .optional(),
     source: record,
     data: record,
     target: record.nullable(),

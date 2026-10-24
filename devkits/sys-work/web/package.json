@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/sys-work-web",
-  "version": "1.1.57",
+  "version": "1.1.58",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/ui": "^1.1.57",
+    "@codexsun/ui": "^1.1.58",
     "lucide-react": "^1.52.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

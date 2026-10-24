@@ -24,6 +24,19 @@ export type ImportReport = {
 
 export type CommonTableImportHost = {
   database: Kysely<unknown>;
+  copyUsers?: (input: { sourceId: number; targetTenantId: number; actor: string }) => Promise<{
+    imported: number;
+    existing: number;
+    warnings: number;
+    rows: Array<{
+      sourceId: number;
+      targetId: number | null;
+      email: string;
+      status: "imported" | "existing" | "warning";
+      message: string;
+    }>;
+  }>;
+  isCompanySeed?: (row: Record<string, unknown>) => boolean;
   authorize(request: FastifyRequest): Promise<string> | string;
   listTenants(): Promise<Array<{ id: number; label: string; database?: string }>>;
   resolveTenant(id: number): Promise<MigrationTenant>;

@@ -6,6 +6,7 @@ const permissions = [
   "crm.sop.view",
   "crm.sop.create",
   "crm.sop.update",
+  "crm.sop.revision.update-draft",
   "crm.sop.publish",
   "crm.sop.deactivate",
   "crm.duty.assign",
@@ -22,13 +23,15 @@ export async function seedSopPermissions(database: Kysely<SopDatabase>) {
       database
     );
     const roles =
-      key === "crm.duty-report.view.all" || key === "crm.duty.view.all"
-        ? ["admin", "super-admin", "manager"]
-        : key.endsWith("view.own") || key === "crm.sop.view"
-          ? ["admin", "super-admin", "manager", "user", "auditor"]
-          : key === "crm.duty-report.create.own"
-            ? ["admin", "super-admin", "user"]
-            : ["admin", "super-admin"];
+      key === "crm.sop.revision.update-draft"
+        ? ["admin", "super-admin", "user"]
+        : key === "crm.duty-report.view.all" || key === "crm.duty.view.all"
+          ? ["admin", "super-admin", "manager"]
+          : key.endsWith("view.own") || key === "crm.sop.view"
+            ? ["admin", "super-admin", "manager", "user", "auditor"]
+            : key === "crm.duty-report.create.own"
+              ? ["admin", "super-admin", "user"]
+              : ["admin", "super-admin"];
     for (const role of roles)
       await sql`INSERT INTO app_role_permissions (uuid, role_id, permission_id, status, is_protected) SELECT ${stable(`${role}:${key}`)}, r.id, p.id, 'active', TRUE FROM app_roles r JOIN app_permissions p ON p.\`key\`=${key} WHERE r.\`key\`=${role} ON DUPLICATE KEY UPDATE status='active'`.execute(
         database

@@ -9,6 +9,16 @@ import type {
 } from "./credential-recovery.types.js";
 
 export class CredentialRecoveryRepository {
+  async isActiveSuperAdmin(email: string) {
+    const row = await getPlatformDatabase()
+      .selectFrom("platform_auth_users")
+      .select("id")
+      .where("user_type", "=", "super_admin")
+      .where("email", "=", normalizeEmail(email))
+      .where("status", "=", "active")
+      .executeTakeFirst();
+    return Boolean(row);
+  }
   async findPlatformCredential(userType: "staff" | "super_admin", email: string) {
     const row = await getPlatformDatabase()
       .selectFrom("platform_auth_users")

@@ -33,7 +33,8 @@ export function BusinessImportAction({
       </Button>
       <p className="mt-2 text-sm text-muted-foreground">
         Common → Masters → Billing. Preserve existing records and deleted history; verify invoices
-        and children.
+        and children. Reuse verified company seeds for single-company sources. Copy missing users
+        with their existing password hashes and standard User-role access.
       </p>
       {error ? (
         <p role="alert" className="mt-2 text-sm text-destructive">

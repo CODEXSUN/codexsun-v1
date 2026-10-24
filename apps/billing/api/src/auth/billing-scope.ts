@@ -8,6 +8,7 @@ export type BillingScope = {
   complianceLease?: string;
   actorEmail?: string;
   canEditFinalizedEntries?: boolean;
+  canEditDraftEntries?: boolean;
   companyId: number;
   financialYearId: number;
 };
@@ -52,7 +53,14 @@ export function setBillingFinalizedEntryEditAccess(allowed: boolean) {
   currentBillingScope().canEditFinalizedEntries = allowed;
 }
 
-export function assertBillingEntryEditable(status: string, label: string) {
+export function assertBillingEntryEditable(status: string, label: string, nextStatus?: string) {
+  if (
+    status === "draft" &&
+    nextStatus &&
+    nextStatus !== "draft" &&
+    !currentBillingScope().canEditFinalizedEntries
+  )
+    throw AppError.forbidden("Only an administrator can finalize or change a document lifecycle.");
   if (status === "draft" || currentBillingScope().canEditFinalizedEntries) return;
   throw AppError.conflict(`Only draft ${label} can be edited.`);
 }

@@ -152,7 +152,7 @@ export function ReceiptList({
                                   label: "Edit",
                                   onSelect: () => onEdit(receipt)
                                 },
-                                ...(receipt.status === "draft"
+                                ...(canEditFinalizedEntries && receipt.status === "draft"
                                   ? [
                                       {
                                         id: "post",
@@ -171,7 +171,7 @@ export function ReceiptList({
                                   : [])
                               ]
                             : []),
-                          ...(receipt.status === "posted"
+                          ...(canEditFinalizedEntries && receipt.status === "posted"
                             ? [
                                 {
                                   id: "cancel",

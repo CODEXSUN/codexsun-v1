@@ -1,3 +1,5 @@
+import { companySeedMarkerMigration } from "../modules/organisation/company/company.seed-marker.migration.js";
+import { defaultCompanySeedMarkerMigration } from "../modules/organisation/default-company/default-company.seed-marker.migration.js";
 import { companyFaviconMigration } from "../modules/organisation/company/company.favicon.migration.js";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
@@ -14,6 +16,10 @@ import { createConnection } from "mysql2/promise";
 import { seedCoreTenantPermissions } from "../auth/tenant-permission.seed.js";
 import { env } from "../env.js";
 import { commonMigrationSteps } from "../modules/common/common.migration.js";
+import {
+  ensureUnitDefaults,
+  unitsDefaultsMigration
+} from "../modules/common/products/units/units.migration.js";
 import { seedCommonModule } from "../modules/common/common.seed.js";
 import { removeUnknownCountrySeed } from "../modules/common/location/country/index.js";
 import { seedMasterModule } from "../modules/master/index.js";
@@ -103,7 +109,10 @@ export const coreTenantMigrations = [
   {
     description: "Add database-generated UUID defaults for repeatable Core writes.",
     name: "core.uuid-defaults-v2"
-  }
+  },
+  { description: unitsDefaultsMigration.description, name: unitsDefaultsMigration.key },
+  companySeedMarkerMigration,
+  defaultCompanySeedMarkerMigration
 ] as const;
 
 export const coreMigrationBatch: MigrationBatch<CoreDatabase> = {
@@ -152,7 +161,16 @@ export const coreMigrationBatch: MigrationBatch<CoreDatabase> = {
         ),
       version: 2
     },
-    companyFaviconMigration
+    companyFaviconMigration,
+    companySeedMarkerMigration,
+    defaultCompanySeedMarkerMigration,
+    {
+      checksum: `${unitsDefaultsMigration.key}:v1`,
+      description: unitsDefaultsMigration.description,
+      name: unitsDefaultsMigration.key,
+      up: ensureUnitDefaults,
+      version: 2
+    }
   ]
 };
 

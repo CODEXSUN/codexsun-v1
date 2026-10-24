@@ -7,7 +7,7 @@ export async function seedProductModule() {
   );
   await sql`UPDATE core_products SET
     unit_id=(SELECT id FROM core_units WHERE status='active'
-      ORDER BY CASE WHEN LOWER(TRIM(name))='nos' THEN 0 WHEN TRIM(name)='-' THEN 2 ELSE 1 END,id LIMIT 1)
+      AND TRIM(name)='-' LIMIT 1)
     WHERE unit_id IS NULL AND deleted_at IS NULL`.execute(getCoreDatabase());
   await sql`UPDATE core_products SET
     product_type_id=COALESCE(product_type_id,(SELECT id FROM core_product_types WHERE status='active' ORDER BY CASE WHEN TRIM(name)='-' THEN 0 ELSE 1 END,id LIMIT 1)),

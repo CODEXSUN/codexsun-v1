@@ -366,14 +366,14 @@ function ReceiptShow({
                 <Pencil className="size-4" />
                 Edit
               </Button>
-              {receipt.status === "draft" ? (
+              {canEditFinalizedEntries && receipt.status === "draft" ? (
                 <Button onClick={onPost} type="button">
                   Post
                 </Button>
               ) : null}
             </>
           ) : null}
-          {receipt.status === "posted" ? (
+          {canEditFinalizedEntries && receipt.status === "posted" ? (
             <Button onClick={onCancel} type="button" variant="destructive">
               Cancel
             </Button>

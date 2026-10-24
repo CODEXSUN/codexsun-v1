@@ -17,6 +17,7 @@ export async function authorizeCoreRequest(
     INNER JOIN app_role_permissions role_permission ON role_permission.role_id=role.id AND role_permission.status='active'
     INNER JOIN app_permissions permission ON permission.id=role_permission.permission_id AND permission.status='active'
     WHERE actor.email=${actorEmail} AND actor.status='active' AND permission.key=${permission}
+    AND (${permission} IN ('core.application.records.view','core.application.records.create') OR role.\`key\` IN ('admin','super-admin','super_admin'))
     LIMIT 1
   `.execute(getCoreDatabase(databaseName));
   if (!result.rows[0]) throw AppError.forbidden(`Permission ${permission} is required.`);

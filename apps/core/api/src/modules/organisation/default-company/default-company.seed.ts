@@ -5,11 +5,15 @@ export async function seedDefaultCompanyModule() {
   if (await repository.get()) return;
   const company = await repository.firstActiveCompany();
   const financialYear = await repository.currentActiveFinancialYear();
-  if (company && financialYear)
-    await repository.save({
-      companyId: company.id,
-      financialYearId: financialYear.id,
-      landingApp: "application",
-      status: "active"
-    });
+  if (company && financialYear) {
+    await repository.save(
+      {
+        companyId: company.id,
+        financialYearId: financialYear.id,
+        landingApp: "application",
+        status: "active"
+      },
+      true
+    );
+  }
 }

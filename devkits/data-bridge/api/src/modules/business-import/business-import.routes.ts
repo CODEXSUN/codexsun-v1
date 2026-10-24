@@ -9,6 +9,20 @@ import { BusinessImportQueries } from "./business-import.queries.js";
 const params = z.object({ id: z.string().uuid() }).strict();
 const page = z.coerce.number().int().min(1).max(100000).default(1);
 const record = z.record(z.string(), z.unknown());
+export const businessRowSchema = z
+  .object({
+    sourceId: z.number(),
+    source: record,
+    data: record,
+    target: record.nullable(),
+    status: z.enum(["ready", "imported", "existing", "warning"]),
+    message: z.string(),
+    reuse: z
+      .object({ targetId: z.number().int(), before: record, sourceCount: z.number().int() })
+      .strict()
+      .optional()
+  })
+  .strict();
 const table = z
   .object({
     table: z.string(),
@@ -18,6 +32,7 @@ const table = z
     sourceRows: z.number(),
     targetRows: z.number(),
     imported: z.number(),
+    updated: z.number().int().nonnegative().optional(),
     existing: z.number(),
     warnings: z.number(),
     sessions: z.array(z.string()),
@@ -42,10 +57,29 @@ export const businessSummarySchema = z
     targetDatabase: z.string(),
     actor: z.string(),
     status: z.enum(["queued", "running", "success", "warning", "failed"]),
-    phase: z.enum(["common", "masters", "billing", "invoices", "complete"]),
+    phase: z.enum(["common", "masters", "billing", "invoices", "users", "complete"]),
     at: z.string(),
     updatedAt: z.string(),
     message: z.string(),
+    users: z
+      .object({
+        imported: z.number().int(),
+        existing: z.number().int(),
+        warnings: z.number().int(),
+        rows: z.array(
+          z
+            .object({
+              sourceId: z.number().int(),
+              targetId: z.number().int().nullable(),
+              email: z.string(),
+              status: z.enum(["imported", "existing", "warning"]),
+              message: z.string()
+            })
+            .strict()
+        )
+      })
+      .strict()
+      .optional(),
     issues: z.array(z.string()),
     tables: z.array(table),
     invoiceCount: z.number(),
@@ -131,18 +165,7 @@ export function registerBusinessImportRoutes(app: FastifyInstance, host: CommonT
               .object({ sourceField: z.string(), targetField: z.string(), parentTable: z.string() })
               .strict()
           ),
-          rows: z.array(
-            z
-              .object({
-                sourceId: z.number(),
-                source: record,
-                data: record,
-                target: record.nullable(),
-                status: z.enum(["ready", "imported", "existing", "warning"]),
-                message: z.string()
-              })
-              .strict()
-          )
+          rows: z.array(businessRowSchema)
         })
         .strict()
     },

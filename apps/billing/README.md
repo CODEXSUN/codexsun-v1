@@ -250,3 +250,11 @@ No schema migration is required for these display changes.
 
 For frontend rendering regressions, set `TSX_TSCONFIG_PATH=apps/billing/web/tsconfig.json` and run:
 `node --import tsx --test apps/billing/web/src/modules/sales/sales.einvoice-print.test.ts apps/billing/web/src/modules/export-sales/export-sales.einvoice-print.test.ts apps/billing/web/src/shared/document/print-pagination.test.ts`.
+
+## Standard User draft editing
+
+The User role can view/create Billing records and edit supported draft documents.
+The backend checks the actual persisted document status. Users cannot edit finalized documents, finalize through an edit payload, delete records, or change protected lifecycle/compliance/settings.
+Administrators retain their existing authorized finalized-edit and lifecycle paths.
+The access response separates draft-edit capability from finalized-edit capability.
+Lists and forms show draft editing while hiding or disabling administrator-only actions for standard users.

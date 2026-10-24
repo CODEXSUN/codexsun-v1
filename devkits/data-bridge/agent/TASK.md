@@ -197,3 +197,39 @@ See [release review](REVIEW-1.1.52.md) and [handoff](HANDOFF.md).
 
 - [x] Record Redis isolation and live SUKRAA/ALTEX verification in [the final release log](RELEASE-1.1.57.md).
 - [x] Keep unrelated implementation changes outside the scoped release.
+
+## Unit upgrade verification — 2026-10-24
+
+The local `tools/e2e/core-units.e2e.ts` regression uses actual Core migrations and disposable MariaDB databases.
+It prepares and commits a product with source Nos ID 1 translated to fresh target nos ID 3.
+It verifies repeat preparation finds the existing record and preserves the source snapshot.
+A legacy target placeholder with a different unit remains a warning and stays unchanged.
+Do not treat this local regression as a cloud deployment or a live client migration.
+
+## Company defaults and user import — local repair, 2026-10-24
+
+- [x] Reuse an exact existing company or one verified untouched seed for a single-company source, without adding a duplicate.
+- [x] Preserve company/default-setting IDs, UUIDs, creation metadata, and dependent references.
+- [x] Recheck prepared source and target values before writing. Warn on ambiguous/customized companies and claim confirmed seed identities.
+- [x] Copy supported user hashes only through Platform's privileged owner contract. Preserve existing accounts and assign new users only the target User role.
+- [x] Add separate Users results, user warnings, and seed-update counts to the ordered report.
+- [x] Verify fresh initialization, older-schema upgrades, exact matches, multiple-company warnings, source/target preservation, supported credentials, and persisted report schemas in disposable local databases.
+
+Read-only local inventory found one company in each source. SUKRAA's existing company match is source 1 to target 2, with default 2.
+ALTEX's match is source 1 to target 1, with default 1. SUKRAA's two existing target companies remain unchanged.
+All three SUKRAA and four ALTEX source-user hashes pass the supported-format check.
+These are observed local values, not a mapping recipe. No existing client import, cloud deployment, version bump, commit, or push ran.
+
+The final local checks also cover legacy unit name casing and display order.
+Account transfer waits for verified company/default mapping and an active target company and financial year.
+Billing creation and update both reject User attempts to finalize documents through payload fields.
+
+Final local validation passed 32 focused integration/regression tests and all affected API/frontend workspace checks.
+Boundaries, dependency layout, component document structure, version alignment, and diff whitespace checks passed.
+Generated repository Docs references are stale across concurrent work. The full root gate remains incomplete.
+See [local repair proof](COMPANY-USER-LOCAL-2026-10-24.md). No browser or cloud verification is claimed.
+
+## Fresh local client verification, version 1.1.58
+
+Both local client imports and repeats passed invoice, child-row, company, unit, user, and source-preservation checks.
+Each target retains one Billing settings warning. See [release proof](RELEASE-1.1.58.md) for exact totals and limits.

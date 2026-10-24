@@ -8,6 +8,7 @@ export type BusinessTable = {
   sourceRows: number;
   targetRows: number;
   imported: number;
+  updated?: number;
   existing: number;
   warnings: number;
   cursor: number;
@@ -26,6 +27,18 @@ export type BusinessTable = {
   verificationIssues: Array<{ sourceId: number; message: string }>;
 };
 export type BusinessRun = {
+  users?: {
+    imported: number;
+    existing: number;
+    warnings: number;
+    rows: Array<{
+      sourceId: number;
+      targetId: number | null;
+      email: string;
+      status: "imported" | "existing" | "warning";
+      message: string;
+    }>;
+  };
   id: string;
   sourceId: number;
   targetTenantId: number;
@@ -33,7 +46,7 @@ export type BusinessRun = {
   targetDatabase: string;
   actor: string;
   status: "queued" | "running" | "success" | "warning" | "failed";
-  phase: "common" | "masters" | "billing" | "invoices" | "complete";
+  phase: "common" | "masters" | "billing" | "invoices" | "users" | "complete";
   at: string;
   updatedAt: string;
   message: string;

@@ -744,3 +744,12 @@ Marketing database tests verify exact UTC timestamps and near-expiry rejection a
 - [x] Verify Show all retains three Closed tasks. Restore the active view and normal search.
 
 See [the cleanup and emulator verification report](RELEASE-1.1.50-VERIFICATION.md) for identities, scope protection, evidence, and limits.
+
+## Standard User draft access — local, 2026-10-24
+
+- [x] Seed available User read/create grants and remove stale administrative edit/delete grants.
+- [x] Enforce administrator role ceilings through the public CRM permission policy used by Platform authorization.
+- [x] Add a separate SOP revision draft-edit permission. Preserve published revision data and publication controls.
+- [x] Verify persisted grants and actual draft/published revision update behavior in disposable local MariaDB databases.
+
+Existing tenant-wide visibility and operational work scopes remain in force. No cloud deployment ran.

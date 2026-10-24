@@ -168,7 +168,7 @@ export function SalesList({
                       <td className="px-4 py-2.5">
                         <WorkspaceRowActions
                           actions={[
-                            ...(sale.status === "draft"
+                            ...(canEditFinalizedEntries && sale.status === "draft"
                               ? [
                                   {
                                     id: "confirm",
@@ -190,7 +190,9 @@ export function SalesList({
                                   }
                                 ]
                               : []),
-                            ...(sale.status !== "cancelled" && !sale.generatedSalesInvoiceNo
+                            ...(canEditFinalizedEntries &&
+                            sale.status !== "cancelled" &&
+                            !sale.generatedSalesInvoiceNo
                               ? [
                                   {
                                     id: "suspend",
@@ -201,7 +203,7 @@ export function SalesList({
                                   }
                                 ]
                               : []),
-                            ...(sale.status === "draft"
+                            ...(canEditFinalizedEntries && sale.status === "draft"
                               ? [
                                   {
                                     id: "force-delete",

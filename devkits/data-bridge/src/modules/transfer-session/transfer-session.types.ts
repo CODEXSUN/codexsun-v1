@@ -13,6 +13,7 @@ export type TransferColumn = {
   parent: string | null;
 };
 export type TransferRow = {
+  reuse?: { targetId: number; before: Record<string, unknown>; sourceCount: number };
   sourceId: number;
   source: Record<string, unknown>;
   data: Record<string, unknown>;

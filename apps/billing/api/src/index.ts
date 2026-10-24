@@ -14,6 +14,16 @@ export {
   lookupLongOutstandingSales
 } from "./modules/dashboard/dashboard.assistant-read.js";
 
-export { SalesComplianceRepository, configureSalesComplianceRuntime, processSalesComplianceJob } from "./modules/sales/index.js";
+export {
+  SalesComplianceRepository,
+  configureSalesComplianceRuntime,
+  processSalesComplianceJob
+} from "./modules/sales/index.js";
 
-export { ExportSalesComplianceRepository, configureExportSalesComplianceRuntime, processExportSalesComplianceJob } from "./modules/export-sales/index.js";
+export {
+  ExportSalesComplianceRepository,
+  configureExportSalesComplianceRuntime,
+  processExportSalesComplianceJob
+} from "./modules/export-sales/index.js";
+
+export { seedBillingStandardUserAccess } from "./auth/tenant-permission.seed.js";

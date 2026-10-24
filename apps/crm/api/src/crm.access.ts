@@ -1,6 +1,11 @@
-/** Tenant-wide reads are reserved for tenant administrators, even after a broad grant. */
+/** Administrative mutations and tenant-wide reads require persisted administrator roles. */
 export function crmRecordReadRoles(permission: string): readonly string[] | null {
-  return permission === "crm.enquiry.view-all" || permission === "crm.task.view-all"
+  return permission === "crm.enquiry.view-all" ||
+    permission === "crm.task.view-all" ||
+    (permission.startsWith("crm.") &&
+      /\.(update(?:-own)?|delete|remove|manage|assign|cancel|restore|suspend|close|deactivate|publish|force-delete)(?:\.|$)/u.test(
+        permission
+      ))
     ? ["admin", "super-admin"]
     : null;
 }

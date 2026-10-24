@@ -366,14 +366,14 @@ function PaymentShow({
                 <Pencil className="size-4" />
                 Edit
               </Button>
-              {payment.status === "draft" ? (
+              {canEditFinalizedEntries && payment.status === "draft" ? (
                 <Button onClick={onPost} type="button">
                   Post
                 </Button>
               ) : null}
             </>
           ) : null}
-          {payment.status === "posted" ? (
+          {canEditFinalizedEntries && payment.status === "posted" ? (
             <Button onClick={onCancel} type="button" variant="destructive">
               Cancel
             </Button>

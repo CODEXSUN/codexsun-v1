@@ -70,7 +70,10 @@ export class BusinessImportEngine {
           run.actor
         );
         for (const row of session.rows) {
-          if (row.status === "imported") entry.imported++;
+          if (row.status === "imported") {
+            if (row.reuse) entry.updated = (entry.updated ?? 0) + 1;
+            else entry.imported++;
+          }
           if (row.status === "existing") entry.existing++;
           if (row.status === "warning") entry.warningIds.push(row.sourceId);
         }
@@ -84,9 +87,11 @@ export class BusinessImportEngine {
         await progress();
       }
       entry.status = entry.warnings ? "warning" : "success";
-      entry.message = entry.sourceRows
-        ? "Available source records audited. Existing rows preserved."
-        : "No source records.";
+      entry.message = entry.updated
+        ? "Verified seed records updated in place. Other existing rows preserved."
+        : entry.sourceRows
+          ? "Available source records audited. Existing rows preserved."
+          : "No source records.";
     } catch (error) {
       entry.status = "warning";
       entry.blocked = true;

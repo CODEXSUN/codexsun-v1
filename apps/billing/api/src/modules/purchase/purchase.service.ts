@@ -73,6 +73,7 @@ export class PurchaseService {
   }
 
   async create(databaseName: string, input: PurchaseSavePayload) {
+    assertBillingEntryEditable("draft", "purchases", input.status);
     const normalized = normalizePurchaseInput(
       await this.repository.resolveMissingReferences(databaseName, input)
     );
@@ -106,7 +107,7 @@ export class PurchaseService {
   async update(databaseName: string, id: string, input: PurchaseSavePayload) {
     const current = await this.repository.get(databaseName, id);
     if (!current) return null;
-    assertBillingEntryEditable(current.status, "purchases");
+    assertBillingEntryEditable(current.status, "purchases", input.status);
     const normalized = normalizePurchaseInput({ ...input, status: current.status });
     await this.validateReferences(databaseName, normalized);
     const duplicateId = await this.repository.findByPurchaseNumber(

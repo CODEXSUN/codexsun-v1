@@ -126,7 +126,8 @@ export function TransferResults({ session }: { session: TransferSession }) {
               setPage(1);
             }}
           >
-            {v} / {session.rows.filter((r) => v === "all" || r.status === v).length}
+            {v === "imported" ? "imported / updated" : v} /{" "}
+            {session.rows.filter((r) => v === "all" || r.status === v).length}
           </Button>
         ))}
       </div>
@@ -152,7 +153,7 @@ export function TransferResults({ session }: { session: TransferSession }) {
                 <td className="p-3 align-top">{r.sourceId}</td>
                 <td className="p-3 align-top">
                   <WorkspaceStatusBadge
-                    label={r.status}
+                    label={r.reuse && r.status === "imported" ? "updated" : r.status}
                     tone={r.status === "warning" ? "warning" : "success"}
                   />
                 </td>

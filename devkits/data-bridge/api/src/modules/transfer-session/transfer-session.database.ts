@@ -4,7 +4,7 @@ import { AppError } from "@codexsun/framework/errors";
 import { CommonTableRowAudit } from "../import-review/index.js";
 import type { TransferColumn, TransferField, TransferRow } from "./transfer-session.types.js";
 export const sensitive =
-  /password|secret|token|credential|api.?key|private.?key|cookie|authorization/iu;
+  /seed_placeholder|password|secret|token|credential|api.?key|private.?key|cookie|authorization/iu;
 export function identifier(name: string) {
   if (!/^[A-Za-z_][A-Za-z0-9_ -]*$/u.test(name))
     throw AppError.validation("Unsupported table or field name.");
@@ -225,7 +225,7 @@ export class TransferDatabase {
     ) {
       row.status = "warning";
       row.message = "Existing business key has different mapped data. Target preserved.";
-    } else if (row.status === "existing")
+    } else if (row.status === "existing" && table !== "core_units")
       row.message = "Mapped business data already exists. Target preserved.";
   }
 }

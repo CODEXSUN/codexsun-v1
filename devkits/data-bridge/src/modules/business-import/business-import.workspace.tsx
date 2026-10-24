@@ -1,3 +1,4 @@
+import { BusinessUsers } from "./business-import.users.js";
 import { useState } from "react";
 import { Button } from "@codexsun/ui/components/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@codexsun/ui/components/tabs";
@@ -40,10 +41,11 @@ export function BusinessReportWorkspace({ id }: { id: string }) {
     (sum, t) => ({
       source: sum.source + t.sourceRows,
       imported: sum.imported + t.imported,
+      updated: sum.updated + (t.updated ?? 0),
       existing: sum.existing + t.existing,
       warnings: sum.warnings + t.warnings
     }),
-    { source: 0, imported: 0, existing: 0, warnings: 0 }
+    { source: 0, imported: 0, updated: 0, existing: 0, warnings: 0 }
   );
   const complete = run.tables.filter((t) => !["pending", "running"].includes(t.status)).length;
   return (
@@ -81,6 +83,7 @@ export function BusinessReportWorkspace({ id }: { id: string }) {
             ["masters", "Masters"],
             ["billing", "Billing"],
             ["invoices", "Invoices"],
+            ["users", "Users"],
             ["warnings", "Warnings"]
           ].map(([key, label]) => (
             <TabsTrigger value={key!} key={key}>
@@ -89,6 +92,9 @@ export function BusinessReportWorkspace({ id }: { id: string }) {
             </TabsTrigger>
           ))}
         </TabsList>
+        <TabsContent value="users">
+          <BusinessUsers report={run.users} />
+        </TabsContent>
         <TabsContent value="summary">
           <h3 className="mb-3 font-semibold">Run summary</h3>
           <table className="w-full text-left text-sm">
@@ -96,8 +102,9 @@ export function BusinessReportWorkspace({ id }: { id: string }) {
               {[
                 ["Source records", totals.source],
                 ["Imported", totals.imported],
+                ["Seed records updated in place", totals.updated],
                 ["Existing preserved", totals.existing],
-                ["Warnings", totals.warnings],
+                ["Warnings", totals.warnings + (run.users?.warnings ?? 0)],
                 ["Invoices matched", `${run.invoiceMatched}/${run.invoiceCount}`],
                 ["Invoice warnings", run.invoiceWarnings],
                 ["Relationships checked", run.relationships],
@@ -144,6 +151,7 @@ export function BusinessReportWorkspace({ id }: { id: string }) {
                           "Source",
                           "Target",
                           "Imported",
+                          "Updated",
                           "Existing",
                           "Warnings",
                           "Result",
@@ -173,6 +181,7 @@ export function BusinessReportWorkspace({ id }: { id: string }) {
                             <td className="p-3">{table.sourceRows}</td>
                             <td className="p-3">{table.targetRows}</td>
                             <td className="p-3">{table.imported}</td>
+                            <td className="p-3">{table.updated ?? 0}</td>
                             <td className="p-3">{table.existing}</td>
                             <td className="p-3">{table.warnings}</td>
                             <td className="p-3">

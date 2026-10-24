@@ -606,3 +606,14 @@ Legacy stage URLs remain hidden compatibility routes. Database credentials remai
 - [x] Verify fresh Redis job 2584, zero inserts, all 137 SUKRAA invoices, unchanged source and all 70 target business tables.
 
 See [the Redis delivery log](REDIS-DELIVERY-2026-10-24.md).
+
+## Data Bridge credential transfer — local, 2026-10-24
+
+- [x] Add a user-owner copy contract with exact supported-hash preservation and explicit authorization/role-assignment dependencies.
+- [x] Recheck the active Super Admin and registered target before copying accounts.
+- [x] Preserve existing accounts, passwords, and roles. Give new accounts only the active target User role.
+- [x] Apply owner-controlled Core/Billing/CRM default User access. Never copy source administrator assignments or permissions.
+- [x] Keep hashes out of persisted report JSON, previews, queue payloads, and error messages.
+- [x] Verify denial, supported password verification, source preservation, repeat copies, existing-account preservation, and sanitized warning reports with local disposable databases.
+
+No cloud operation or client account import ran for this local repair.

@@ -215,7 +215,7 @@ export function QuotationList({
                       <td className="px-4 py-2.5">
                         <WorkspaceRowActions
                           actions={[
-                            ...(quotation.status === "draft"
+                            ...(canEditFinalizedEntries && quotation.status === "draft"
                               ? [
                                   {
                                     id: "confirm",
@@ -237,7 +237,8 @@ export function QuotationList({
                                   }
                                 ]
                               : []),
-                            ...(quotation.status !== "cancelled" &&
+                            ...(canEditFinalizedEntries &&
+                            quotation.status !== "cancelled" &&
                             !quotation.generatedSalesInvoiceNo
                               ? [
                                   {
@@ -249,7 +250,7 @@ export function QuotationList({
                                   }
                                 ]
                               : []),
-                            ...(quotation.status === "draft"
+                            ...(canEditFinalizedEntries && quotation.status === "draft"
                               ? [
                                   {
                                     id: "force-delete",

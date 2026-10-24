@@ -222,3 +222,13 @@ Every worker delivery carries both the persisted numeric job ID and UUID. Mismat
 The Redis worker tick republishes pending database records to recover missing deliveries after startup.
 Upgrade every worker for the same master database together. Do not purge shared Redis or legacy queues during this change.
 See [the delivery verification log](agent/REDIS-DELIVERY-2026-10-24.md).
+
+## Data Bridge account transfer
+
+Platform owns the dedicated app_users credential transfer, target registry resolution, active Super Admin recheck, and User-role assignment.
+The transfer copies supported existing PBKDF2 hashes exactly, without generating a new password or returning hashes to the browser.
+Existing target accounts remain authoritative. Source roles, elevated privileges, and protected flags are not imported.
+Unsupported hashes, schemas, usernames, or missing User roles produce sanitized warnings.
+Core, Billing, and CRM public seed contracts establish their User access defaults on the registered target.
+App activation and tenant/record scopes remain enforced. Permission grants do not activate applications or bypass entitlements.
+Data Bridge persists sanitized account outcomes in a separate Users report tab.

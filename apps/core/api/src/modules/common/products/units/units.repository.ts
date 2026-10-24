@@ -13,7 +13,9 @@ export class UnitsRepository {
   async list(filters: UnitsListFilters = {}) {
     const rows = await sql<UnitsRow>`SELECT id, name, status, sort_order FROM core_units
       WHERE (${filters.search ?? ""} = '' OR LOWER(name) LIKE ${like(filters.search)})
-      ORDER BY sort_order, id`.execute(getCoreDatabase());
+      ORDER BY CASE WHEN TRIM(name)='-' THEN 0 ELSE 1 END, sort_order, id`.execute(
+      getCoreDatabase()
+    );
     return rows.rows.map(toUnits);
   }
 

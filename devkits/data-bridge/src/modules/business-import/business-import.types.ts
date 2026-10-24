@@ -6,6 +6,7 @@ export type BusinessTable = {
   sourceRows: number;
   targetRows: number;
   imported: number;
+  updated?: number;
   existing: number;
   warnings: number;
   blocked: boolean;
@@ -15,6 +16,18 @@ export type BusinessTable = {
   references: Array<{ sourceField: string; targetField: string; parentTable: string }>;
 };
 export type BusinessReport = {
+  users?: {
+    imported: number;
+    existing: number;
+    warnings: number;
+    rows: Array<{
+      sourceId: number;
+      targetId: number | null;
+      email: string;
+      status: "imported" | "existing" | "warning";
+      message: string;
+    }>;
+  };
   id: string;
   sourceId: number;
   targetTenantId: number;
@@ -35,6 +48,7 @@ export type BusinessReport = {
   orphans: number;
 };
 export type BusinessRow = {
+  reuse?: { targetId: number; before: Record<string, unknown>; sourceCount: number };
   sourceId: number;
   source: Record<string, unknown>;
   data: Record<string, unknown>;

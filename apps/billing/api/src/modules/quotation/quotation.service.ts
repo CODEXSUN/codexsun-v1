@@ -119,6 +119,7 @@ export class QuotationService {
   }
 
   async create(databaseName: string, input: QuotationSavePayload) {
+    assertBillingEntryEditable("draft", "quotations", input.status);
     const normalized = normalizeQuotationInput(
       await this.repository.resolveMissingReferences(databaseName, input)
     );
@@ -152,7 +153,7 @@ export class QuotationService {
   async update(databaseName: string, id: string, input: QuotationSavePayload) {
     const current = await this.repository.get(databaseName, id);
     if (!current) return null;
-    assertBillingEntryEditable(current.status, "quotations");
+    assertBillingEntryEditable(current.status, "quotations", input.status);
     if (current.generatedSalesInvoiceNo)
       throw AppError.conflict("This quotation is linked to an invoice and cannot be changed.");
     const normalized = normalizeQuotationInput({ ...input, status: current.status });

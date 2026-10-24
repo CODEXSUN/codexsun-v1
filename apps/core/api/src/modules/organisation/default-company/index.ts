@@ -9,3 +9,5 @@ export {
 } from "./default-company.service.js";
 export type { ApplicationCompanyBranding } from "./default-company.types.js";
 export type * from "./default-company.types.js";
+
+export { hasActiveTransferCompanyContext } from "./default-company.transfer.js";

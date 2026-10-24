@@ -45,7 +45,7 @@ export class ProductRepository {
       (SELECT id FROM core_product_categories WHERE status='active' ORDER BY CASE WHEN TRIM(name)='-' THEN 0 ELSE 1 END, id LIMIT 1) AS category_id,
       (SELECT id FROM core_hsn_codes WHERE status='active' ORDER BY CASE WHEN TRIM(code)='-' THEN 0 ELSE 1 END, id LIMIT 1) AS hsn_id,
       (SELECT id FROM core_units WHERE status='active'
-        ORDER BY CASE WHEN LOWER(TRIM(name))='nos' THEN 0 WHEN TRIM(name)='-' THEN 2 ELSE 1 END, id LIMIT 1) AS unit_id,
+        AND TRIM(name)='-' LIMIT 1) AS unit_id,
       (SELECT id FROM core_taxes WHERE status='active' ORDER BY CASE WHEN TRIM(description)='-' THEN 0 ELSE 1 END, id LIMIT 1) AS tax_id`.execute(
       getCoreDatabase()
     );

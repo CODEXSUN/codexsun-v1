@@ -122,3 +122,5 @@ export {
   checkContactRestrictions,
   registerContactRestrictionRoutes
 } from "./modules/contact-restriction/index.js";
+
+export { seedCrmUserAccess } from "./crm.user-access.seed.js";

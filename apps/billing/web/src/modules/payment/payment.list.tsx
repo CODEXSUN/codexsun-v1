@@ -152,7 +152,7 @@ export function PaymentList({
                                   label: "Edit",
                                   onSelect: () => onEdit(payment)
                                 },
-                                ...(payment.status === "draft"
+                                ...(canEditFinalizedEntries && payment.status === "draft"
                                   ? [
                                       {
                                         id: "post",
@@ -171,7 +171,7 @@ export function PaymentList({
                                   : [])
                               ]
                             : []),
-                          ...(payment.status === "posted"
+                          ...(canEditFinalizedEntries && payment.status === "posted"
                             ? [
                                 {
                                   id: "cancel",

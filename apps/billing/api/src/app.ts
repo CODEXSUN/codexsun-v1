@@ -54,6 +54,7 @@ export async function registerBillingApi(app: FastifyInstance) {
       });
       const access = await authorizeBillingRequest(request, tenantDatabase, claims.email ?? "");
       setBillingFinalizedEntryEditAccess(access.canEditFinalizedEntries);
+      currentBillingScope().canEditDraftEntries = access.canEditEntries;
       currentBillingScope().actorEmail = claims.email ?? "";
       if (
         request.url.startsWith("/billing/reports/") ||
@@ -69,12 +70,12 @@ export async function registerBillingApi(app: FastifyInstance) {
       }
     });
     billingApp.get("/billing/access", async (request) => {
-      const canEditEntries = Boolean(currentBillingScope().canEditFinalizedEntries);
+      const canEditEntries = Boolean(currentBillingScope().canEditDraftEntries);
 
       return ok(
         {
           canEditEntries,
-          canEditFinalizedEntries: canEditEntries
+          canEditFinalizedEntries: Boolean(currentBillingScope().canEditFinalizedEntries)
         },
         {
           requestId: request.id,

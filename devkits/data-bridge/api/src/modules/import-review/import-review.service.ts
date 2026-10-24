@@ -1,3 +1,4 @@
+import { CompanySeedReuse } from "../master-tables/index.js";
 import { createHash, randomUUID } from "node:crypto";
 import { createConnection, type Connection, type RowDataPacket } from "mysql2/promise";
 import { AppError } from "@codexsun/framework/errors";
@@ -16,7 +17,7 @@ import {
 const pageLimit = 100;
 const importLimit = 10_000;
 const sensitiveKey =
-  /password|secret|token|credential|api.?key|private.?key|cookie|authorization/iu;
+  /seed_placeholder|password|secret|token|credential|api.?key|private.?key|cookie|authorization/iu;
 
 type DbColumn = { name: string; type: string; required: boolean; primary: boolean };
 
@@ -346,6 +347,22 @@ export class CommonTableImportService {
             for (const row of rows) {
               const checked = await audit.row(row, keys);
               if (checked.status !== "ready") {
+                if (checked.status === "existing") {
+                  const matched = {
+                    sourceId: row.rowNumber,
+                    source: row.data,
+                    data: row.data,
+                    target: null,
+                    status: "existing",
+                    message: checked.message
+                  };
+                  await new CompanySeedReuse(
+                    sourceDb,
+                    targetDb,
+                    this.host.isCompanySeed
+                  ).claimExisting(saved.table, matched);
+                  checked.message = matched.message;
+                }
                 report.rows.push(checked);
                 skipped += 1;
                 continue;

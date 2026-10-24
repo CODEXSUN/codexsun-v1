@@ -221,8 +221,8 @@ export function TransferWorkspace({
                   onCheckedChange={(value) => setConfirmed(value === true)}
                   disabled={locked || busy}
                 />
-                I verified the destination and prepared records. Import missing rows and preserve
-                existing records.
+                I verified the destination and prepared records. Import missing rows, apply the
+                shown seed updates, and preserve other existing records.
               </label>
               <Button
                 disabled={

@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.57
+Current version: 1.1.58
 
-Release tag: v-1.1.57
+Release tag: v-1.1.58
 
-Changelog label: v 1.1.57
+Changelog label: v 1.1.58
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -20,7 +20,67 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
 
+## v-1.1.58
+
+### [v 1.1.58] 2026-10-24 10:47 pm - Verify fresh Data Bridge client imports and safe User access
+
+#### Database Changes
+
+- Database update: Yes. Add safe unit defaults and company/default-setting provenance upgrades.
+- Reuse seed companies in place, preserve references, and copy only missing users with exact supported hashes and target User roles.
+- Initialize fresh local sukraa_db and altex_db targets from their cloud-named local sources. Both source row fingerprints remain unchanged.
+- Verify 137/137 SUKRAA and 184/184 ALTEX invoices, 521/521 and 690/690 item rows, and all other invoice descendants.
+- Retain five deleted ALTEX invoices. Preserve one target Billing settings conflict per tenant as a warning.
+- Repeat both imports with zero business inserts/updates or account inserts and identical saved row fingerprints.
+
+#### App Codebase Changes
+
+- Separate company updates from inserts and show sanitized Users results and warnings.
+- Permit User draft editing while enforcing administrator-only finalized edits, deletion, settings, and lifecycle changes.
+- Verify all seven copied users against actual target permission checks without elevating their roles.
+- Add an explicit local-only fresh-client harness. It uses repository owner services and refuses existing targets.
+- Pass owner lint, selected typechecks, access regressions, boundaries, dependencies, and version alignment. Shared root checks retain unrelated Docs/Ecommerce blockers.
+- Record exact totals, source fingerprints, warning treatment, and transport limits in the [local release proof](../../devkits/data-bridge/agent/RELEASE-1.1.58.md).
+- Bump lockstep metadata to 1.1.58. Leave unrelated implementation changes and cloud deployment outside this release.
+
 ## v-1.1.57
+
+### [v 1.1.57] 2026-10-24 - Local company mapping and User access repair
+
+#### Database Changes
+
+- Add tracked company and default-setting seed provenance upgrades with conservative legacy adoption.
+- Reuse one verified seed for a single-company source. Preserve target identity and dependent references.
+- Preserve existing companies and accounts. Copy supported hashes only for missing users through the privileged Platform owner contract.
+- Resolve units by normalized name while preserving target display order and reference IDs.
+
+#### App Codebase Changes
+
+- Hold account transfer until company/default mapping and active target business context pass verification.
+- Grant supported Core, Billing, and CRM User access. Restrict edits to actual drafts and retain administrator mutation controls.
+- Report company updates separately from inserts and show sanitized account results in a separate Users tab.
+- Verify the local flow with disposable MariaDB integration tests. No cloud deployment, client import, version bump, commit, or push.
+- Details and validation limits: [local repair log](../../devkits/data-bridge/agent/COMPANY-USER-LOCAL-2026-10-24.md).
+
+
+### [v 1.1.57] 2026-10-24 6:26 pm - Repair unit defaults and safe local upgrades
+
+#### Database Changes
+
+- Database update: Yes. Append core.common.products.units.defaults-v2 after standard Core column upgrades without changing applied checksums.
+- Reserve hyphen ID 1 only on empty unit tables. Add missing pcs/nos and measurement defaults without renaming existing Nos, moving occupied IDs, or replacing existing references.
+- Preserve existing non-null product and document units. Conflicting legacy placeholders require a separate reviewed correction.
+- Verify the real migration ledger, repeat seeds, existing unit snapshots, and product/document references in disposable local MariaDB databases only.
+
+#### App Codebase Changes
+
+- Resolve product creation and null-unit backfills through active hyphen identity, removing the previous Nos preference.
+- Display hyphen first without renumbering and reject protected hyphen edits, deactivation, and deletion explicitly.
+- Pass 10 local database tests covering fresh initialization, upgrades, reference translation, import/repeat, bulk order, and full invoice descendants.
+- Pass Core API build/typecheck/lint, Core web typecheck/lint, Data Bridge API typecheck/lint, owner boundaries, and dependency-layout checks.
+- Root checks pass documentation structure, cleanup, boundaries, and add-on checks, then stop on stale generated repository Docs references. Full root validation is not green.
+- Do not deploy cloud, migrate client databases, bump versions, commit, or push as part of this local repair.
+
 
 ### [v 1.1.57] 2026-10-24 4:21 pm - Finalize Data Bridge cloud migration verification
 

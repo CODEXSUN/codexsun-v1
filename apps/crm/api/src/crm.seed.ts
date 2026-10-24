@@ -1,3 +1,4 @@
+import { seedCrmUserAccess } from "./crm.user-access.seed.js";
 import { seedContactRestrictionPermissions } from "./modules/contact-restriction/index.js";
 import { seedLead } from "./modules/lead/index.js";
 import type { Kysely } from "kysely";
@@ -39,4 +40,5 @@ export async function seedCrmTenantDatabase(database: Kysely<EnquiryDatabase>) {
   );
   await seedContact360Database(database);
   await seedLead(database as never);
+  await seedCrmUserAccess(database as unknown as Kysely<unknown>);
 }

@@ -204,3 +204,12 @@ These corrections require no new database migration. They do not modify producti
 - Rendered and visually checked Customer Summary and Supplier Summary A4 PDFs. Customer totals and supplier empty-state totals are visible without clipping.
 - Verified the Platform web production bundle with the new QR dependency.
 - Restored the original company and INR selection after browser verification.
+
+## Standard User draft policy — local, 2026-10-24
+
+- [x] Grant User view/create/update permission with backend status checks and administrator ceilings for deletion/lifecycle/compliance.
+- [x] Keep finalized edits administrator-only and reject draft finalization through update payloads.
+- [x] Expose draft/finalized capabilities separately and restrict administrator-only list/form actions.
+- [x] Verify persisted permission grants, stale-grant denial, draft acceptance, finalized rejection, settings/deletion denial, and administrator access locally.
+
+No cloud deployment ran.

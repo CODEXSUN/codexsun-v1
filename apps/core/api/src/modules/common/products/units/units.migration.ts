@@ -7,6 +7,24 @@ export const unitsMigration = {
   key: "core.common.products.units"
 };
 
+export const unitsDefaultsMigration = {
+  description: "Add canonical unit defaults without changing existing identities or references.",
+  key: "core.common.products.units.defaults-v2"
+};
+
+export async function ensureUnitDefaults(database: Kysely<CoreDatabase>) {
+  // Reserve ID 1 only while the table is empty. Never repurpose an existing unit.
+  await sql`INSERT INTO core_units (id, name, status, sort_order)
+    SELECT 1, '-', 'active', 0 WHERE NOT EXISTS (SELECT 1 FROM core_units)
+    ON DUPLICATE KEY UPDATE id=id`.execute(database);
+  for (const [index, name] of ["-", "pcs", "nos", "Kg", "Meter", "Litre"].entries()) {
+    await sql`INSERT INTO core_units (name, status, sort_order)
+      SELECT ${name}, 'active', ${index} WHERE NOT EXISTS
+        (SELECT 1 FROM core_units WHERE LOWER(TRIM(name))=${name.toLowerCase()})
+      ON DUPLICATE KEY UPDATE id=id`.execute(database);
+  }
+}
+
 export function migrateUnits(database: Kysely<CoreDatabase>) {
   return sql
     .raw(

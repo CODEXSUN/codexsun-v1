@@ -82,6 +82,14 @@ export class BusinessImportQueries {
         sourceId: Number(invoice.source_row_id),
         message: invoice.message
       });
+    for (const row of run.users?.rows ?? [])
+      if (row.status === "warning")
+        warnings.push({
+          group: "users",
+          table: "app_users",
+          sourceId: row.sourceId || null,
+          message: row.message
+        });
     if (run.orphans)
       warnings.push({
         group: "run",

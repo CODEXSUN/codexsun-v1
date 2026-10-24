@@ -1,3 +1,4 @@
+import { prepareExistingUnit } from "../common-tables/index.js";
 import type { Connection, RowDataPacket } from "mysql2/promise";
 import type { ImportRowReport } from "./import-review.types.js";
 
@@ -28,11 +29,24 @@ export class CommonTableRowAudit {
     row: { rowNumber: number; data: Record<string, unknown> },
     keys: string[][]
   ): Promise<ImportRowReport> {
+    const unit =
+      this.table === "core_units"
+        ? await prepareExistingUnit(this.database, row.data, this.columns)
+        : null;
+    if (unit?.ambiguous)
+      return {
+        rowNumber: row.rowNumber,
+        status: "warning",
+        message:
+          "Multiple target units share the normalized name. Review unit identity before importing."
+      };
     if (await this.exists(row.data, this.columns, true)) {
       return {
         rowNumber: row.rowNumber,
         status: "existing",
-        message: "All selected values already exist. This row will be skipped."
+        message: unit?.changed
+          ? "Existing unit identity matched. Target label and display order preserved."
+          : "All selected values already exist. This row will be skipped."
       };
     }
     for (const names of keys) {
@@ -44,6 +58,18 @@ export class CommonTableRowAudit {
           message: `Existing unique key (${names.join(", ")}) has different selected values. Kept existing row; skipped import.`
         };
       }
+    }
+    if (this.table === "core_companies") {
+      const [existing] = await this.database.query<RowDataPacket[]>(
+        "SELECT id FROM core_companies LIMIT 1"
+      );
+      if (existing.length)
+        return {
+          rowNumber: row.rowNumber,
+          status: "warning",
+          message:
+            "Review company identity in Field Mapping. An existing company must not be duplicated."
+        };
     }
     return {
       rowNumber: row.rowNumber,

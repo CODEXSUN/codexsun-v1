@@ -210,3 +210,34 @@ Billing provider jobs and source runtime history remain excluded.
 New groups such as CRM or ecommerce need owner-specific business scope and fresh verification.
 
 Read [HANDOFF.md](HANDOFF.md) for the current release state and evidence links.
+
+## Company identity and account transfer rules
+
+Count source companies before preparing seed reuse. Prefer an existing business-key match.
+Reuse only one verified pristine Core seed for a single-company source. Do not infer a seed from a familiar company name alone.
+Hold ambiguous or customized destinations for review. Do not insert another company to bypass an unresolved identity.
+Recheck the source snapshot/count and destination snapshot/eligibility inside the target transaction.
+Preserve destination IDs, UUIDs, creation metadata, and dependent references.
+Resolve default-company foreign IDs through persisted business identity. Do not copy equal numeric IDs as identity proof.
+Claim matched seeds after confirmation so later sources cannot rename an established business identity.
+Keep seed updates distinct from inserts in reports.
+
+Keep app_users out of generic business-table and SQL-preview imports.
+Use Platform's dedicated credential-copy contract after active Super Admin and target registry verification.
+Copy only supported existing hashes, without rehashing or exposing them. Never assign source administrator privileges.
+Assign the target User role and use owner-controlled Core/Billing/CRM access defaults.
+Preserve existing target accounts and warn on unsupported hashes or account conflicts.
+Record sanitized outcomes in Users and Warnings tabs. Preserve the source database.
+
+### Unit identity and account gates
+
+Match unit names with case and surrounding whitespace normalized. Preserve the matched target name and display order.
+For example, source `Nos` and target `nos` can share identity without changing either stored source values or target IDs.
+Keep other mapped values under normal conflict checks. Do not guess aliases between different unit names.
+
+Hold account transfer until company and default-company results pass verification.
+Require an active mapped target company, default setting, and financial year before copying credentials.
+Use the narrow owner User-access seed contracts. Do not run full app boot seeds from account transfer.
+Existing account-role links must stay unchanged. Only new accounts receive the target User role.
+Users can create and edit Billing drafts. Reject finalized status on both creation and update.
+Keep lifecycle changes, deletion, settings changes, and finalized edits restricted to administrators.

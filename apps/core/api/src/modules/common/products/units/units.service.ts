@@ -30,6 +30,8 @@ export class UnitsService {
   private async mutable(id: string): Promise<UnitsRecord> {
     const record = await this.repository.find(id);
     if (!record) throw AppError.notFound("Units record was not found.");
+    if (record.name.trim() === "-")
+      throw AppError.conflict("The default hyphen unit is protected.");
     return record;
   }
   private validate(input: UnitsSavePayload) {

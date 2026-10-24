@@ -301,3 +301,11 @@ CRM now owns append-only company-scoped email contact restrictions and a public 
 The check also reads Contact Preferences for every matching Core identity. Unknown legacy preferences require review.
 Explicit operational allowance never grants promotional consent. Restriction changes require `crm.contact-restrictions.manage`.
 Policy reads require `crm.contact-restrictions.check`. Only Admin receives these new grants by default.
+
+## Standard User access and draft revisions
+
+Standard User defaults grant available CRM read/create capabilities while retaining tenant and record visibility rules.
+Administrative edits, deletion, management, publication, and protected lifecycle permissions require an active administrator role even after a stale broad grant.
+Existing operational permissions, such as assigned task work, retain their owner rules.
+SOP instruction revisions have a separate draft-edit permission. Their repository updates only draft rows and rejects published revisions atomically.
+Ordinary CRM records without a draft state do not receive an invented draft-edit exception.

@@ -1,3 +1,4 @@
+import { useBillingAccess } from "../../shared/auth/billing-access";
 import { Button } from "@codexsun/ui/components/button";
 import { Dialog, DialogContent } from "@codexsun/ui/components/dialog";
 import {
@@ -48,6 +49,7 @@ export function QuotationFormView({
 }: {
   model: ReturnType<typeof useQuotationFormController>;
 }) {
+  const canChangeWorkflow = useBillingAccess().data?.canEditFinalizedEntries ?? false;
   const {
     contactsQuery,
     form,
@@ -455,7 +457,7 @@ export function QuotationFormView({
                     workflowAction === "revoke" &&
                       "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
                   )}
-                  disabled={loading}
+                  disabled={loading || !canChangeWorkflow}
                   title="Quotation workflow action"
                   type="button"
                   variant="outline"

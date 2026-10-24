@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/crm-api",
-  "version": "1.1.57",
+  "version": "1.1.58",
   "private": true,
   "type": "module",
   "exports": {
@@ -13,7 +13,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/framework": "^1.1.57",
+    "@codexsun/framework": "^1.1.58",
     "fastify": "^5.12.5",
     "kysely": "^0.29.6",
     "sanitize-html": "^2.18.0",

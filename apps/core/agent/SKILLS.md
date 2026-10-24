@@ -34,3 +34,19 @@ A concrete leaf owns its schema, repository, validation, routes, seeds, and UI. 
 
 Check affected consumers and relevant tests. Report skipped or blocked checks explicitly.
 Documentation and prompts never replace backend authorization or deployment approval.
+
+## Unit identity initialization
+
+Keep defaults-v2 as an appended migration after standard-column upgrades.
+For new databases only, reserve unit ID 1 for hyphen.
+For upgrades, preserve occupied IDs and references. Never relabel a business unit as hyphen to obtain ID 1.
+Use exact normalized unit names for defaults and parent mapping. Do not silently equate Pieces, pcs, Numbers, and Nos.
+New products use active hyphen by identity. Preserve existing non-null units and require review for conflicting placeholders.
+
+## Company transfer protocol
+
+Keep seed provenance in Company and Default Company owners. Add upgrades as separate tracked steps.
+Do not identify a reusable seed by ID 1 or company name alone. Require its owner marker and pristine signature.
+Clear seed status when the owner edits a record or Data Bridge confirms its business identity.
+Preserve established company IDs, UUIDs, creation metadata, and dependent references.
+Do not automatically merge or delete existing companies. Ambiguous identities require reviewed mapping.

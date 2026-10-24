@@ -193,13 +193,17 @@ export class SopItemRepository {
   }
 
   async updateRevision(itemId: number, revisionId: number, input: SopRevisionInput) {
-    await this.database
+    const result = await this.database
       .updateTable("crm_sop_item_revisions")
       .set(inputToRevision(input))
       .where("id", "=", revisionId)
       .where("sop_item_id", "=", itemId)
       .where("status", "=", "draft")
-      .execute();
+      .executeTakeFirst();
+    if (Number(result.numUpdatedRows) === 0) {
+      const current = (await this.revisions(itemId)).find((row) => row.id === revisionId);
+      return current?.status === "draft" ? current : null;
+    }
     return (await this.revisions(itemId)).find((row) => row.id === revisionId) ?? null;
   }
 

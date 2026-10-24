@@ -63,6 +63,7 @@ export class ExportSalesService {
   }
 
   async createExportSale(databaseName: string, input: ExportSaleSavePayload) {
+    assertBillingEntryEditable("draft", "export sales", input.status);
     if (
       input.einvoice?.irn ||
       input.einvoice?.status === "generated" ||
@@ -106,7 +107,7 @@ export class ExportSalesService {
     if (!current) return null;
     if (current.einvoice.irn || current.eway.status === "generated")
       throw AppError.conflict("Invoices with generated compliance cannot be edited.");
-    assertBillingEntryEditable(current.status, "export sales");
+    assertBillingEntryEditable(current.status, "export sales", input.status);
     const normalized = normalizeExportSaleInput({
       ...input,
       einvoice: current.einvoice,

@@ -217,7 +217,7 @@ export function PurchaseList({
                       <td className="px-4 py-2.5">
                         <WorkspaceRowActions
                           actions={[
-                            ...(purchase.status === "draft"
+                            ...(canEditFinalizedEntries && purchase.status === "draft"
                               ? [
                                   {
                                     id: "confirm",
@@ -239,7 +239,9 @@ export function PurchaseList({
                                   }
                                 ]
                               : []),
-                            ...(purchase.status !== "cancelled" && !purchase.generatedSalesInvoiceNo
+                            ...(canEditFinalizedEntries &&
+                            purchase.status !== "cancelled" &&
+                            !purchase.generatedSalesInvoiceNo
                               ? [
                                   {
                                     id: "suspend",
@@ -250,7 +252,7 @@ export function PurchaseList({
                                   }
                                 ]
                               : []),
-                            ...(purchase.status === "draft"
+                            ...(canEditFinalizedEntries && purchase.status === "draft"
                               ? [
                                   {
                                     id: "force-delete",

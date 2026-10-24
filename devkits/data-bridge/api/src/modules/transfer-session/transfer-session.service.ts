@@ -1,3 +1,4 @@
+import { CompanySeedReuse } from "../master-tables/index.js";
 import { TransferReferences } from "./transfer-session.references.js";
 import { randomUUID, randomBytes, createHash } from "node:crypto";
 import { AppError } from "@codexsun/framework/errors";
@@ -9,6 +10,7 @@ import { TransferRepository } from "./transfer-session.repository.js";
 import { TransferDatabase, identifier } from "./transfer-session.database.js";
 import type {
   TransferSession,
+  TransferRow,
   TransferField,
   TransferParentMapping
 } from "./transfer-session.types.js";
@@ -193,7 +195,7 @@ export class TransferService {
                     ? new Date().toISOString().slice(0, 19).replace("T", " ")
                     : field.value;
           }
-          const row = {
+          const row: TransferRow = {
             sourceId: Number(source.id),
             source: Object.fromEntries(
               session.fields
@@ -213,6 +215,11 @@ export class TransferService {
               schema.target
             );
             await db.audit(session.targetTable, row, session.fields);
+            await new CompanySeedReuse(db.source, db.target, this.host.isCompanySeed).prepare(
+              session.sourceTable,
+              session.targetTable,
+              row
+            );
             if (row.status === "ready" && options?.blocked?.has(row.sourceId)) {
               row.status = "warning";
               row.message = options.blocked.get(row.sourceId)!;
@@ -318,9 +325,27 @@ export class TransferService {
             try {
               for (const row of session.rows) {
                 if (row.status === "warning") continue;
+                if (row.reuse && row.status === "ready") {
+                  await new CompanySeedReuse(db.source, db.target, this.host.isCompanySeed).commit(
+                    session.sourceTable,
+                    session.targetTable,
+                    row
+                  );
+                  const check = { ...row };
+                  await db.audit(session.targetTable, check, session.fields);
+                  if (check.status !== "existing")
+                    throw AppError.validation("Company reuse verification failed. Rolled back.");
+                  row.target = check.target;
+                  continue;
+                }
                 const approved = row.status === "ready";
                 await db.audit(session.targetTable, row, session.fields);
                 if (!approved) {
+                  await new CompanySeedReuse(
+                    db.source,
+                    db.target,
+                    this.host.isCompanySeed
+                  ).claimExisting(session.targetTable, row);
                   if (row.status === "ready") {
                     row.status = "warning";
                     row.message =

@@ -1,3 +1,4 @@
+import { useBillingAccess } from "../../shared/auth/billing-access";
 import { Button } from "@codexsun/ui/components/button";
 import { Dialog, DialogContent } from "@codexsun/ui/components/dialog";
 import {
@@ -48,6 +49,7 @@ export function PurchaseFormView({
 }: {
   model: ReturnType<typeof usePurchaseFormController>;
 }) {
+  const canChangeWorkflow = useBillingAccess().data?.canEditFinalizedEntries ?? false;
   // Prettier keeps the controller projection compact so this focused view stays under the source-size limit.
   // prettier-ignore
   const { contactsQuery, form, patch, applyContactSelection, contactSaveMutation, applyContactAddresses, selectedContact, setEditingContact, workOrdersQuery, masterSaveMutation, selectedWorkOrder, setEditingWorkOrder, itemDraft, editingItemIndex, coloursQuery, productsQuery, itemResetSignal, settings, sizesQuery, roundOffManual, suggestedRoundOff, addOrUpdateItem, patchDraft, editItem, applyProductSelection, applyRoundOff, removeItem, setRoundOffManual, resetDraft, setEditingProduct, contactAddressChoices, billingAddressChoice, setEditingAddressKind, applyAddressDraft, shippingAddressChoice, onSubmit, activeTab, setActiveTab, errorMessage, loading, onBack, workflowAction, setWorkflowAction, purchase, editingContact, editingProduct, editingWorkOrder, shippingAddressDraft, billingAddressDraft, editingAddressKind, contactAddressSaveMutation } = model;
@@ -505,7 +507,7 @@ export function PurchaseFormView({
                     workflowAction === "revoke" &&
                       "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
                   )}
-                  disabled={loading}
+                  disabled={loading || !canChangeWorkflow}
                   title="Purchase workflow action"
                   type="button"
                   variant="outline"

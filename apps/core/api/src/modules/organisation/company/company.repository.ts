@@ -18,10 +18,10 @@ export class CompanyRepository {
       );
     return rows.rows[0] ? map(rows.rows[0]) : null;
   }
-  async create(input: CompanySaveInput) {
+  async create(input: CompanySaveInput, seedPlaceholder = false) {
     const value = await normalize(input);
     const result =
-      await sql`INSERT INTO core_companies (code,name,legal_name,primary_phone,primary_email,gstin,pan,msme_no,msme_category,tan_no,tds_available,tcs_available,website,description,logo_path,logo_dark_path,favicon_path,industry_id,industry_name,status,emails_json,phones_json,addresses_json,bank_accounts_json,social_links_json) VALUES (${value.code},${value.name},${value.legalName},${value.primaryPhone},${value.primaryEmail},${value.gstin},${value.pan},${value.msmeNo},${value.msmeCategory},${value.tanNo},${value.tdsAvailable},${value.tcsAvailable},${value.website},${value.description},${value.logoPath},${value.logoDarkPath},${value.faviconPath},${value.industryId},${value.industryName},${value.status},${JSON.stringify(value.emails)},${JSON.stringify(value.phones)},${JSON.stringify(value.addresses)},${JSON.stringify(value.bankAccounts)},${JSON.stringify(value.socialLinks)})`.execute(
+      await sql`INSERT INTO core_companies (seed_placeholder,code,name,legal_name,primary_phone,primary_email,gstin,pan,msme_no,msme_category,tan_no,tds_available,tcs_available,website,description,logo_path,logo_dark_path,favicon_path,industry_id,industry_name,status,emails_json,phones_json,addresses_json,bank_accounts_json,social_links_json) VALUES (${seedPlaceholder ? 1 : 0},${value.code},${value.name},${value.legalName},${value.primaryPhone},${value.primaryEmail},${value.gstin},${value.pan},${value.msmeNo},${value.msmeCategory},${value.tanNo},${value.tdsAvailable},${value.tcsAvailable},${value.website},${value.description},${value.logoPath},${value.logoDarkPath},${value.faviconPath},${value.industryId},${value.industryName},${value.status},${JSON.stringify(value.emails)},${JSON.stringify(value.phones)},${JSON.stringify(value.addresses)},${JSON.stringify(value.bankAccounts)},${JSON.stringify(value.socialLinks)})`.execute(
         getCoreDatabase()
       );
     return (await this.find(Number(result.insertId)))!;
@@ -30,7 +30,7 @@ export class CompanyRepository {
     const current = await this.find(id);
     if (!current || current.name === "-") return null;
     const value = await normalize(input, current);
-    await sql`UPDATE core_companies SET code=${value.code},name=${value.name},legal_name=${value.legalName},primary_phone=${value.primaryPhone},primary_email=${value.primaryEmail},gstin=${value.gstin},pan=${value.pan},msme_no=${value.msmeNo},msme_category=${value.msmeCategory},tan_no=${value.tanNo},tds_available=${value.tdsAvailable},tcs_available=${value.tcsAvailable},website=${value.website},description=${value.description},logo_path=${value.logoPath},logo_dark_path=${value.logoDarkPath},favicon_path=${value.faviconPath},industry_id=${value.industryId},industry_name=${value.industryName},status=${value.status},emails_json=${JSON.stringify(value.emails)},phones_json=${JSON.stringify(value.phones)},addresses_json=${JSON.stringify(value.addresses)},bank_accounts_json=${JSON.stringify(value.bankAccounts)},social_links_json=${JSON.stringify(value.socialLinks)},updated_at=CURRENT_TIMESTAMP WHERE id=${Number(id)}`.execute(
+    await sql`UPDATE core_companies SET seed_placeholder=0,code=${value.code},name=${value.name},legal_name=${value.legalName},primary_phone=${value.primaryPhone},primary_email=${value.primaryEmail},gstin=${value.gstin},pan=${value.pan},msme_no=${value.msmeNo},msme_category=${value.msmeCategory},tan_no=${value.tanNo},tds_available=${value.tdsAvailable},tcs_available=${value.tcsAvailable},website=${value.website},description=${value.description},logo_path=${value.logoPath},logo_dark_path=${value.logoDarkPath},favicon_path=${value.faviconPath},industry_id=${value.industryId},industry_name=${value.industryName},status=${value.status},emails_json=${JSON.stringify(value.emails)},phones_json=${JSON.stringify(value.phones)},addresses_json=${JSON.stringify(value.addresses)},bank_accounts_json=${JSON.stringify(value.bankAccounts)},social_links_json=${JSON.stringify(value.socialLinks)},updated_at=CURRENT_TIMESTAMP WHERE id=${Number(id)}`.execute(
       getCoreDatabase()
     );
     return this.find(id);
@@ -38,7 +38,7 @@ export class CompanyRepository {
   async setActive(id: string | number, active: boolean) {
     const current = await this.find(id);
     if (!current || current.name.trim() === "-") return null;
-    await sql`UPDATE core_companies SET status=${active ? "active" : "suspend"},updated_at=CURRENT_TIMESTAMP WHERE id=${Number(id)}`.execute(
+    await sql`UPDATE core_companies SET seed_placeholder=0,status=${active ? "active" : "suspend"},updated_at=CURRENT_TIMESTAMP WHERE id=${Number(id)}`.execute(
       getCoreDatabase()
     );
     return this.find(id);

@@ -12,3 +12,5 @@ export type {
   CompanySaveInput,
   CompanySocialLink
 } from "./company.types.js";
+
+export { isUntouchedCompanySeed } from "./company.seed-policy.js";

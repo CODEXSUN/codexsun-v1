@@ -39,10 +39,16 @@ export class DefaultCompanyRepository {
       );
     return rows.rows[0] ? mapRow(rows.rows[0]) : null;
   }
-  async save(input: DefaultCompanySavePayload) {
+  async save(input: DefaultCompanySavePayload, seedPlaceholder = false) {
+    if (seedPlaceholder) {
+      await sql`INSERT INTO core_default_company_settings(singleton_key,company_id,financial_year_id,landing_app,status,seed_placeholder)
+        VALUES (1,${input.companyId},${input.financialYearId},${input.landingApp.trim()},${input.status ?? "active"},1)
+        ON DUPLICATE KEY UPDATE id=id`.execute(getCoreDatabase());
+      return (await this.get())!;
+    }
     const current = await this.get();
     if (current) {
-      await sql`UPDATE core_default_company_settings SET company_id=${input.companyId},financial_year_id=${input.financialYearId},landing_app=${input.landingApp.trim()},status=${input.status ?? "active"},updated_at=CURRENT_TIMESTAMP WHERE singleton_key=1`.execute(
+      await sql`UPDATE core_default_company_settings SET seed_placeholder=0, company_id=${input.companyId},financial_year_id=${input.financialYearId},landing_app=${input.landingApp.trim()},status=${input.status ?? "active"},updated_at=CURRENT_TIMESTAMP WHERE singleton_key=1`.execute(
         getCoreDatabase()
       );
     } else {

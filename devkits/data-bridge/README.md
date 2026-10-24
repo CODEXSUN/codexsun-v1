@@ -74,3 +74,38 @@ Run Platform composition, Docs, dependency-layout, and root checks before releas
 The focused tests create disposable databases and verify authorization, translated references, rollback, conflicts, and saved results.
 Live import requires an explicit approved scope and verified recovery material.
 Do not rerun a client import merely to reproduce a release check.
+
+## Company reuse and tenant user transfer
+
+Company preparation counts the source rows and checks the destination business identity first.
+An exact destination company match takes precedence over an unused seed.
+For a single-company source, Data Bridge can update one verified untouched owner seed in place.
+Core owns the seed marker and its pristine signature. Normal company/settings edits clear the marker.
+Ambiguous companies, multiple unmatched source companies, and customized targets produce warnings instead of another company.
+Preparation is read-only. Execution checks the saved target snapshot, source values, source count, and seed eligibility again.
+Company IDs, UUIDs, creation metadata, and existing references remain unchanged.
+Default-company settings resolve the source company and financial year to target identities before updating their seed row.
+Confirmed exact seed matches become claimed business identities and cannot be reused for a different source later.
+Reports distinguish seed updates from inserted rows. Legacy review paths block duplicate companies and direct unresolved mappings to the guided flow.
+
+Ordered business import also calls Platform's dedicated tenant-user transfer contract.
+Platform rechecks the active Super Admin, registered target, supported password format, and active target User role.
+New users retain their exact supported PBKDF2 hash. Existing target accounts, passwords, and roles remain unchanged.
+Source administrator privileges, protected flags, role definitions, and source permission grants are not copied.
+Core/Billing/CRM own their standard User access defaults. App activation and tenant visibility boundaries still apply.
+Unsupported hashes, duplicate usernames, missing roles, and unsupported account schemas produce warnings without password resets.
+User outcomes have a separate paginated Users tab and appear in Warnings. Hashes never enter report JSON, SQL previews, or queue payloads.
+
+Local regressions:
+
+```text
+node --env-file=.env --import tsx --test tools/e2e/data-bridge-company-users.e2e.ts tools/e2e/data-bridge-user-access.e2e.ts
+```
+
+These tests require local MariaDB and remove their random disposable databases.
+They do not deploy cloud or import into existing client databases.
+
+## Fresh local client verification, version 1.1.58
+
+Both local client imports and repeats passed invoice, child-row, company, unit, user, and source-preservation checks.
+Each target retains one Billing settings warning. See [release proof](agent/RELEASE-1.1.58.md) for exact totals and limits.
