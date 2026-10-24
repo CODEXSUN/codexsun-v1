@@ -36,13 +36,15 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
   Future<List<CrmJobExecution>> jobSessions(String sourceId) {
     final cached = _jobSessions[sourceId];
     if (cached != null) return Future.value(cached);
-    return _sessionRequests.putIfAbsent(sourceId, () async {
+    final generation = _sessionGeneration;
+    final requestKey = '$generation:$sourceId';
+    return _sessionRequests.putIfAbsent(requestKey, () async {
       try {
         final sessions = await api.enquiryJobSessions(
           accessToken: session.accessToken,
           enquiryId: sourceId,
         );
-        if (!_disposed) {
+        if (!_disposed && generation == _sessionGeneration) {
           _jobSessions[sourceId] = sessions;
           final index = _jobs.indexWhere((job) => job.sourceId == sourceId);
           if (index >= 0) {
@@ -54,7 +56,7 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
         }
         return sessions;
       } finally {
-        _sessionRequests.remove(sourceId);
+        _sessionRequests.remove(requestKey);
       }
     });
   }
@@ -162,7 +164,6 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
       _jobs.clear();
       _jobsBySourceId.clear();
       _jobSessions.clear();
-      _sessionRequests.clear();
       _pendingClosureIds.clear();
       _pendingCollectionIds.clear();
     }
@@ -192,15 +193,11 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<List<CrmJob>> _loadEnquiries() async {
-    try {
-      return await api.enquiries(
-        accessToken: session.accessToken,
-        scope: 'assigned',
-        filter: 'active',
-      );
-    } on CrmMobileApiException {
-      return api.assignedJobs(session.accessToken);
-    }
+    return api.enquiries(
+      accessToken: session.accessToken,
+      scope: 'assigned',
+      filter: 'active',
+    );
   }
 
   Future<Set<String>?> _loadPendingIds(

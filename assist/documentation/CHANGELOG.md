@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.59
+Current version: 1.1.60
 
-Release tag: v-1.1.59
+Release tag: v-1.1.60
 
-Changelog label: v 1.1.59
+Changelog label: v 1.1.60
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,23 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.60
+
+### [v 1.1.60] 2026-10-24 11:50 pm - CRM mobile performance audit and refactor
+
+#### Database Changes
+
+- Database update: No (manual).
+
+#### App Codebase Changes
+
+- Reduced the Jobs feed from per-enquiry detail fan-out to summary loading, with timer sessions fetched and cached as cards are needed.
+- Reused the mobile API HTTP client, parallelized independent pending-state lookups, avoided unchanged feed notifications, and indexed feed jobs by source ID.
+- Replaced the eager Jobs card list with a lazy list and reduced dashboard duty-count loading to one API request.
+- Removed unused CRM mobile API helpers and retained the pending mobile UX updates for call logs, call notes, job/task actions, and navigation.
+- Verified with Flutter analysis and all 78 CRM mobile tests.
+- Bumped workspace version to 1.1.60.
 
 ## v-1.1.59
 

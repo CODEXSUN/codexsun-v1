@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/zuno-api",
-  "version": "1.1.59",
+  "version": "1.1.60",
   "private": true,
   "type": "module",
   "exports": {
@@ -13,7 +13,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/framework": "^1.1.59",
+    "@codexsun/framework": "^1.1.60",
     "fastify": "^5.12.5",
     "kysely": "^0.29.6",
     "zod": "^4.6.5"

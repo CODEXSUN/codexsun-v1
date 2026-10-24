@@ -108,6 +108,7 @@ class _WorkActionSheetState extends State<WorkActionSheet> {
   DateTime? _jobStartedAt;
   Timer? _timer;
   bool _busy = false;
+  bool _loadingJobSessions = false;
   bool _changed = false;
   String? _error;
   Map<String, dynamic>? _retry;
@@ -122,6 +123,7 @@ class _WorkActionSheetState extends State<WorkActionSheet> {
     _jobStartedAt = widget.jobStartedAt ?? _runningEnquiryStart();
     _syncTimer();
     if (_enquiry != null && _enquiry!.jobs.isEmpty) {
+      _loadingJobSessions = widget.loadJobSessions != null;
       unawaited(_loadSelectedJobSessions(_enquiry!));
     }
   }
@@ -140,6 +142,10 @@ class _WorkActionSheetState extends State<WorkActionSheet> {
       });
     } on CrmMobileApiException {
       // Action controls remain available if the optional timer lookup fails.
+    } finally {
+      if (mounted && _enquiry?.sourceId == selected.sourceId) {
+        setState(() => _loadingJobSessions = false);
+      }
     }
   }
 
@@ -608,6 +614,9 @@ class _WorkActionSheetState extends State<WorkActionSheet> {
                             if (job == null) return;
                             setState(() {
                               _enquiry = job;
+                              _loadingJobSessions =
+                                  job.jobs.isEmpty &&
+                                  widget.loadJobSessions != null;
                               _jobRunning = job.jobs.any(
                                 (execution) => execution.isRunning,
                               );
@@ -638,7 +647,9 @@ class _WorkActionSheetState extends State<WorkActionSheet> {
                   trailing: _jobRunning
                       ? _RunningTimerBadge(duration: _elapsed)
                       : null,
-                  onTap: _busy || _closed ? null : _toggleJob,
+                  onTap: _busy || _loadingJobSessions || _closed
+                      ? null
+                      : _toggleJob,
                 ),
                 if (!_closed)
                   _WorkActionMenuItem(

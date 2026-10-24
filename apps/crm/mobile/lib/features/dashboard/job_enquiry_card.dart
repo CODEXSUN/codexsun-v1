@@ -49,12 +49,16 @@ class _JobEnquiryCardState extends State<JobEnquiryCard> {
   Timer? _jobTimer;
   var _isSending = false;
   var _completionPending = false;
+  var _loadingJobSessions = false;
 
   @override
   void initState() {
     super.initState();
     _syncJobTimer();
-    if (_job.jobs.isEmpty) _loadJobSessions();
+    if (_job.jobs.isEmpty && widget.loadJobSessions != null) {
+      _loadingJobSessions = true;
+      _loadJobSessions();
+    }
   }
 
   Future<void> _loadJobSessions() async {
@@ -69,6 +73,8 @@ class _JobEnquiryCardState extends State<JobEnquiryCard> {
       });
     } on CrmMobileApiException {
       // The list stays usable when the optional timer lookup is unavailable.
+    } finally {
+      if (mounted) setState(() => _loadingJobSessions = false);
     }
   }
 
@@ -169,7 +175,7 @@ class _JobEnquiryCardState extends State<JobEnquiryCard> {
                     onWhatsApp: _openWhatsApp,
                     onMore: _runMoreAction,
                     runningJob: _runningJob,
-                    isSending: _isSending,
+                    isSending: _isSending || _loadingJobSessions,
                   ),
                 ),
                 const SizedBox(height: 10),

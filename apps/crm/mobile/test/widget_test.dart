@@ -1610,6 +1610,10 @@ void main() {
     expect(fakeApi.requestedEnquiryScope, 'assigned');
     expect(fakeApi.requestedEnquiryFilter, 'active');
     expect(feed.jobs.single.sourceId, _testCrmJob.sourceId);
+    expect(fakeApi.jobSessionCalls, 0);
+    await feed.jobSessions(_testCrmJob.sourceId);
+    await feed.jobSessions(_testCrmJob.sourceId);
+    expect(fakeApi.jobSessionCalls, 1);
     final running = await fakeApi.startJob(
       accessToken: session.accessToken,
       id: _testCrmJob.sourceId,
@@ -2084,6 +2088,7 @@ class _FakeCrmMobileApi extends CrmMobileApi {
   final List<String> postedComments = [];
   var startJobCalls = 0;
   var stopJobCalls = 0;
+  var jobSessionCalls = 0;
   String? requestedEnquiryScope;
   String? requestedEnquiryFilter;
   String? lastEnquiriesAccessToken;
@@ -2157,7 +2162,6 @@ class _FakeCrmMobileApi extends CrmMobileApi {
       pendingCollectionIds;
 
   @override
-  @override
   Future<List<CrmDuty>> duties(String accessToken) async => [];
 
   @override
@@ -2167,7 +2171,10 @@ class _FakeCrmMobileApi extends CrmMobileApi {
   Future<List<CrmJobExecution>> enquiryJobSessions({
     required String accessToken,
     required String enquiryId,
-  }) async => _job.jobs;
+  }) async {
+    jobSessionCalls++;
+    return _job.jobs;
+  }
 
   @override
   Future<int> activitiesCount(String accessToken) async => 0;
