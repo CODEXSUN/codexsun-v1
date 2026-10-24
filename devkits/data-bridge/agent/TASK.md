@@ -233,3 +233,12 @@ See [local repair proof](COMPANY-USER-LOCAL-2026-10-24.md). No browser or cloud 
 
 Both local client imports and repeats passed invoice, child-row, company, unit, user, and source-preservation checks.
 Each target retains one Billing settings warning. See [release proof](RELEASE-1.1.58.md) for exact totals and limits.
+
+## Cloud verification, version 1.1.59
+
+- [x] Provision the registered fresh targets through the owner setup operation.
+- [x] Verify real authenticated Data Bridge endpoints and four completed Redis first/repeat jobs.
+- [x] Verify full invoices, source preservation, company reuse, units, new User credentials, and preserved administrators.
+- [x] Check all report drilldowns and retain explicit configuration warnings and verified backups.
+
+See [cloud proof](CLOUD-1.1.59.md). HTTP checks do not imply new browser-interaction proof.

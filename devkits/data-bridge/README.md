@@ -109,3 +109,9 @@ They do not deploy cloud or import into existing client databases.
 
 Both local client imports and repeats passed invoice, child-row, company, unit, user, and source-preservation checks.
 Each target retains one Billing settings warning. See [release proof](agent/RELEASE-1.1.58.md) for exact totals and limits.
+
+## Cloud verification, version 1.1.59
+
+The cloud Data Bridge endpoint and real Redis worker completed both client imports and repeat checks.
+All 321 invoices and their child rows matched. Sources remained unchanged and repeats produced no duplicate business rows.
+Each target retains one Billing settings warning. See [cloud proof](agent/CLOUD-1.1.59.md) for job IDs, reports, backups, and limits.

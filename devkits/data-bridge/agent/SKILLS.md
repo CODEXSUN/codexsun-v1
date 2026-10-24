@@ -241,3 +241,17 @@ Use the narrow owner User-access seed contracts. Do not run full app boot seeds 
 Existing account-role links must stay unchanged. Only new accounts receive the target User role.
 Users can create and edit Billing drafts. Reject finalized status on both creation and update.
 Keep lifecycle changes, deletion, settings changes, and finalized edits restricted to administrators.
+
+## Cloud queue verification protocol
+
+Resolve both databases through their saved connection and tenant registrations before every run.
+Create and verify private recovery backups before provisioning or migration.
+Preserve unrelated live runtime patches during a scoped deployment.
+Use owner setup for absent targets. Never drop an existing target to simplify a rehearsal.
+Use the authenticated Data Bridge endpoint and verify the real configured queue backend.
+Match each persisted job ID and UUID with its actual delivery and final report.
+Audit complete invoice descendants and target foreign identities, then repeat the import.
+Compare source fingerprints throughout and compare saved business/user rows across the repeat.
+Verify paginated report drilldowns and distinguish configuration warnings from missing business records.
+Keep observed IDs and database names in evidence logs, not reusable mapping rules.
+Record transport, browser, security, and transaction limits explicitly.

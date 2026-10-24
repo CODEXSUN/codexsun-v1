@@ -32,7 +32,13 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 
 - Prepare the scoped cloud rollout of the tested Data Bridge repair, preserving live CRM patches and shared services.
 - Record source/target identities, backup requirements, queue verification, invoice checks, and repeat-import proof in [the cloud release log](../../devkits/data-bridge/agent/CLOUD-1.1.59.md).
-- Cloud execution results remain pending until verified.
+- Deploy 1.1.59 API/Web/Shop and preserve live CRM patches and shared infrastructure identities.
+- Import 1,595 SUKRAA and 5,094 ALTEX business rows through four real Redis-backed first/repeat jobs, all completed in one attempt.
+- Verify 137/137 and 184/184 invoices, 521/521 and 690/690 item rows, all other children, 354 relationships, and zero orphans.
+- Preserve source fingerprints, reuse one company per target, copy five missing User accounts with exact hashes, and retain two existing administrators.
+- Repeat both imports with zero business writes or new users and identical saved row fingerprints.
+- Verify 140 public report drilldowns and invoice pagination. Preserve one Billing settings warning per target.
+- Retain checksum-verified before/after backups. Record seven dependency advisories, including one high and one critical, without claiming a clean security audit.
 
 ## v-1.1.58
 
