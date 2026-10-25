@@ -14,6 +14,23 @@ Use full documentation, inventory, boundary, build, dependency, database, E2E, o
 
 This section overrides older, more detailed Assist and component checklist wording for normal focused work.
 
+## App Selection
+
+Before an unspecified app task, ask which app the user wants to work on.
+Current app work is separate: CXMobile, Marketing, CRM, and Billing.
+Use the selected app's assigned worktree and task chat.
+Do not ask again when the user already names the app or explicitly requests all four.
+Do not combine app changes, installs, or runtime resources merely because the repository is shared.
+Fresh app worktrees start as code-only checkouts. Do not install npm dependencies without authorization.
+
+## Shared Worktree And Release Workflow
+
+Follow [Worktree And Version Release Workflow](operations/worktree-release-workflow.md) for worktree, integration, and release operations.
+Read the shared canonical policy when an older worktree contains conflicting location or release rules.
+The required flow is app worktree -> reviewed main -> frozen candidate -> staging -> approved cloud promotion.
+Reserved release folders remain empty until candidate preparation is authorized.
+Policy-only work does not authorize pulls, installs, version updates, commits, pushes, or deployment.
+
 ## Required Reading
 
 For every code change, read:
@@ -41,9 +58,10 @@ Do not read historical blueprints, product plans, or runbooks by default when th
 ## Repository Rules
 
 - Treat `D:\workspace\codexsun` as the canonical local working repository and project root.
-- Do not use other checkouts outside `D:\workspace\codexsun` as project references.
+- Use an authorized external Git worktree as the project root for its assigned task.
+- Read the shared canonical workflow for policy. Do not import source files or writable dependencies from sibling worktrees.
 - Use npm only from the repository root.
-- Keep one root `node_modules`, one root `package-lock.json`, and one root `dist`.
+- Keep one root `node_modules`, one root `package-lock.json`, and one root `dist` per worktree. Do not share writable outputs.
 - Never create workspace-local `node_modules`, `dist`, `dist-types`, pnpm stores, or alternative lockfiles.
 - Preserve unrelated user changes in the working tree.
 - Use root scripts for dependency checks, formatting, lint, TypeScript, boundaries, builds, versions, and releases.

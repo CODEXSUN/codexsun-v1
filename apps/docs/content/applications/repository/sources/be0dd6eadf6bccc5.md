@@ -2,7 +2,7 @@
 
 Repository source: `assist/documentation/design-system-helper.md`
 
-Source SHA-256 (LF line endings): `04d441afbfc6bed54b57affc5a6f53283edba7291d7cde58a4579c3984ae806a`
+Source SHA-256 (LF line endings): `d377b3d5bdb969399f78a4fa3ba13057485476b20181914ac1da10a5beff586a`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -127,6 +127,22 @@ Table rules:
 - Keep action column last.
 - Avoid duplicate columns. Example: do not show both `Active` and `Status` when they mean the same thing.
 - Keep row actions consistent: View, Edit, Suspend/Restore, Delete/Force delete where allowed.
+
+## Column Search and Date Range Pattern
+
+Use CRM Enquiry as the visual reference for new workspace lists.
+
+- Render column search inputs in the first `tbody` row, immediately below the column headings and above records.
+- Keep the filter row white (`bg-white`), with `border-b border-border/70`. Keep the heading background separate.
+- Use `td` cells with `px-4 py-2.5 text-foreground`. Render one cell per visible column, including empty cells for non-searchable columns.
+- Use `WorkspaceTable` with its `filterRow` option when possible. Owner-rendered tables must follow the same row structure.
+- Use `WorkspaceColumnFilter` or `useWorkspaceListTools().filterRow`. Keep input heights, borders, focus, and Escape behavior in shared controls.
+- Do not put search inputs inside heading cells. Hidden columns must hide their matching filter cells.
+- Use the icon-only `WorkspaceDateRangePicker` from `@codexsun/ui/workspace/date-range-picker` for toolbar date ranges.
+- Keep the calendar button 32 pixels high, with a tooltip and accessible name. Selected dates use the shared active tone.
+- Place date range before the column-search toggle. Keep search, active-filter badges, Filters, and Columns in the shared toolbar.
+- Verify toggle on/off, column alignment, filter/clear behavior, hidden columns, and date-range open/clear behavior in the browser.
+- Check empty lists as well as populated lists. Keep business filtering, query state, and pagination in the owning module.
 
 ## Show Page Standard
 

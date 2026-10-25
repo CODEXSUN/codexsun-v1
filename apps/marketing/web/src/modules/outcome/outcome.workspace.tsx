@@ -48,7 +48,7 @@ export function OutcomeWorkspace() {
   const [recordKey, setRecordKey] = useWorkspaceQueryValue("record", "");
   const [leadUuidParam] = useWorkspaceQueryValue("leadUuid", "");
   const [conversionUuidParam] = useWorkspaceQueryValue("conversionUuid", "");
-  const [previousOutcomeUuidParam] = useWorkspaceQueryValue("previousOutcomeUuid", "");
+  const [_previousOutcomeUuidParam] = useWorkspaceQueryValue("previousOutcomeUuid", "");
   const [hiddenColumnKeys, setHiddenColumnKeys] = useWorkspaceQueryValue("hiddenColumns", "");
 
   const hiddenColumns = useMemo(

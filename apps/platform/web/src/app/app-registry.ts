@@ -90,6 +90,9 @@ export type PlatformAppRootPage =
   | "auditor.overview"
   | "auditor.clients"
   | "marketing.consents"
+  | "marketing.contents"
+  | "marketing.email-campaigns"
+  | "marketing.conversations"
   | "marketing.submissions"
   | "marketing.brands"
   | "marketing.campaigns"
@@ -1342,7 +1345,7 @@ export function appMenuItemsFor(
   crmTaskCount = 0
 ): SidemenuItem[] {
   if (appId === "marketing")
-    return ["brands", "campaigns", "captures", "submissions", "leads", "qualifications", "conversions", "outcomes", "followups", "connections", "consents"].map(
+    return ["brands", "campaigns", "email-campaigns", "conversations", "captures", "submissions", "leads", "qualifications", "conversions", "outcomes", "followups", "connections", "consents", "contents"].map(
       (key) => ({
         icon: Globe2Icon,
         title: key[0]!.toUpperCase() + key.slice(1),

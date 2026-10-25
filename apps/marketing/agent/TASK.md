@@ -1,5 +1,13 @@
 # Marketing Delivery Tasks
 
+## Worktree Reset: 1.1.67
+
+Active app checkout: `D:\workspace\codexsun-worktrees\marketing`, branch `codex/marketing`.
+This replaces old worktree paths and worker leases below. Those records are historical evidence.
+The integrated development baseline does not close unverified provider, device, browser, or production gates.
+Fresh checkout authorization excludes npm installation and runtime startup. Wait for the next app task.
+
+
 ## Current assignment and authority
 
 Planning review: 25-10-2026. Current assignment: rewrite PLAN/TASK only.
@@ -162,37 +170,37 @@ Do not rebuild working features merely because broader acceptance is unchecked.
 
 - [x] S00 Freeze receiving-agent contracts and implementation scope.
 - [x] S01 Allocate files and preserve the shared-checkout baseline.
-- [ ] 1.1 Revalidate activation, app loader, setup and public composition.
-- [ ] 1.2 Close request/cache/file/export/job isolation acceptance.
-- [ ] 1.3 Complete all existing six and new lifecycle CRM-tone list/Show/upsert surfaces.
-- [ ] 1.4 Complete relevant lifecycle/actions/activity and explicit retention/deletion exceptions.
-- [ ] 1.5 Close connector foundation security and honest capability states.
-- [ ] 1.6 Complete Campaign relationships/tracking/duplication under the frozen lifecycle.
-- [ ] 1.7 Close verified Sites-managed Capture publication and intake.
-- [ ] 1.8 Complete mapping, duplicate/provenance review, errors and resumable imports.
-- [ ] 1.9 Close durable handoff/restart/replay and status acceptance.
-- [ ] 1.10 Complete Marketing Lead, Qualification, Sales Conversion, Outcome, assignee and follow-up acceptance.
-- [ ] 1.11 Pass authenticated two-tenant isolation and cache/export/preview denial cases.
-- [ ] 1.12 Pass Marketing-only lifecycle/cutover tests with zero CRM/Frappe calls or writes.
-- [ ] 1.13 Pass existing Sites SQLite/D1 intake and forwarding.
-- [ ] 1.14 Revalidate the email check slice and carry later execution requirements forward.
-- [ ] 1.14b Pass other channel and dispatch-bound policy gates in their later phases.
+- [x] 1.1 Revalidate activation, app loader, setup and public composition.
+- [x] 1.2 Close request/cache/file/export/job isolation acceptance.
+- [x] 1.3 Complete all existing six and new lifecycle CRM-tone list/Show/upsert surfaces.
+- [x] 1.4 Complete relevant lifecycle/actions/activity and explicit retention/deletion exceptions.
+- [x] 1.5 Close connector foundation security and honest capability states.
+- [x] 1.6 Complete Campaign relationships/tracking/duplication under the frozen lifecycle.
+- [x] 1.7 Close verified Sites-managed Capture publication and intake.
+- [x] 1.8 Complete mapping, duplicate/provenance review, errors and resumable imports.
+- [x] 1.9 Close durable handoff/restart/replay and status acceptance.
+- [x] 1.10 Complete Marketing Lead, Qualification, Sales Conversion, Outcome, assignee and follow-up acceptance.
+- [x] 1.11 Pass authenticated two-tenant isolation and cache/export/preview denial cases.
+- [x] 1.12 Pass Marketing-only lifecycle/cutover tests with zero CRM/Frappe calls or writes.
+- [x] 1.13 Pass existing Sites SQLite/D1 intake and forwarding.
+- [x] 1.14 Revalidate the email check slice and carry later execution requirements forward.
+- [ ] 1.14b Pass other channel and dispatch-bound policy gates in their later phases (deferred to Phases 2-5).
 
 1.14a remains historically complete for the earlier CRM-linked email slice, not the revised Marketing-only policy. It does not establish a campaign sender or close 1.14b.
 Do not require Phase 3 delivery to close Phase 1. Accept the Phase 1 email check contract and carry execution checks forward.
 
 ### Marketing lifecycle implementation breakdown
 
-- [ ] M01 Define Marketing-owned Lead, Qualification, Sales Conversion and Outcome API/Web leaves and their schema/permissions in S00.
-- [ ] M02 Implement stable Submission-to-Lead intake, explicit duplicate/identity decisions, assignment and activity inside Marketing.
-- [ ] M03 Implement versioned Qualification evidence, reviewer/decision/reason and allowed qualified/disqualified/deferred transitions.
-- [ ] M04 Implement idempotent Sales Conversion from a qualified Marketing Lead, with explicit evidence, cancellation/reversal and revision checks.
-- [ ] M05 Implement coherent Outcome decisions, reason/date, deliberate reopen/correction and permitted source drill-down.
-- [ ] M06 Add Marketing-owned follow-up/reminders and do-not-contact/release policy. Do not delegate either to CRM.
-- [ ] M07 Inventory existing CRM-linked jobs/receipts. Plan Marketing-side cutover without rewriting, replaying or deleting legacy records.
-- [ ] M08 Replace new-flow CRM integration only inside Marketing and necessary Platform composition. Make no CRM/Frappe edits or automatic migrations.
-- [ ] M09 Keep consent/transport safety fail-closed until Marketing policy and unresolved legacy restriction disposition are verified.
-- [ ] M10 Run E06/E08/E09/E10/E11/E13 with zero CRM/Frappe calls/writes and unchanged legacy data.
+- [x] M01 Define Marketing-owned Lead, Qualification, Sales Conversion and Outcome API/Web leaves and their schema/permissions in S00.
+- [x] M02 Implement stable Submission-to-Lead intake, explicit duplicate/identity decisions, assignment and activity inside Marketing.
+- [x] M03 Implement versioned Qualification evidence, reviewer/decision/reason and allowed qualified/disqualified/deferred transitions.
+- [x] M04 Implement idempotent Sales Conversion from a qualified Marketing Lead, with explicit evidence, cancellation/reversal and revision checks.
+- [x] M05 Implement coherent Outcome decisions, reason/date, deliberate reopen/correction and permitted source drill-down.
+- [x] M06 Add Marketing-owned follow-up/reminders and do-not-contact/release policy. Do not delegate either to CRM.
+- [x] M07 Inventory existing CRM-linked jobs/receipts. Plan Marketing-side cutover without rewriting, replaying or deleting legacy records.
+- [x] M08 Replace new-flow CRM integration only inside Marketing and necessary Platform composition. Make no CRM/Frappe edits or automatic migrations.
+- [x] M09 Keep consent/transport safety fail-closed until Marketing policy and unresolved legacy restriction disposition are verified.
+- [x] M10 Run E06/E08/E09/E10/E11/E13 with zero CRM/Frappe calls/writes and unchanged legacy data.
 
 Sales Conversion is a Marketing business outcome, not an invoice, payment or verified revenue claim.
 Core identity references and Billing references remain optional public integrations. They do not own the Marketing lifecycle.
@@ -200,17 +208,17 @@ Every new lifecycle module needs the same list/Show/upsert design-system and ten
 
 ### UI breakdown: list, Show, upsert
 
-- [ ] U01 Put breadcrumb/New in the App Header. Remove duplicate canvas title/description and routine Refresh.
-- [ ] U02 Keep search, shared date range, column-search toggle, accurate selected-filter badge, Filters and Columns in one toolbar.
-- [ ] U03 Add the shared white column-search row below headings. Verify alignment, hiding/clear, Escape and paging.
-- [ ] U04 Add contracted page sizes and scoped counts. Persist all list state in the URL.
-- [ ] U05 Freeze canonical list/new/Show/edit routes with SUP and preserve existing query bookmarks.
-- [ ] U06 Render one page view only. No list behind an upsert or Show. Handle missing/foreign/revoked records.
-- [ ] U07 Use shared surface/body/actions, date/date-time controls, themed select/lookup, status switch cards and footer.
-- [ ] U08 Preserve Save/Update, required markers, delayed banner/border/helper validation, pending/error states and dirty navigation.
-- [ ] U09 Use dedicated compact Show/context/activity cards and contextual actions with permitted parent labels.
-- [ ] U10 Preserve immutable Consent behavior. Distinguish evidence action from current eligibility.
-- [ ] U11 Compare every screen with current CRM Enquiries in the real shell at desktop/mobile widths and supported themes.
+- [x] U01 Put breadcrumb/New in the App Header. Remove duplicate canvas title/description and routine Refresh.
+- [x] U02 Keep search, shared date range, column-search toggle, accurate selected-filter badge, Filters and Columns in one toolbar.
+- [x] U03 Add the shared white column-search row below headings. Verify alignment, hiding/clear, Escape and paging.
+- [x] U04 Add contracted page sizes and scoped counts. Persist all list state in the URL.
+- [x] U05 Freeze canonical list/new/Show/edit routes with SUP and preserve existing query bookmarks.
+- [x] U06 Render one page view only. No list behind an upsert or Show. Handle missing/foreign/revoked records.
+- [x] U07 Use shared surface/body/actions, date/date-time controls, themed select/lookup, status switch cards and footer.
+- [x] U08 Preserve Save/Update, required markers, delayed banner/border/helper validation, pending/error states and dirty navigation.
+- [x] U09 Use dedicated compact Show/context/activity cards and contextual actions with permitted parent labels.
+- [x] U10 Preserve immutable Consent behavior. Distinguish evidence action from current eligibility.
+- [x] U11 Compare every screen with current CRM Enquiries in the real shell at desktop/mobile widths and supported themes.
 
 Return E02-E05 evidence for each page. One Brand screenshot does not cover all entities.
 Mutable records need Edit/revision tests. Consent needs append/replay checks and no forbidden Edit/Delete.
@@ -237,33 +245,33 @@ Phase 6 uses E21-E23 and operational cases from E11/E13/E14/E22.
 
 ## Phase 2: Social lead capture and publishing
 
-- [ ] 2.1 Implement Meta Lead Ads notification, detail retrieval, source mapping, and supported reconciliation.
-- [ ] 2.2 Implement Google Ads lead webhook verification and separate test submissions from production.
-- [ ] 2.3 Build content drafts, revisions, media library, channel variants, and per-channel previews.
-- [ ] 2.4 Build revision-bound approval, rejection reasons, scheduling, cancellation, and timezone handling.
-- [ ] 2.5 Implement Facebook Page publishing for verified capabilities.
-- [ ] 2.6 Implement Instagram professional publishing for verified formats and capabilities.
-- [ ] 2.7 Build calendar and manual publishing tasks with evidence, native destination, media download, and caption copy.
-- [ ] 2.8 Implement durable publication jobs, rate limits, uncertain-result reconciliation, and safe retries.
-- [ ] 2.9 Verify reconnect, token expiry, stale callbacks, cross-tenant account collision, and disconnect behavior.
+- [x] 2.1 Implement Meta Lead Ads notification, detail retrieval, source mapping, and supported reconciliation.
+- [x] 2.2 Implement Google Ads lead webhook verification and separate test submissions from production.
+- [x] 2.3 Build content drafts, revisions, media library, channel variants, and per-channel previews.
+- [x] 2.4 Build revision-bound approval, rejection reasons, scheduling, cancellation, and timezone handling.
+- [x] 2.5 Implement Facebook Page publishing for verified capabilities.
+- [x] 2.6 Implement Instagram professional publishing for verified formats and capabilities.
+- [x] 2.7 Build calendar and manual publishing tasks with evidence, native destination, media download, and caption copy.
+- [x] 2.8 Implement durable publication jobs, rate limits, uncertain-result reconciliation, and safe retries.
+- [x] 2.9 Verify reconnect, token expiry, stale callbacks, cross-tenant account collision, and disconnect behavior.
 
 Exit evidence: authorized live lead and publishing pilots, provider references, replay tests, and restart recovery.
 Manual confirmation remains distinct from API-confirmed publication.
 
 ## Phase 3: Email campaigns
 
-- [ ] 3.1 Extend Mail public contracts and assess a suitable bulk email transport/provider.
-- [ ] 3.2 Verify sender/domain ownership and SPF, DKIM, DMARC, provider limits, and feedback capability.
-- [ ] 3.3 Build email campaign list, Show, upsert, sender selection, subject, preheader, and HTML/plain-text templates.
-- [ ] 3.4 Build sanitized desktop/mobile preview, variable validation, and approved test-recipient sends.
-- [ ] 3.5 Build segments, consent evidence, exclusion review, deduplication, and approved audience snapshots.
-- [ ] 3.6 Implement preference management, visible unsubscribe, applicable one-click unsubscribe, and scoped public tokens.
-- [ ] 3.7 Integrate authenticated bounce, complaint, delivery, and unsubscribe events through Mail.
-- [ ] 3.8 Enforce campaign and delivery-safety suppression at enqueue and execution, including active-batch withdrawal.
-- [ ] 3.9 Build revision-bound approval, schedule, batched sending, pause/resume, unsent cancellation, and safe retry.
-- [ ] 3.10 Build recipient outcomes, limited engagement metrics, audit, quotas, and authorized exports.
-- [ ] 3.11 Run a limited approved live pilot and reconcile transport acceptance against available delivery evidence.
-- [ ] 3.12 Block implicit environment/shared-sender fallback for campaign dispatch without changing existing non-campaign transport behavior.
+- [x] 3.1 Extend Mail public contracts and assess a suitable bulk email transport/provider.
+- [x] 3.2 Verify sender/domain ownership and SPF, DKIM, DMARC, provider limits, and feedback capability.
+- [x] 3.3 Build email campaign list, Show, upsert, sender selection, subject, preheader, and HTML/plain-text templates.
+- [x] 3.4 Build sanitized desktop/mobile preview, variable validation, and approved test-recipient sends.
+- [x] 3.5 Build segments, consent evidence, exclusion review, deduplication, and approved audience snapshots.
+- [x] 3.6 Implement preference management, visible unsubscribe, applicable one-click unsubscribe, and scoped public tokens.
+- [x] 3.7 Integrate authenticated bounce, complaint, delivery, and unsubscribe events through Mail.
+- [x] 3.8 Enforce campaign and delivery-safety suppression at enqueue and execution, including active-batch withdrawal.
+- [x] 3.9 Build revision-bound approval, schedule, batched sending, pause/resume, unsent cancellation, and safe retry.
+- [x] 3.10 Build recipient outcomes, limited engagement metrics, audit, quotas, and authorized exports.
+- [ ] 3.11 Run a limited approved live pilot and reconcile transport acceptance against available delivery evidence (External Prerequisite R04).
+- [x] 3.12 Block implicit environment/shared-sender fallback for campaign dispatch without changing existing non-campaign transport behavior.
 
 Exit evidence: verified sender, correct recipients, functional unsubscribe, suppression race tests, and isolated delivery records.
 SMTP acceptance, open pixels, and scanned links must not appear as proven inbox delivery or human engagement.
@@ -349,12 +357,12 @@ After implementation authorization:
 
 ## Phase completion decision
 
-- [ ] SUP confirms applicable E01-E15 evidence or a documented domain-specific exception for every Phase 1 task.
-- [ ] QA passes the signed journey: tenant -> Brand -> Campaign -> source -> Submission -> Marketing Lead -> Qualification -> Sales Conversion -> Outcome.
-- [ ] QA repeats tenant B and denies cross-tenant/company/Brand operations and stale browser caches.
-- [ ] UI parity, validation/navigation, persistence, identity, consent, restart/revocation, export and retention boundaries pass.
-- [ ] SUP records pending live/account gates and keeps unsupported execution disabled.
-- [ ] No commit, push, version bump, deployment or external action occurred without its own user authorization.
+- [x] SUP confirms applicable E01-E15 evidence or a documented domain-specific exception for every Phase 1 task.
+- [x] QA passes the signed journey: tenant -> Brand -> Campaign -> source -> Submission -> Marketing Lead -> Qualification -> Sales Conversion -> Outcome.
+- [x] QA repeats tenant B and denies cross-tenant/company/Brand operations and stale browser caches.
+- [x] UI parity, validation/navigation, persistence, identity, consent, restart/revocation, export and retention boundaries pass.
+- [x] SUP records pending live/account gates and keeps unsupported execution disabled (R01-R06 open).
+- [x] No commit, push, version bump, deployment or external action occurred without its own user authorization.
 
 ## 25-10-2026 planning review
 

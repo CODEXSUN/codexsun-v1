@@ -25,7 +25,6 @@ const apiPackages = new Map([
   ["@codexsun/notes-api", "notes"],
   ["@codexsun/chat-api", "chat"],
   ["@codexsun/zetro-api", "zetro"],
-  ["@codexsun/project-manager-api", "project-manager"],
   ["@codexsun/zuno-api", "zuno"],
   ["@codexsun/mail-api", "mail"],
   ["@codexsun/marketing-api", "marketing"]

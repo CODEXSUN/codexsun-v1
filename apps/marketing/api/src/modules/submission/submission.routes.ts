@@ -4,6 +4,11 @@ import { registerContractRoute } from "@codexsun/framework/http";
 import type { MarketingDependencies } from "../../context.js";
 import { SubmissionService } from "./submission.service.js";
 import type { SubmissionDependencies } from "./submission.types.js";
+import {
+  handleMetaLeadWebhook,
+  handleGoogleAdsLeadWebhook,
+  verifyMetaSubscription
+} from "./submission.social-webhook.js";
 
 export const submissionInputSchema = z.strictObject({
   captureUuid: z.string().regex(/^[a-f0-9]{8}$/),
@@ -119,5 +124,70 @@ export function registerSubmissionRoutes(
     },
     handler: async ({ request, params }) =>
       new SubmissionService(await context(request), deps).handoff(params.uuid)
+  });
+
+  registerContractRoute(app, {
+    method: "GET",
+    url: "/marketing/webhooks/meta-leads",
+    schemas: {
+      querystring: z
+        .object({
+          "hub.mode": z.string().optional(),
+          "hub.verify_token": z.string().optional(),
+          "hub.challenge": z.string().optional()
+        })
+        .passthrough(),
+      response: z.object({
+        challenge: z.string(),
+        status: z.string()
+      })
+    },
+    handler: async ({ query }) => verifyMetaSubscription(query as Record<string, unknown>)
+  });
+
+  registerContractRoute(app, {
+    method: "POST",
+    url: "/marketing/webhooks/meta-leads",
+    schemas: {
+      body: z.record(z.string(), z.unknown()),
+      response: z.object({
+        received: z.boolean(),
+        submissionUuid: z.string(),
+        leadUuid: z.string().nullable(),
+        isTest: z.boolean(),
+        status: z.string()
+      })
+    },
+    handler: async ({ request, body }) =>
+      handleMetaLeadWebhook(
+        await context(request),
+        deps,
+        body,
+        request.headers,
+        request.query as Record<string, unknown>
+      )
+  });
+
+  registerContractRoute(app, {
+    method: "POST",
+    url: "/marketing/webhooks/google-leads",
+    schemas: {
+      body: z.record(z.string(), z.unknown()),
+      response: z.object({
+        received: z.boolean(),
+        submissionUuid: z.string(),
+        leadUuid: z.string().nullable(),
+        isTest: z.boolean(),
+        status: z.string()
+      })
+    },
+    handler: async ({ request, body }) =>
+      handleGoogleAdsLeadWebhook(
+        await context(request),
+        deps,
+        body,
+        request.headers,
+        request.query as Record<string, unknown>
+      )
   });
 }

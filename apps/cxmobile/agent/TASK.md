@@ -1,5 +1,13 @@
 # cxmobile tasks and acceptance evidence
 
+## Worktree Reset: 1.1.67
+
+Active app checkout: `D:\workspace\codexsun-worktrees\cxmobile`, branch `codex/cxmobile`.
+This replaces old worktree paths and worker leases below. Those records are historical evidence.
+The integrated development baseline does not close unverified provider, device, browser, or production gates.
+Fresh checkout authorization excludes npm installation and runtime startup. Wait for the next app task.
+
+
 ## Status rules
 
 Implementation baseline: 25 October 2026. Implementation is ACTIVE under supervisor repair and integration loop.
@@ -67,8 +75,9 @@ Do not treat Node mock unit tests or demonstration slices as device completion e
 
 ## Test Suite Execution Evidence
 
-- Total tests: **127** passed, **0** failed (34 suites, duration: 11.5s)
-- Test script: `npm test -w @codexsun/cxmobile-client`
+- Total tests: **135** passed, **0** failed
+  - Node / TypeScript Integration Tests: **127** passed, **0** failed (34 suites, duration: 8.3s via `npm test -w @codexsun/cxmobile-client`)
+  - Java JVM Unit Tests: **8** passed, **0** failed (executed in Gradle via `./gradlew testDebugUnitTest` in `apps/cxmobile/client/android`, exercising `NativeSecureStoragePluginTest.java` directly on Dalvik/JVM classes with real JSON parsing)
 - Static Analysis: `npm run typecheck -w @codexsun/cxmobile-client` (0 errors), `npm run lint -w @codexsun/cxmobile-client` (0 errors, 0 warnings across 70 files)
 - Packaging Entry Points: `build:release` (`vite build --mode production`), `build:debug` (`vite build --mode debug`)
 - Boundaries: `node tools/check-module-boundaries.mjs cxmobile` (Passed), `node tools/check-root-node-modules.mjs` (Passed)

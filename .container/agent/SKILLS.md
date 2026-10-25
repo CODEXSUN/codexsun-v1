@@ -1,5 +1,12 @@
 # Deployment rules
 
+Follow the shared [worktree and release workflow](../../assist/operations/worktree-release-workflow.md).
+Release candidates come from reviewed `main` after app worktree integration.
+Version folders remain empty until candidate preparation is authorized.
+The target promotion uses the same approved staging image digests in production.
+The current source-building VPS updater does not implement that promotion.
+Do not pull, install, build, or deploy to implement documentation-only requests.
+
 - Keep one active deployment contract under `codexsun-v1`. Do not add product, demo, or local deployment duplicates.
 - Preserve database and Redis definitions. Do not install or bind Media or Frappe until separately authorized.
 - Frappe installer source lives under `frappe`. It adds one container, reuses explicitly selected MariaDB, Redis, and network resources, and reserves a new database plus unused Redis databases. Preparing source does not authorize live installation.

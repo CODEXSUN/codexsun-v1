@@ -220,13 +220,11 @@ import {
 import { closeAllTenantDatabases } from "./database/tenant-database.js";
 import { registerAuthRequestContext } from "./auth/auth-request-context.js";
 import { TenantDomainRepository } from "./modules/tenant-domain/tenant-domain.repository.js";
-import { registerProjectManagerHost } from "./project-manager-host.js";
 import { registerDataMigrationHost } from "./data-migration-host.js";
 import { registerDataBridgeHost } from "./data-bridge-host.js";
 import { registerZunoHost } from "./zuno-host.js";
 import { registerCodexsunHost } from "./codexsun-host.js";
 import { resolvePlatformApiUrl } from "./api-url.js";
-import { projectManagerApiModuleKeys } from "@codexsun/project-manager-api";
 import { zunoApiModuleKeys } from "@codexsun/zuno-api";
 import {
   addonApiModuleKeys,
@@ -276,7 +274,6 @@ export async function createApp() {
   registerBillingComplianceHost(app, queueService);
   registerAuthRequestContext(app);
   await registerMarketingHost(app, queueService);
-  await registerProjectManagerHost(app);
   const dataMigrationHost = await registerDataMigrationHost(app);
   await registerDataBridgeHost(app, dataMigrationHost);
   await registerZunoHost(app);
@@ -330,7 +327,6 @@ export async function createApp() {
             zetroChatModule.key,
             ...billingApiModuleKeys,
             ...accountsApiModuleKeys,
-            ...projectManagerApiModuleKeys,
             ...zunoApiModuleKeys,
             ...addonApiModuleKeys,
             qCafeModule.key,

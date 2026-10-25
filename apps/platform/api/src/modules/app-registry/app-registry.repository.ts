@@ -21,6 +21,7 @@ export class AppRegistryRepository {
         "default_landing",
         "description"
       ])
+      .where("app_id", "!=", "project-manager")
       .orderBy("default_landing", "desc")
       .orderBy("label", "asc")
       .execute();

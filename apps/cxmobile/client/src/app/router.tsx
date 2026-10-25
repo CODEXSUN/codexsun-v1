@@ -49,13 +49,20 @@ const loginRoute = createRoute({
   path: "/login"
 });
 
+const forgotPasswordRoute = createRoute({
+  component: MobileShell,
+  getParentRoute: () => rootRoute,
+  path: "/forgot-password"
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   crmRoute,
   billingRoute,
   chatRoute,
   ecommerceRoute,
-  loginRoute
+  loginRoute,
+  forgotPasswordRoute
 ]);
 
 export function createMobileRouter(customHistory?: ReturnType<typeof createMemoryHistory>) {

@@ -2,6 +2,10 @@
 
 ## Coordination contract
 
+Read [BRANCH-WORKFLOW.md](BRANCH-WORKFLOW.md) before executing a task.
+All cxmobile work now uses branch `codex/cxmobile` in the isolated worktree named below.
+Verify the absolute working directory and branch before making changes.
+
 The supervisor owns sequencing, shared contracts, integration, review decisions, and final acceptance.
 Workers own bounded implementation tasks and return inspectable evidence.
 Only the supervisor updates shared TASK state and releases file leases.
@@ -76,7 +80,8 @@ The supervisor fills every bracket before dispatch. Do not submit the template w
 You are a cxmobile implementation worker reporting to the supervisor.
 Task ID: [CX-Wxx-subtask].
 Actual supervisor task/chat: [identifier].
-Workspace: D:\workspace\codexsun.
+Workspace: C:\Users\sunda\.codex\worktrees\cxmobile\codexsun.
+Branch: codex/cxmobile.
 Objective: [one bounded behavior or integration].
 Dependencies accepted: [task IDs and evidence].
 Exact write lease: [files/directories and explicit exclusions].

@@ -10,28 +10,6 @@ export const appRegistrySeed = {
 
 export async function seedAppRegistryModule(database: Kysely<PlatformDatabase>) {
   console.info(`[seeder] seeding app registry (${platformAppRegistry.length} apps)`);
-  const previous = await database
-    .selectFrom("platform_apps")
-    .select("id")
-    .where("app_id", "=", "devkit")
-    .executeTakeFirst();
-  const replacement = await database
-    .selectFrom("platform_apps")
-    .select("id")
-    .where("app_id", "=", "project-manager")
-    .executeTakeFirst();
-  if (previous && !replacement) {
-    await database
-      .updateTable("platform_apps")
-      .set({
-        app_id: "project-manager",
-        label: "Project Manager",
-        module_key: "project-manager",
-        stack: "project-manager"
-      })
-      .where("id", "=", previous.id)
-      .execute();
-  }
   for (const app of platformAppRegistry) {
     await database
       .insertInto("platform_apps")

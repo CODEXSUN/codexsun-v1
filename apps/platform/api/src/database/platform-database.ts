@@ -63,12 +63,6 @@ import {
   authLoginAttemptMigration,
   migrateAuthLoginAttempt
 } from "../auth/auth-login-attempt.migration.js";
-import {
-  migrateProjectManagerDatabase,
-  rollbackProjectManagerDatabase,
-  seedProjectManagerDatabase,
-  type ProjectManagerDatabase
-} from "@codexsun/project-manager-api";
 import { migrateDataMigrationDatabase } from "@codexsun/data-migration-api";
 import { migrateDataBridgeDatabase } from "@codexsun/data-bridge-api";
 import { migrateZunoDatabase, rollbackZunoDatabase, type ZunoDatabase } from "@codexsun/zuno-api";
@@ -77,7 +71,11 @@ let platformDatabase: Kysely<PlatformDatabase> | null = null;
 let bootstrapped = false;
 
 const platformMasterMigrationSteps = [
-  {description:"Provider account ownership routing without tenant credentials.",migrate:migrateProviderAccountClaims,name:"platform.provider-account-claims.v1"},
+  {
+    description: "Provider account ownership routing without tenant credentials.",
+    migrate: migrateProviderAccountClaims,
+    name: "platform.provider-account-claims.v1"
+  },
   {
     description: appRegistryMigration.description,
     migrate: migrateAppRegistryModule,
@@ -375,7 +373,6 @@ export async function migratePlatformDatabase() {
   console.info(`[database] migrating platform database "${platformDatabaseName()}"`);
   const database = getPlatformDatabase();
   const result = await runMigrationBatch(database, platformMigrationBatch, { batchSize: 8 });
-  await migrateProjectManagerDatabase(database as unknown as Kysely<ProjectManagerDatabase>);
   await migrateDataMigrationDatabase(database as unknown as Kysely<unknown>);
   await migrateDataBridgeDatabase(database as unknown as Kysely<unknown>);
   await migrateZunoDatabase(database as unknown as Kysely<ZunoDatabase>);
@@ -387,7 +384,6 @@ export async function migratePlatformDatabase() {
 export async function rollbackPlatformDatabase() {
   const database = getPlatformDatabase();
   await rollbackZunoDatabase(database as unknown as Kysely<ZunoDatabase>);
-  await rollbackProjectManagerDatabase(database as unknown as Kysely<ProjectManagerDatabase>);
   return rollbackMigrationBatch(database, platformMigrationBatch);
 }
 
@@ -397,8 +393,6 @@ export async function seedPlatformDatabase() {
     await step.seed(database);
     console.info(`[seeder] platform module seeded: ${step.name}`);
   }
-  await seedProjectManagerDatabase(database as unknown as Kysely<ProjectManagerDatabase>);
-  console.info("[seeder] master app seeded: project-manager");
 }
 
 export async function resetPlatformDatabases() {

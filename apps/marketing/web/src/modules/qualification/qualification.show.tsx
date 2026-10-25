@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2, Edit, TrendingUp } from "lucide-react";
+import { ArrowLeft, Edit, TrendingUp } from "lucide-react";
 import { Button } from "@codexsun/ui/components/button";
 import {
   WorkspaceDetailTable,

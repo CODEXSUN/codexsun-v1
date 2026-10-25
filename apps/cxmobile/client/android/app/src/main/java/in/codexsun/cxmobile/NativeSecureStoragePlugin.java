@@ -108,7 +108,7 @@ public class NativeSecureStoragePlugin extends Plugin {
         return new String(decrypted, StandardCharsets.UTF_8);
     }
 
-    private boolean isNativeOwnedKey(String key) {
+    boolean isNativeOwnedKey(String key) {
         if (key == null) return false;
         String lower = key.toLowerCase();
         return lower.endsWith("auth.session_record") ||
@@ -254,7 +254,18 @@ public class NativeSecureStoragePlugin extends Plugin {
      * Validates destination URL, protocol, and binds scope natively against
      * the approved session origin and base path BEFORE opening a network connection.
      */
-    private URL assertValidDestination(String urlString, JSONObject sessionObj) throws Exception {
+    URL assertValidDestination(String urlString, JSONObject sessionObj) throws Exception {
+        boolean isDebug = false;
+        try {
+            if (getContext() != null && getContext().getApplicationInfo() != null) {
+                isDebug = (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+            }
+        } catch (Exception ignored) {
+        }
+        return assertValidDestination(urlString, sessionObj, isDebug);
+    }
+
+    URL assertValidDestination(String urlString, JSONObject sessionObj, boolean isDebug) throws Exception {
         if (urlString == null || urlString.trim().isEmpty()) {
             throw new IllegalArgumentException("Destination URL is required.");
         }
@@ -267,7 +278,6 @@ public class NativeSecureStoragePlugin extends Plugin {
         }
 
         String protocol = destUrl.getProtocol().toLowerCase();
-        boolean isDebug = (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
 
         if (!protocol.equals("http") && !protocol.equals("https")) {
             throw new SecurityException("Insecure or unsupported protocol: " + protocol);
@@ -370,6 +380,8 @@ public class NativeSecureStoragePlugin extends Plugin {
         String method = call.getString("method", "GET").toUpperCase();
         JSObject headers = call.getObject("headers", new JSObject());
         String body = call.getString("body", null);
+        String bodyBase64 = call.getString("bodyBase64", null);
+        String responseType = call.getString("responseType", "text");
         int timeoutMs = call.getInt("timeoutMs", 15000);
         String secretKeyParam = call.getString("secretKey", "codexsun.cxmobile.auth.session_secret");
 
@@ -454,31 +466,56 @@ public class NativeSecureStoragePlugin extends Plugin {
                     conn.setRequestProperty("x-codexsun-session-slot", sessionSlot);
                 }
 
-                // 5. Send body if present
-                if (body != null && ("POST".equals(method) || "PUT".equals(method) || "PATCH".equals(method))) {
-                    conn.setDoOutput(true);
-                    byte[] input = body.getBytes(StandardCharsets.UTF_8);
-                    try (OutputStream os = conn.getOutputStream()) {
-                        os.write(input, 0, input.length);
-                        os.flush();
+                // 5. Send body if present (supports UTF-8 string or Base64 binary / multipart data)
+                if ("POST".equals(method) || "PUT".equals(method) || "PATCH".equals(method)) {
+                    if (bodyBase64 != null) {
+                        conn.setDoOutput(true);
+                        byte[] input = Base64.decode(bodyBase64, Base64.NO_WRAP);
+                        try (OutputStream os = conn.getOutputStream()) {
+                            os.write(input, 0, input.length);
+                            os.flush();
+                        }
+                    } else if (body != null) {
+                        conn.setDoOutput(true);
+                        byte[] input = body.getBytes(StandardCharsets.UTF_8);
+                        try (OutputStream os = conn.getOutputStream()) {
+                            os.write(input, 0, input.length);
+                            os.flush();
+                        }
                     }
                 }
 
-                // 6. Read response
+                // 6. Read response (supports UTF-8 text or Base64 binary stream)
                 int statusCode = conn.getResponseCode();
                 InputStream is = (statusCode >= 200 && statusCode < 400)
                         ? conn.getInputStream()
                         : conn.getErrorStream();
 
-                StringBuilder responseBuilder = new StringBuilder();
-                if (is != null) {
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                        char[] buf = new char[4096];
+                boolean isBinary = "base64".equalsIgnoreCase(responseType) || "binary".equalsIgnoreCase(responseType);
+                String responseData;
+
+                if (isBinary) {
+                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                    if (is != null) {
+                        byte[] buf = new byte[8192];
                         int r;
-                        while ((r = reader.read(buf)) != -1) {
-                            responseBuilder.append(buf, 0, r);
+                        while ((r = is.read(buf)) != -1) {
+                            baos.write(buf, 0, r);
                         }
                     }
+                    responseData = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
+                } else {
+                    StringBuilder responseBuilder = new StringBuilder();
+                    if (is != null) {
+                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                            char[] buf = new char[4096];
+                            int r;
+                            while ((r = reader.read(buf)) != -1) {
+                                responseBuilder.append(buf, 0, r);
+                            }
+                        }
+                    }
+                    responseData = responseBuilder.toString();
                 }
 
                 // Read and FILTER response headers: never return Set-Cookie or auth headers to JS!
@@ -503,8 +540,11 @@ public class NativeSecureStoragePlugin extends Plugin {
 
                 JSObject ret = new JSObject();
                 ret.put("status", statusCode);
-                ret.put("data", responseBuilder.toString());
+                ret.put("data", responseData);
                 ret.put("headers", responseHeaders);
+                if (isBinary) {
+                    ret.put("isBase64", true);
+                }
                 call.resolve(ret);
             } catch (Exception e) {
                 call.reject("Native authenticated HTTP transport error: " + e.getMessage(), e);

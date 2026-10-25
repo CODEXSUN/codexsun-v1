@@ -7,7 +7,8 @@ import React, {
   useState,
   type ReactNode
 } from "react";
-import { NativeHttpTransport } from "../native/http.js";
+import { Capacitor } from "@capacitor/core";
+import { NativeHttpTransport, PlatformApiError } from "../native/http.js";
 import { NativeSessionManager } from "../session/native-session-manager.js";
 import type {
   Desk,
@@ -43,7 +44,10 @@ function syncWebSessionStorage(session: SessionRecord | null): void {
   try {
     if (session && session.authenticated) {
       if (session.tenantId || session.tenantUuid) {
-        window.sessionStorage.setItem("codexsun_tenant_id", session.tenantId ?? session.tenantUuid!);
+        window.sessionStorage.setItem(
+          "codexsun_tenant_id",
+          session.tenantId ?? session.tenantUuid!
+        );
       }
       if (session.tenantDbName) {
         window.sessionStorage.setItem("codexsun_tenant_db_name", session.tenantDbName);
@@ -56,7 +60,8 @@ function syncWebSessionStorage(session: SessionRecord | null): void {
       if (companyId !== undefined) {
         window.sessionStorage.setItem("codexsun.tenant.company-id", String(companyId));
       }
-      const finYearId = session.activeFinancialYearId ?? session.context?.defaultCompany?.financialYearId;
+      const finYearId =
+        session.activeFinancialYearId ?? session.context?.defaultCompany?.financialYearId;
       if (finYearId !== undefined) {
         window.sessionStorage.setItem("codexsun.tenant.financial-year-id", String(finYearId));
       }
@@ -95,10 +100,13 @@ export function evaluateSessionPermission(
     if (!enabledModules || !Array.isArray(enabledModules) || enabledModules.length === 0) {
       return false;
     }
-    return (
-      enabledModules.includes(target) ||
-      enabledModules.includes(`codexsun.${target}`) ||
-      enabledModules.includes("all")
+    return enabledModules.some(
+      (m) =>
+        m === target ||
+        m === `codexsun.${target}` ||
+        m.startsWith(`${target}.`) ||
+        m.startsWith(`codexsun.${target}.`) ||
+        m === "all"
     );
   }
 
@@ -109,12 +117,111 @@ export function evaluateSessionPermission(
     (session as unknown as { grantedPermissions?: string[] }).grantedPermissions ??
     (session.context as unknown as { permissions?: string[] })?.permissions;
 
-  if (!explicitPermissions || !Array.isArray(explicitPermissions) || explicitPermissions.length === 0) {
+  if (
+    !explicitPermissions ||
+    !Array.isArray(explicitPermissions) ||
+    explicitPermissions.length === 0
+  ) {
     return false;
   }
 
   const normalizedGrants = explicitPermissions.map((p) => String(p).toLowerCase().trim());
   return normalizedGrants.includes(target) || normalizedGrants.includes("all");
+}
+
+/**
+ * Installs a transport seam on window.fetch for Platform API requests.
+ * Connects leaf owner workspaces (CRM crmRequest, Billing billingApiRequest, etc.)
+ * to the NativeHttpTransport, ensuring hardware KeyStore bearer tokens and native
+ * origin/path binding are enforced without leaking decrypted tokens to JavaScript.
+ */
+export function installNativeFetchInterceptor(
+  transport: NativeHttpTransport,
+  apiUrl: string
+): () => void {
+  if (typeof window === "undefined" || !window.fetch) return () => {};
+
+  const originalFetch = window.fetch.bind(window);
+  const normalizedBase = apiUrl.replace(/\/+$/, "");
+
+  const interceptor: typeof window.fetch = async (input, init) => {
+    const urlString =
+      typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+
+    const isPlatformApi =
+      urlString.startsWith(normalizedBase) ||
+      urlString.startsWith("/api/app") ||
+      (urlString.startsWith("/") &&
+        (normalizedBase.endsWith(urlString) || urlString.startsWith("/api/app/")));
+
+    const isNativeTransport =
+      Capacitor.isNativePlatform() ||
+      Boolean((transport as unknown as { nativeHttpDispatcher?: unknown }).nativeHttpDispatcher);
+
+    if (isPlatformApi && isNativeTransport) {
+      try {
+        const method = (init?.method ?? "GET").toUpperCase();
+        let body: unknown = init?.body;
+
+        if (typeof body === "string") {
+          try {
+            body = JSON.parse(body);
+          } catch {}
+        }
+
+        const headers: Record<string, string> = {};
+        if (init?.headers) {
+          if (init.headers instanceof Headers) {
+            init.headers.forEach((v, k) => {
+              headers[k] = v;
+            });
+          } else if (Array.isArray(init.headers)) {
+            for (const [k, v] of init.headers) {
+              headers[k] = v;
+            }
+          } else {
+            Object.assign(headers, init.headers);
+          }
+        }
+
+        const result = await transport.request<unknown>(urlString, {
+          body,
+          headers,
+          method,
+          ...(init?.signal ? { signal: init.signal } : {}),
+          skipEnvelopeUnwrap: true
+        });
+
+        const responseText = typeof result === "string" ? result : JSON.stringify(result);
+        return new Response(responseText, {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+          statusText: "OK"
+        });
+      } catch (err) {
+        if (err instanceof PlatformApiError) {
+          return new Response(
+            JSON.stringify({
+              error: { code: err.code, message: err.message },
+              success: false
+            }),
+            {
+              headers: { "Content-Type": "application/json" },
+              status: err.statusCode,
+              statusText: err.message
+            }
+          );
+        }
+      }
+    }
+
+    return originalFetch(input, init);
+  };
+
+  window.fetch = interceptor;
+  return () => {
+    window.fetch = originalFetch;
+  };
 }
 
 export function NativeSessionProvider({
@@ -136,6 +243,14 @@ export function NativeSessionProvider({
 
   const [sessionState, setSessionState] = useState(() => sessionManager.state);
   const [activeApp, setActiveApp] = useState<SupportedApp>(initialApp);
+
+  useEffect(() => {
+    const origin = getRuntimeConfig("VITE_PLATFORM_API_URL", "http://127.0.0.1:18080");
+    const uninstall = installNativeFetchInterceptor(transport, origin);
+    return () => {
+      uninstall();
+    };
+  }, [transport]);
 
   useEffect(() => {
     // Initial sync
@@ -192,22 +307,7 @@ export function NativeSessionProvider({
 
   const isAppEnabled = useCallback(
     (appKey: SupportedApp | string): boolean => {
-      const session = sessionManager.activeSession;
-      if (!session || !session.authenticated) return false;
-
-      const enabledModules = session.context?.enabledModuleKeys;
-      if (!enabledModules || !Array.isArray(enabledModules) || enabledModules.length === 0) {
-        // Fail closed: if module list is absent or empty, do not grant access
-        return false;
-      }
-
-      // Check whether app key or wildcard is enabled
-      const normalizedKey = appKey.toLowerCase().trim();
-      return (
-        enabledModules.includes(normalizedKey) ||
-        enabledModules.includes(`codexsun.${normalizedKey}`) ||
-        enabledModules.includes("all")
-      );
+      return evaluateSessionPermission(sessionManager.activeSession, appKey);
     },
     [sessionManager]
   );
@@ -252,9 +352,7 @@ export function NativeSessionProvider({
   );
 
   return (
-    <NativeSessionContext.Provider value={contextValue}>
-      {children}
-    </NativeSessionContext.Provider>
+    <NativeSessionContext.Provider value={contextValue}>{children}</NativeSessionContext.Provider>
   );
 }
 

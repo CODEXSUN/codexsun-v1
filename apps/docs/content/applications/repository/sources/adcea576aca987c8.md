@@ -2,7 +2,7 @@
 
 Repository source: `tools/hostinger-deploy/agent/TASK.md`
 
-Source SHA-256 (LF line endings): `cf9f80ea36630ccb5dd14a31e1e1cdb81107229699950f1b69cf12be9f23f95f`
+Source SHA-256 (LF line endings): `1de1c82424e977a94d5d24694e31f033d90c9dc8c72ab8073d08a7d4c69dd5d9`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -13,9 +13,9 @@ Historical notes and unchecked plans retain their original status.
 
 ## Responsibility
 
-The pinned-host SSH status, demo checkout bootstrap, and reviewed commit synchronization tooling.
+Read-only pinned-host SSH, Docker, Compose, and deployment-checkout status.
 
-Keep private credentials outside source. Verify the configured host and separate demo checkout. A source sync does not deploy containers. Do not contact or change a host merely to update documentation.
+Keep private credentials outside source. Verify the pinned host. This tool has no source mutation or deployment operation. Do not contact a host merely to update documentation.
 
 Read [the component README](../README.md), [the plan](PLAN.md), and [the skills](SKILLS.md) before changing this owner.
 These tasks define acceptance for a change. Unchecked items are not claims of missing production features.

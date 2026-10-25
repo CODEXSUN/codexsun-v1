@@ -24,10 +24,6 @@ const uiuxPort = requiredDevPort(
   process.env.CODEXSUN_UIUX_WEB_PORT ?? env.CODEXSUN_UIUX_WEB_PORT,
   "CODEXSUN_UIUX_WEB_PORT"
 );
-const projectManagerPort = requiredDevPort(
-  process.env.CODEXSUN_PROJECT_MANAGER_WEB_PORT ?? env.CODEXSUN_PROJECT_MANAGER_WEB_PORT,
-  "CODEXSUN_PROJECT_MANAGER_WEB_PORT"
-);
 const qCafeApiPort = requiredDevPort(
   process.env.CODEXSUN_QCAFE_API_PORT ?? env.CODEXSUN_QCAFE_API_PORT,
   "CODEXSUN_QCAFE_API_PORT"
@@ -62,13 +58,6 @@ const allServices = {
     healthUrl: `http://127.0.0.1:${uiuxPort}/`,
     readyUrl: `http://127.0.0.1:${uiuxPort}/`,
     label: "uiux",
-    readyTimeoutMs: 30_000
-  },
-  "project-manager-web": {
-    color: "\x1b[34m",
-    healthUrl: `http://127.0.0.1:${projectManagerPort}/`,
-    readyUrl: `http://127.0.0.1:${projectManagerPort}/`,
-    label: "project manager",
     readyTimeoutMs: 30_000
   },
   "ecommerce-web": {
@@ -131,7 +120,6 @@ try {
     await startAndWait("platform-web");
     await startAndWait("ecommerce-web");
     await startAndWait("uiux-web");
-    await startAndWait("project-manager-web");
   }
   if (stopping) await shutdown(0);
   if (stopping) process.exit(0);

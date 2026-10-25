@@ -2,7 +2,7 @@
 
 Repository source: `apps/ecommerce/agent/tasks/EC-T03-CATALOG.md`
 
-Source SHA-256 (LF line endings): `42d050709519c962ce45e8b4303563e7eecd8e16850bbdeee8ecfffdf379f4e5`
+Source SHA-256 (LF line endings): `9aaf34b568ed084070f3e3afedf00e6d219320eafd854feced7504008a1b83dc`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -56,15 +56,15 @@ Use the complete E2E-PLAN section 11 cases applicable to this task. Record exact
 
 ## Evidence to fill during execution
 
-- Base/source revision and dirty baseline:
-- Worker, effective model, exact paths and lease generation:
-- Accepted contract revisions and prerequisites:
-- Changed files and database compatibility:
-- Commands, exit codes and exact observed results:
-- Database fixture IDs, screenshots and recovery evidence:
-- Independent reviewer, findings and repairs:
-- Integrated verification and remaining limits:
-- Status and supervisor acceptance:
+- Base/source revision and dirty baseline: `ef5b3b3` plus uncommitted repair/catalog work; dirty baseline in `dist/ecommerce-scratch/baseline/`.
+- Worker, effective model, exact paths and lease generation: supervisor, `opencode/deepseek-v4.1-flash-free`; product-information and product-variant API/web modules plus the tenancy harness.
+- Accepted contract revisions and prerequisites: EC-T00 contracts; EC-T02 local-only repair pending re-acceptance (EC-T03 does not depend on remote reads).
+- Changed files and database compatibility: additive `revision` and `option_signature` columns plus the option unique index; legacy rows are backfilled before the index.
+- Commands, exit codes and exact observed results: tenancy A1-A13 exit 0; N04 non-browser log 13 groups (`dist/ecommerce-scratch/evidence/ec-n04-postfix.log`); Chrome log 14 groups including R04 and staff paging (`dist/ecommerce-scratch/evidence/ec-n04-browser.log`); focused 32/32 suite, API/web typecheck, lint and module boundaries pass.
+- Database fixture IDs, screenshots and recovery evidence: A11-A13 use disposable Core/product/variant rows and drop all generated databases; staff screenshots at 1440/1024/390 and one-row 1440 are under `dist/ecommerce-scratch/ecommerce-browser-1792864760930/`.
+- Independent reviewer, findings and repairs: not yet assigned; N01-N06 review pending.
+- Integrated verification and remaining limits: attributes, specifications, collections, Show/App Header actions, activity, invalid-field feedback, 768/320 checks and review remain.
+- Status and supervisor acceptance: in progress, not accepted.
 
 Do not mark accepted until the integrated behavior passes its acceptance tests.
 Mocks, database E2E, browser checks, sandbox providers and production verification remain distinct evidence.

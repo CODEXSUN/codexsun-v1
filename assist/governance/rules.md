@@ -8,12 +8,32 @@ Use the full governance audits and release gates only for a release, new module,
 
 This section overrides older, more detailed governance or component checklist wording for normal focused work.
 
+## App Selection
+
+Before an unspecified app task, ask which app the user wants to work on.
+Current app work is separate: CXMobile, Marketing, CRM, and Billing.
+Use the selected app's assigned worktree and task chat.
+Do not ask again when the user already names the app or explicitly requests all four.
+Do not combine app changes, installs, or runtime resources merely because the repository is shared.
+Fresh app worktrees start as code-only checkouts. Do not install npm dependencies without authorization.
+
+## Worktree And Release Rules
+
+Follow [the shared workflow](../operations/worktree-release-workflow.md) for app integration and versioned cloud releases.
+Use authorized external app worktrees. Integrate reviewed work into `main` before cutting a frozen release candidate.
+Test staging before an explicitly approved production promotion. Promote the same verified image digests.
+Keep reserved version folders empty until candidate preparation is authorized.
+Preserve unfinished work and separate test data, queues, storage, credentials, and ports.
+An empty folder, branch name, or passing local check does not identify a deployed release.
+The existing source-building VPS updater is not the target unchanged-image promotion mechanism.
+Documentation and folder requests do not authorize pulls, installs, version bumps, commits, pushes, or deployment.
+
 ## Package Manager And Generated Output Rules
 
 - CODEXSUN uses npm only. Agents and developers must run dependency commands with `npm` from the repository root; pnpm, Yarn, workspace-local installs, and alternative lockfiles are prohibited.
 - The internal application identity is CODEXSUN: environment keys use `CODEXSUN_*`, npm workspaces use `@codexsun/*`, and machine-facing runtime identifiers use `codexsun`. Use the same identity across source, configuration, and documentation.
 - Never reintroduce aliases for the retired environment prefix. A deployment must migrate its complete environment contract before the new release starts.
-- The repository must contain exactly one dependency installation tree at `/node_modules`. Never create or retain `node_modules` inside `apps/`, `packages/`, `tools/`, or any other subfolder.
+- Each worktree must contain at most one dependency installation tree at its root `/node_modules`. Never create or retain `node_modules` inside `apps/`, `packages/`, `tools/`, or any other subfolder.
 - The root `package-lock.json` is the only dependency lockfile. Do not create `pnpm-lock.yaml`, `yarn.lock`, `.pnpm-store`, or a `node_modules/.pnpm` store.
 - All workspaces must resolve dependencies from the root installation through npm workspaces. A workspace must not carry installation configuration that creates its own dependency tree.
 - Generated build output belongs only under the root `/dist` tree. Subfolder `dist` and `dist-types` directories and configuration that emits them are prohibited.

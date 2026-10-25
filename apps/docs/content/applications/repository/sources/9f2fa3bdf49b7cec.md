@@ -2,7 +2,7 @@
 
 Repository source: `assist/README.md`
 
-Source SHA-256 (LF line endings): `9d4875a1097133b26c1895a74d5cd7891af3473cffd5d906fb67a93cb7c09f62`
+Source SHA-256 (LF line endings): `0c3210457d067ae495b550c6ffbf6108d2877af44bc8b17f7ab559d3739a0288`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -30,13 +30,13 @@ and change history.
 The goal is to keep the platform clean, scalable, modular, and understandable while supporting many industries,
 deployment styles, customizations, and online/offline business workflows.
 
-Agents should inspect this reference before changing authentication screens, global loading states, workspace shell
-behavior, super-admin flows, tenant desk flows, and shared design-system primitives. Copy the intent and interaction
+Agents should inspect only the relevant reference before changing authentication screens, global loading states, workspace shell
+behavior, super-admin flows, tenant desk flows, or shared design-system primitives. Copy the intent and interaction
 rhythm into CODEXSUN through `@codexsun/ui`; do not paste unrelated business logic or old module boundaries blindly.
 
 ## Development Standards
 
-Agents must read and follow these standards before changing module UI, backend contracts, or release notes:
+Agents read these standards only when the task changes the listed concern, or when the user requests planning, audit, release, or documentation work:
 
 - Current repository inventory and latest work update: `assist/documentation/project-inventory.md`
 - UI and backend module standard: `assist/documentation/design-system-helper.md`
@@ -327,7 +327,7 @@ Good vibe coding means:
 - Existing patterns first.
 - Tenant, permission, subscription, and offline impact checked.
 - Verification is proportional to risk and every skipped check is reported explicitly.
-- Docs updated when product meaning changes.
+- Docs updated only when the user asks, or when product meaning, a contract, architecture, or release changes.
 - Clean summary after work.
 
 Use `assist/AGENT-GUIDE.md` as the working standard for AI-assisted development. Open specialized documents only when the task touches their subject.

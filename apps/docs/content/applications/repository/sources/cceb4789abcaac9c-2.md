@@ -2,14 +2,25 @@
 
 Repository source: `apps/frappe/agent/TASK.md`
 
-Source SHA-256 (LF line endings): `1c94014c63cd705e71850d3ca73f253b2d044f15f1c87f2f1792363ceac7a7d4`
+Source SHA-256 (LF line endings): `f897cbc4dc13609369fea95bd79118bee2d8a3da3d401621fc2e0f9ef71d62e0`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
 Historical notes and unchecked plans retain their original status.
 
 ```markdown
-; the exact remote test document and local CRM fixture were then removed and absence verified. CRM did not create another Frappe Customer or Supplier. This was a local browser/API queue test against the live Frappe site, not a production deployment.
+ll 18 distinct assigned employee codes mapped, and all 389 rows without a source assignee remain unassigned. All 575 source Customer rows have contact links; rows lacking a Frappe Customer were not linked by mobile alone. Frappe contained 4,066 embedded `enquiry_messages` and 69 standalone Enquiry comments; CRM contains 4,135 retry-keyed imported comments. Release 1.1.17 imports embedded messages with source author/time and stable retry keys. API, web, shop, and all CXApp containers report healthy; live CODEXSUN, shop, and API health routes passed. Only `techmedia_db` was used; no backup, schema migration, or tenant database creation occurred. Focused CRM/Frappe tests (101) and three isolated integration suites passed, as did Frappe API typecheck/lint/build, module boundaries, version consistency, and diff checks.
+
+- [x] Separate Frappe-to-CRM imports from CRM-to-Frappe exports in the API and web labels.
+- [x] Report connection usability and queue-worker availability to the web client.
+- [x] Reject queued import and export jobs when the background worker is disabled.
+- [x] Keep direct selected-row imports available without a background worker.
+      Evidence: `sync-readiness.test.ts`, `npm run test:crm-frappe`, and Frappe/Platform typechecks.
+- [ ] Resolve the CRM policy for automatic Contact, Enquiry, Activity, and Call Log exports.
+      CRM documentation approves automatic outbound transfer only for SOP and Duty records.
+- [x] Verify both Contact directions and the queued CRM-to-Frappe export through the browser.
+      Evidence: `npm run test:e2e:frappe-contacts-live` on `logicx.tmnext.in` imported Customer `C9138` into disposable local Core storage, confirmed the same local ID on retry, then created and read back one unique Mobile Contact using only `mobile_number`; repeat export updated that same document and cleanup deleted it. The mismatch path remained blocked.
+      The local browser export page verified Customer `C9138`, showed “Create Mobile Contact” and “Ready · mobile number only”, queued the export, and completed with 1 exported and 0 failed. Remote readback confirmed the Mobile Contact ID and `mobile_number` were `6886246988`; the exact remote test document and local CRM fixture were then removed and absence verified. CRM did not create another Frappe Customer or Supplier. This was a local browser/API queue test against the live Frappe site, not a production deployment.
 
 ## Enquiry live sync and source timestamps - 2026-10-18
 
@@ -151,4 +162,23 @@ The previous blocked checklist records the earlier state. These repairs supersed
 - [x] Retain SOP-14, ASSIGN3, and REPORTING353 with test-completion notes. SOP Item and SOP Assigned have no Closed field.
 
 See [CRM cleanup and emulator evidence](../../crm/agent/RELEASE-1.1.50-VERIFICATION.md). Tasks remain local. Existing business enquiries, Customers, and collection history remain intact.
+## TECHMEDIA Mobile Contact export and current site failure — 2026-10-24
+
+This entry supersedes earlier Customer blockers for the six selected enquiry IDs.
+
+- [x] Use exact Mobile Contact number IDs without forcing a missing Customer association, as requested by the user.
+- [x] Link C9118 and C10604 from exact Customer primary mobile and Contact evidence. Repeated contact imports reused their IDs.
+- [x] Verify Vijay Anand, vijay@techmedia.in, maps to active Employee HR-EMP-00001 for the current connection.
+- [x] Preserve the user's assignment change to Vijay on stable CRM enquiry ID 2663. Do not rename the admin account.
+- [x] Post stable enquiry IDs 2654, 2663, 2655, 2656, 2657, and 2662 as Q2081-Q2086 respectively.
+- [x] Sync their saved opening and follow-up comments through the existing Redis queue.
+- [x] Fix coalesced updates reusing completed delivery keys. Pass the disposable database regression and deploy the scoped API module.
+
+The current Frappe connection returns HTTP 530 with Cloudflare Error 1033, Tunnel error.
+Authenticated ping and Q2082 reads confirmed the failure. The CRM public API remains HTTP 200.
+Later update event 95 is retryable and cannot receive a final remote readback while the tunnel is unavailable.
+Do not claim all green or final remote duplicate verification after this outage.
+Mobile work is separate. This continuation does not build, install, or modify mobile or web bundles.
+
+Evidence: `/home/codexsun-releases/techmedia-exact-mapping-20261024/`.
 ```

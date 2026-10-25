@@ -8,7 +8,7 @@ import {
 } from "@codexsun/ui/workspace/show";
 import { WorkspacePage } from "@codexsun/ui/workspace/page";
 import { WorkspaceStatusBadge } from "@codexsun/ui/workspace/status";
-import { formatDate, formatDateTime } from "@codexsun/ui/workspace/utils";
+import { formatDateTime } from "@codexsun/ui/workspace/utils";
 import { useMarketingTransport } from "../../transport";
 import { brandActivity, getBrand } from "./brand.services";
 import type { BrandRecord } from "./brand.types";

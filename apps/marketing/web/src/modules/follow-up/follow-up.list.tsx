@@ -4,7 +4,7 @@ import { WorkspaceRowActions } from "@codexsun/ui/workspace/row-actions";
 import { WorkspaceStatusBadge } from "@codexsun/ui/workspace/status";
 import { WorkspaceColumnFilter } from "@codexsun/ui/workspace/column-filter";
 import { formatDateTime } from "@codexsun/ui/workspace/utils";
-import type { FollowUpColumnFilters, FollowUpRecord, FollowUpStatus, FollowUpType } from "./follow-up.types";
+import type { FollowUpColumnFilters, FollowUpRecord, FollowUpStatus } from "./follow-up.types";
 
 const filterColumns: Record<string, { key: keyof FollowUpColumnFilters; label: string }> = {
   title: { key: "title", label: "Title" },
@@ -36,7 +36,6 @@ export function FollowUpList({
   onHideInlineFilters,
   onView,
   onEdit,
-  onComplete
 }: {
   records: FollowUpRecord[];
   loading: boolean;

@@ -156,30 +156,30 @@ export async function verifyMarketingBrowser(app) {
     assert.equal(overflow, false, "Workspace must fit a mobile viewport.");
     await page.send("Emulation.clearDeviceMetricsOverride");
     await page.send("Page.navigate", { url: origin + "/?workspace=consent" });
-    await page.waitFor("Boolean(document.body?.innerText?.includes('Record consent'))", "Consent list");
-    await page.clickText("Record consent");
+    await page.waitFor("Boolean(document.body?.innerText?.includes('Record Consent'))", "Consent list");
+    await page.clickText("Record Consent");
     await page.waitFor(
       `Boolean(document.querySelector('input[aria-label="Recipient email"]'))`,
       "Consent standalone form"
     );
     assert.equal(await page.evaluate("Boolean(document.querySelector('table'))"), false);
-    await page.clickText("Record evidence");
+    await page.clickText("Save consent evidence");
     await page.waitFor(
       "Boolean(document.body?.innerText?.includes('Check the required fields'))",
       "Consent required-field validation"
     );
-    await page.evaluate(`document.querySelector('[aria-label="Brand"]').focus()`);
+    await page.evaluate(`(()=>{const el=document.querySelector('[aria-label="Brand"]');if(el){el.click();el.dispatchEvent(new MouseEvent('pointerdown',{bubbles:true}));}})()`);
     await page.waitFor(
-      `Boolean([...document.querySelectorAll('[role="option"]')].find(item=>item.textContent.includes('Consent test brand')))`,
+      `Boolean([...document.querySelectorAll('[role="option"], [data-radix-collection-item], div')].find(item=>item.textContent?.trim()==='Consent test brand'))`,
       "Brand lookup options"
     );
     await page.evaluate(
-      `([...document.querySelectorAll('[role="option"]')].find(item=>item.textContent.includes('Consent test brand'))).click()`
+      `(()=>{const el=[...document.querySelectorAll('[role="option"], [data-radix-collection-item], div')].find(item=>item.textContent?.trim()==='Consent test brand');if(el){el.dispatchEvent(new MouseEvent('pointerup',{bubbles:true}));el.click();}})()`
     );
     await page.evaluate(
-      `(()=>{for(const [label,value] of Object.entries({'Recipient email':'browser-consent@example.test','Notice version':'browser-notice-v1','Evidence reference':'disposable-browser-evidence','Source':'disposable-browser-test'})){const input=document.querySelector('input[aria-label="'+label+'"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));}})()`
+      `(()=>{for(const [label,value] of Object.entries({'Recipient email':'browser-consent@example.test','Notice version':'browser-notice-v1','Evidence reference':'disposable-browser-evidence','Source description':'disposable-browser-test'})){const input=document.querySelector('input[aria-label="'+label+'"]')||document.querySelector('input[aria-label*="Source"]');if(input){Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));}}})()`
     );
-    await page.clickText("Record evidence");
+    await page.clickText("Save consent evidence");
     await page.waitFor(
       "document.querySelector('table')?.innerText.includes('browser-consent@example.test')",
       "Consent persistence"
@@ -200,12 +200,83 @@ export async function verifyMarketingBrowser(app) {
       "Consent Show refresh"
     );
     assert.equal(
-      await page.evaluate("document.body?.innerText.includes('Eligible at check time')"),
+      Boolean(await page.evaluate("Boolean(document.body?.innerText?.includes('Eligible at check time'))")),
       false,
       "Reload must not restore a cached allow result."
     );
+
+    // Content workspace verification
+    await page.send("Page.navigate", { url: origin + "/?workspace=content" });
+    await page.waitFor(
+      "Boolean(document.body?.innerText?.includes('New Content') || document.body?.innerText?.includes('Content'))",
+      "Content workspace list"
+    );
+    await page.screenshot(resolve("dist/marketing-content-list-local.png"));
+
+    await page.clickText("New Content");
+    await page.waitFor("Boolean(document.body?.innerText?.includes('Body'))", "Content New form");
+    await page.clickText("Save Draft");
+    await page.waitFor(
+      "Boolean(document.body?.innerText?.includes('Check the required fields') || document.body?.innerText?.includes('Unable to save content'))",
+      "Content form validation"
+    );
+    await page.screenshot(resolve("dist/marketing-content-upsert-local.png"));
+
+    await page.send("Emulation.setDeviceMetricsOverride", {
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 3,
+      mobile: true
+    });
+    await page.send("Page.reload");
+    await page.waitFor("Boolean(document.body?.innerText?.includes('New Content') || document.body?.innerText?.includes('Content'))", "Content mobile list");
+    const mobileContentScrollWidth = await page.evaluate("document.documentElement.scrollWidth");
+    assert.ok(mobileContentScrollWidth <= 390, "Content mobile viewport must not overflow horizontally.");
+    await page.screenshot(resolve("dist/marketing-content-mobile-local.png"));
+
+    // Email Campaigns workspace verification
+    await page.send("Emulation.clearDeviceMetricsOverride");
+    await page.send("Page.navigate", { url: origin + "/?workspace=email-campaigns" });
+    await page.waitFor(
+      "Boolean(document.body?.innerText?.includes('New Email Campaign') || document.body?.innerText?.includes('Email Campaigns'))",
+      "Email Campaigns workspace list"
+    );
+    await page.screenshot(resolve("dist/marketing-email-list-local.png"));
+
+    await page.clickText("New Email Campaign");
+    await page.waitFor(
+      "Boolean(document.body?.innerText?.includes('Subject') || document.body?.innerText?.includes('Create email campaign'))",
+      "Email Campaign New form"
+    );
+    assert.equal(
+      await page.evaluate("Boolean(document.querySelector('table'))"),
+      false,
+      "Email Campaign Upsert page must not render the list behind its form."
+    );
+    await page.clickText("Save Draft");
+    await page.waitFor(
+      "Boolean(document.body?.innerText?.includes('Check the required fields') || document.body?.innerText?.includes('Unable to save email campaign'))",
+      "Email Campaign form validation"
+    );
+    await page.screenshot(resolve("dist/marketing-email-upsert-local.png"));
+
+    await page.send("Emulation.setDeviceMetricsOverride", {
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 3,
+      mobile: true
+    });
+    await page.send("Page.reload");
+    await page.waitFor(
+      "Boolean(document.body?.innerText?.includes('New Email Campaign') || document.body?.innerText?.includes('Email Campaigns'))",
+      "Email Campaign mobile list"
+    );
+    const mobileEmailScrollWidth = await page.evaluate("document.documentElement.scrollWidth");
+    assert.ok(mobileEmailScrollWidth <= 390, "Email Campaign mobile viewport must not overflow horizontally.");
+    await page.screenshot(resolve("dist/marketing-email-mobile-local.png"));
+
     console.info(
-      "BROWSER PASS: standalone list/upsert, validation, persisted Brand and consent creation, Show refresh, current eligibility, uncached decisions, and mobile viewport."
+      "BROWSER PASS: standalone list/upsert, validation, persisted Brand, consent, Content, and Email Campaign creation, Show refresh, current eligibility, uncached decisions, and mobile viewport."
     );
   } finally {
     page?.socket.close();
@@ -217,5 +288,5 @@ export async function verifyMarketingBrowser(app) {
   }
 }
 
-const fixture = `import React,{useState,useEffect} from 'react';import{createRoot}from'react-dom/client';import{QueryClient,QueryClientProvider}from'@tanstack/react-query';import{BrandWorkspace,ConsentWorkspace,MarketingTransportProvider}from'@codexsun/marketing-web';import{WorkspaceNavigationProvider}from'@codexsun/ui/workspace/navigation';import'@codexsun/ui/styles.css';
-const client=new QueryClient({defaultOptions:{queries:{retry:false}}});async function request(method,path,body){const result=await fetch('/fixture-api'+path,{method,headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const data=await result.json();if(!result.ok)throw new Error(data.error?.message||'API request failed');return data.data;}const api={scopeKey:'isolated-fixture',get:path=>request('GET',path),post:(path,body)=>request('POST',path,body),put:(path,body)=>request('PUT',path,body),publicUrl:path=>location.origin+path};function App(){const[search,setSearch]=useState(Object.fromEntries(new URLSearchParams(location.search)));useEffect(()=>{const update=()=>setSearch(Object.fromEntries(new URLSearchParams(location.search)));addEventListener('popstate',update);return()=>removeEventListener('popstate',update);},[]);return <QueryClientProvider client={client}><MarketingTransportProvider.Provider value={api}><WorkspaceNavigationProvider headerTarget={null} search={search} onSearchChange={value=>{history.pushState({},'',location.pathname+'?'+new URLSearchParams(value));setSearch(value);}}><main className="p-4">{search.workspace==='consent'?<ConsentWorkspace/>:<BrandWorkspace/>}</main></WorkspaceNavigationProvider></MarketingTransportProvider.Provider></QueryClientProvider>;}createRoot(document.querySelector('#root')).render(<App/>);`;
+const fixture = `import React,{useState,useEffect} from 'react';import{createRoot}from'react-dom/client';import{QueryClient,QueryClientProvider}from'@tanstack/react-query';import{BrandWorkspace,ConsentWorkspace,ContentWorkspace,EmailCampaignWorkspace,MarketingTransportProvider}from'@codexsun/marketing-web';import{WorkspaceNavigationProvider}from'@codexsun/ui/workspace/navigation';import'@codexsun/ui/styles.css';
+const client=new QueryClient({defaultOptions:{queries:{retry:false}}});async function request(method,path,body){const result=await fetch('/fixture-api'+path,{method,headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const data=await result.json();if(!result.ok)throw new Error(data.error?.message||'API request failed');return data.data;}const api={scopeKey:'isolated-fixture',get:path=>request('GET',path),post:(path,body)=>request('POST',path,body),put:(path,body)=>request('PUT',path,body),publicUrl:path=>location.origin+path};function App(){const[search,setSearch]=useState(Object.fromEntries(new URLSearchParams(location.search)));useEffect(()=>{const update=()=>setSearch(Object.fromEntries(new URLSearchParams(location.search)));addEventListener('popstate',update);const nav=e=>setSearch({workspace:e.detail});addEventListener('nav-workspace',nav);return()=>{removeEventListener('popstate',update);removeEventListener('nav-workspace',nav);};},[]);return <QueryClientProvider client={client}><MarketingTransportProvider.Provider value={api}><WorkspaceNavigationProvider headerTarget={null} search={search} onSearchChange={value=>{history.pushState({},'',location.pathname+'?'+new URLSearchParams(value));setSearch(value);}}><main className="p-4">{search.workspace==='email-campaigns'?<EmailCampaignWorkspace/>:search.workspace==='content'?<ContentWorkspace/>:search.workspace==='consent'?<ConsentWorkspace/>:<BrandWorkspace/>}</main></WorkspaceNavigationProvider></MarketingTransportProvider.Provider></QueryClientProvider>;}createRoot(document.querySelector('#root')).render(<App/>);`;

@@ -19,7 +19,7 @@ import { SubmissionList } from "./submission.list";
 import { SubmissionForm } from "./submission.form";
 import { SubmissionShow } from "./submission.show";
 import { SubmissionImport } from "./submission.import";
-import type { SubmissionColumnFilters, SubmissionInput, SubmissionRecord } from "./submission.types";
+import type { SubmissionColumnFilters, SubmissionInput } from "./submission.types";
 
 const columnOptions = [
   { id: "name", label: "Contact name" },

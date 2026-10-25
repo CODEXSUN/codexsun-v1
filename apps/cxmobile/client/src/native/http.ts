@@ -8,6 +8,11 @@ import {
   StaleResponseError,
   TenantIsolationError
 } from "../session/session-types.js";
+export {
+  PlatformApiError,
+  StaleResponseError,
+  TenantIsolationError
+};
 
 export interface HttpRequestOptions {
   body?: unknown;
@@ -23,14 +28,17 @@ export interface HttpRequestOptions {
 
 export type NativeHttpDispatcher = (options: {
   body?: string | undefined;
+  bodyBase64?: string | undefined;
   headers?: Record<string, string> | undefined;
   method?: string | undefined;
+  responseType?: "text" | "base64" | "binary" | undefined;
   secretKey?: string | undefined;
   timeoutMs?: number | undefined;
   url: string;
 }) => Promise<{
   data: string;
   headers: Record<string, string>;
+  isBase64?: boolean;
   status: number;
 }>;
 
@@ -340,6 +348,79 @@ export class NativeHttpTransport {
     delete headers["Content-Type"];
 
     const timeoutMs = options.timeoutMs ?? this.defaultTimeoutMs;
+    const isNative = Capacitor.isNativePlatform() || Boolean(this.nativeHttpDispatcher);
+
+    if (isNative) {
+      delete headers["Authorization"];
+      try {
+        const dummyRequest = new Request("http://localhost", { body: formData, method: "POST" });
+        const contentType = dummyRequest.headers.get("content-type");
+        if (contentType) {
+          headers["Content-Type"] = contentType;
+        }
+        const buffer = await dummyRequest.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]!);
+        }
+        const bodyBase64 = btoa(binary);
+
+        const dispatcher =
+          this.nativeHttpDispatcher ??
+          ((opts) =>
+            NativeSecureKeyStore.executeAuthenticatedRequest
+              ? NativeSecureKeyStore.executeAuthenticatedRequest(opts)
+              : NativeSecureKeyStore.performAuthenticatedRequest!(opts));
+
+        const nativeRes = await dispatcher({
+          bodyBase64,
+          headers,
+          method: "POST",
+          timeoutMs,
+          url: targetUrl
+        });
+
+        if (this.sessionManager.isResponseStale(startGeneration, startSlot ?? undefined)) {
+          throw new StaleResponseError();
+        }
+
+        let parsedEnvelope: ApiEnvelope<T> | null = null;
+        if (nativeRes.data) {
+          try {
+            parsedEnvelope = JSON.parse(nativeRes.data) as ApiEnvelope<T>;
+          } catch {}
+        }
+
+        if (nativeRes.status === 401) {
+          await this.sessionManager.handleServerRevocation();
+          throw new PlatformApiError(
+            parsedEnvelope?.error?.message ?? "Session expired during upload.",
+            401,
+            parsedEnvelope?.error?.code ?? "AUTH_SESSION_EXPIRED"
+          );
+        }
+
+        if (nativeRes.status < 200 || nativeRes.status >= 300 || (parsedEnvelope && !parsedEnvelope.success)) {
+          throw new PlatformApiError(
+            parsedEnvelope?.error?.message ?? `Upload failed with status ${nativeRes.status}`,
+            nativeRes.status,
+            parsedEnvelope?.error?.code
+          );
+        }
+
+        return (parsedEnvelope ? parsedEnvelope.data : nativeRes.data) as T;
+      } catch (err) {
+        if (err instanceof PlatformApiError || err instanceof StaleResponseError) throw err;
+        if (Capacitor.isNativePlatform()) {
+          throw new PlatformApiError(
+            `Native multipart transport error: ${err instanceof Error ? err.message : String(err)}`,
+            500
+          );
+        }
+        // In non-native test mock environments where native dispatcher is unmocked, allow fallback
+      }
+    }
 
     const response = await this.executeFetch(
       targetUrl,
@@ -394,13 +475,54 @@ export class NativeHttpTransport {
     delete headers.Accept; // Allow binary / application/pdf / stream
 
     const timeoutMs = options.timeoutMs ?? this.defaultTimeoutMs;
+    const method = (options.method ?? "GET").toUpperCase();
+    const isNative = Capacitor.isNativePlatform() || Boolean(this.nativeHttpDispatcher);
+
+    if (isNative) {
+      delete headers["Authorization"];
+      const dispatcher =
+        this.nativeHttpDispatcher ??
+        ((opts) =>
+          NativeSecureKeyStore.executeAuthenticatedRequest
+            ? NativeSecureKeyStore.executeAuthenticatedRequest(opts)
+            : NativeSecureKeyStore.performAuthenticatedRequest!(opts));
+
+      const nativeRes = await dispatcher({
+        headers,
+        method,
+        responseType: "base64",
+        timeoutMs,
+        url: targetUrl
+      });
+
+      if (this.sessionManager.isResponseStale(startGeneration, startSlot ?? undefined)) {
+        throw new StaleResponseError();
+      }
+
+      if (nativeRes.status === 401) {
+        await this.sessionManager.handleServerRevocation();
+        throw new PlatformApiError("Session expired during binary download.", 401, "AUTH_SESSION_EXPIRED");
+      }
+
+      if (nativeRes.status < 200 || nativeRes.status >= 300) {
+        throw new PlatformApiError(`Binary download failed with status ${nativeRes.status}`, nativeRes.status);
+      }
+
+      const binaryString = atob(nativeRes.data);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
 
     const response = await this.executeFetch(
       targetUrl,
       {
         credentials: "include",
         headers,
-        method: (options.method ?? "GET").toUpperCase()
+        method
       },
       timeoutMs,
       options.signal
@@ -429,13 +551,55 @@ export class NativeHttpTransport {
 
     const headers = this.buildContextHeaders(options);
     const timeoutMs = options.timeoutMs ?? this.defaultTimeoutMs;
+    const method = (options.method ?? "GET").toUpperCase();
+    const isNative = Capacitor.isNativePlatform() || Boolean(this.nativeHttpDispatcher);
+
+    if (isNative) {
+      delete headers["Authorization"];
+      const dispatcher =
+        this.nativeHttpDispatcher ??
+        ((opts) =>
+          NativeSecureKeyStore.executeAuthenticatedRequest
+            ? NativeSecureKeyStore.executeAuthenticatedRequest(opts)
+            : NativeSecureKeyStore.performAuthenticatedRequest!(opts));
+
+      const nativeRes = await dispatcher({
+        headers,
+        method,
+        responseType: "base64",
+        timeoutMs,
+        url: targetUrl
+      });
+
+      if (this.sessionManager.isResponseStale(startGeneration, startSlot ?? undefined)) {
+        throw new StaleResponseError();
+      }
+
+      if (nativeRes.status === 401) {
+        await this.sessionManager.handleServerRevocation();
+        throw new PlatformApiError("Session expired while loading media.", 401, "AUTH_SESSION_EXPIRED");
+      }
+
+      if (nativeRes.status < 200 || nativeRes.status >= 300) {
+        throw new PlatformApiError(`Media load failed with status ${nativeRes.status}`, nativeRes.status);
+      }
+
+      const binaryString = atob(nativeRes.data);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const contentType = nativeRes.headers["content-type"] || "application/octet-stream";
+      return new Blob([bytes], { type: contentType });
+    }
 
     const response = await this.executeFetch(
       targetUrl,
       {
         credentials: "include",
         headers,
-        method: (options.method ?? "GET").toUpperCase()
+        method
       },
       timeoutMs,
       options.signal

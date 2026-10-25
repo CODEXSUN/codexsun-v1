@@ -102,7 +102,7 @@ try {
   }
   const afterMigration = await tableCounts();
   for (const [table, count] of oldRows) {
-    const currentTable = renamedProjectManagerTable(table);
+    const currentTable = table;
     if (!afterMigration.has(currentTable)) {
       assert.equal(count, 0, `Existing table ${table} had rows before removal.`);
       continue;
@@ -130,10 +130,7 @@ try {
   );
   assert.equal(Number(qCafe[0]?.enabled), 1, "Q Cafe was not enabled for the tenant.");
   assert.equal(qCafe[0]?.status, "active");
-  assert.equal(
-    resolveEnabledApps(["qcafe"]).find(({ appId }) => appId === "qcafe")?.enabled,
-    true
-  );
+  assert.equal(resolveEnabledApps(["qcafe"]).find(({ appId }) => appId === "qcafe")?.enabled, true);
   assert.equal(
     resolveEnabledApps(["accounts.accounting"]).find(({ appId }) => appId === "accounts")?.enabled,
     true,
@@ -168,11 +165,4 @@ async function tableCounts() {
     counts.set(table, Number(rows[0]?.count ?? 0));
   }
   return counts;
-}
-
-function renamedProjectManagerTable(table: string) {
-  return table.replace(
-    /^devkit_platform_registry_(platforms|groups|modules|activity)$/u,
-    "project_manager_platform_registry_$1"
-  );
 }

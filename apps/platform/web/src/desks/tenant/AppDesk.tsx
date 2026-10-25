@@ -744,6 +744,9 @@ type AppPage =
   | "logicx-erp.overview"
   | "logicx-erp.schemes"
   | "marketing.consents"
+  | "marketing.contents"
+  | "marketing.email-campaigns"
+  | "marketing.conversations"
   | "marketing.submissions"
   | "marketing.brands"
   | "marketing.campaigns"
@@ -3013,6 +3016,9 @@ function renderOwnedCommonMasterPage(page: AppPage) {
 function titleForPage(page: AppPage) {
   const labels: Partial<Record<AppPage, string>> = {
     "marketing.consents": "Consent",
+    "marketing.contents": "Content",
+    "marketing.email-campaigns": "Email Campaigns",
+    "marketing.conversations": "Conversations",
     "marketing.brands": "Brands",
     "marketing.campaigns": "Campaigns",
     "marketing.captures": "Capture forms",

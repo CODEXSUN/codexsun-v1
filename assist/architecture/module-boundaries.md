@@ -107,13 +107,7 @@ Each reduced Common module must own concrete migration SQL, repository queries, 
 
 ### Mandatory Boundary Audit For Every Application
 
-The same ownership discipline applies to Core, Platform, Billing, Project Manager, and every future application. Project Manager
-Platform Registry behavior belongs under `devkits/project-manager/api` and `devkits/project-manager/web`; Platform may compose only
-the public `@codexsun/project-manager-api` and `@codexsun/project-manager-web` contracts. Project Manager request databases and actors must always
-come from the authenticated Platform host adapter, its API remains namespaced under `/project-manager`, and its master and
-tenant tables use the `project_manager_` owner prefix plus the standard identity, status, and audit columns. Ideas behavior
-belongs in the `ideas` leaf of each Project Manager package. Platform composes its public bundle and database lifecycle;
-the Ideas leaf owns editor data, validation, routes, persistence, and activity records. Before an
+The same ownership discipline applies to Core, Platform, Billing, and every future application. Before an
 application change is finalized, audit its complete backend and frontend module tree for wrapper/alias roles,
 inherited or metadata-driven generic CRUD, private cross-module imports, centralized business implementations,
 stale exports and proxies, misplaced files, and business behavior stored in app-level shared folders. Composition
@@ -327,8 +321,6 @@ Do not put unstable business rules in the shared kernel.
 | `apps/billing/web`            | Billing frontend modules          | Billing entry workspaces, billing settings, billing forms, and billing reports                                                                             |
 | `apps/mail/api`               | Mail backend module               | Tenant mail settings, encrypted credentials, messages, attachments, delivery/sync events, SMTP/IMAP workers, and queue contracts                           |
 | `apps/mail/web`               | Mail frontend module              | Mailboxes, rich compose, provider settings, message reader, and public Billing document-mail integration                                                   |
-| `devkits/project-manager/api` | Project Manager backend module    | Master/tenant Platform Registry hierarchy, JSON registry seed, and registry audit activity                                                                 |
-| `devkits/project-manager/web` | Project Manager frontend module   | Super Admin Platform Registry workspace composed through the public Project Manager web bundle                                                             |
 | `devkits/data-migration/api`  | Data Migration backend module     | Encrypted external MariaDB sources, table preview and copy, and the Platform master run ledger                                                             |
 | `devkits/data-migration/web`  | Data Migration frontend module    | Super Admin Overview, Migration, and Migration Settings desk pages through the public Data Migration web entry point                                        |
 | `apps/platform/api`           | API gateway + platform routes     | Route registration, guard functions (session, tenant, feature, permission), migration runner, DB bootstrap                                                 |

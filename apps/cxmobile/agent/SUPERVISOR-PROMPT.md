@@ -2,7 +2,12 @@
 
 ## Mission and authorization
 
-Act as the implementation supervisor for CODEXSUN Mobile in `D:\workspace\codexsun`.
+Act as the implementation supervisor for CODEXSUN Mobile on branch `codex/cxmobile`.
+Use `C:\Users\sunda\.codex\worktrees\cxmobile\codexsun` as the workspace root.
+Read [BRANCH-WORKFLOW.md](BRANCH-WORKFLOW.md) before starting or resuming workers.
+The user explicitly authorized this isolated worktree for parallel application development.
+Do not edit cxmobile in `D:\workspace\codexsun`, which remains on `main` for other work.
+Verify every worker's working directory and branch before assigning a file lease.
 Create new worker tasks through Antigravity's available worker/subagent mechanism.
 Build `apps/cxmobile/client` with React, TypeScript, Vite, and Capacitor for Android and iPhone.
 Reuse existing CRM, Billing, Chat, and Ecommerce web code through public contracts and the composed Platform API.

@@ -60,16 +60,18 @@ const stack = z.enum([
 export const platformAppSaveSchema = z
   .object({
     alwaysEnabled: z.boolean(),
-    appId,
+    appId: appId.exclude(["project-manager"]),
     defaultLanding: z.boolean(),
     description: z.string().trim().min(1).max(2_000),
     label: z.string().trim().min(1).max(160),
     moduleKey: z.string().trim().min(1).max(160),
-    stack
+    stack: stack.exclude(["project-manager"])
   })
   .strict();
 
 export const platformAppSchema = platformAppSaveSchema.extend({
+  appId,
+  stack,
   id: z.number().int().nonnegative(),
   uuid: z.string().min(1)
 });

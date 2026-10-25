@@ -188,12 +188,11 @@ test("development services use one distinct frontend port each", async () => {
   const ports = new Map(
     [
       ...example.matchAll(
-        /^(PLATFORM_API_PORT|PLATFORM_WEB_PORT|CODEXSUN_ECOMMERCE_WEB_PORT|CODEXSUN_UIUX_WEB_PORT|CODEXSUN_PROJECT_MANAGER_WEB_PORT)=(\d+)$/gmu
+        /^(PLATFORM_API_PORT|PLATFORM_WEB_PORT|CODEXSUN_ECOMMERCE_WEB_PORT|CODEXSUN_UIUX_WEB_PORT)=(\d+)$/gmu
       )
     ].map((match) => [match[1], Number(match[2])])
   );
-  assert.deepEqual([...ports.values()], [7010, 7020, 7030, 7040, 7050]);
+  assert.deepEqual([...ports.values()], [7010, 7020, 7030, 7040]);
   assert.match(stackSource, /await startAndWait\("uiux-web"\)/u);
-  assert.match(stackSource, /await startAndWait\("project-manager-web"\)/u);
   assert.doesNotMatch(stackSource, /await startAndWait\("ecommerce-storefront"\)/u);
 });

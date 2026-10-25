@@ -54,10 +54,6 @@ const moduleRoots = [
     path: join(process.cwd(), "apps", "platform", "api", "src", "modules")
   },
   {
-    app: "project-manager-api",
-    path: join(process.cwd(), "devkits", "project-manager", "api", "src", "modules")
-  },
-  {
     app: "data-migration-api",
     path: join(process.cwd(), "devkits", "data-migration", "api", "src", "modules")
   },
@@ -189,7 +185,6 @@ const capabilityBackendRoles = new Map([
   ["ecommerce-api/overview", ["module", "service", "routes", "seed", "types"]],
   ["logicx-erp-api/overview", ["module", "service", "routes", "seed", "types"]],
   ["logicx-erp-api/scheme", reducedBackendRoles],
-  ["project-manager-api/platform-registry", reducedBackendRoles],
   [
     "data-migration-api/migration",
     ["module", "service", "repository", "routes", "migration", "types", "secrets"]
@@ -211,10 +206,7 @@ const capabilityBackendRoles = new Map([
   ["zuno-api/cases", ["module", "service", "repository", "routes", "migration", "types"]],
   ["zuno-api/watch", ["module", "service", "repository", "routes", "types"]],
   ["zuno-api/conversations", ["module", "service", "repository", "routes", "migration", "types"]],
-  [
-    "project-manager-api/ideas",
-    ["module", "service", "repository", "routes", "migration", "types"]
-  ],
+  [["module", "service", "repository", "routes", "migration", "types"]],
   ["billing-api/opening-balance", reducedBackendRoles],
   ["crm-api/enquiry", reducedBackendRoles],
   ["crm-api/lead", reducedBackendRoles],
@@ -230,11 +222,11 @@ const capabilityBackendRoles = new Map([
     "qualification",
     "conversion",
     "outcome",
-    "follow-up"
-  ].map((name) => [
-    `marketing-api/${name}`,
-    reducedBackendRoles
-  ]),
+    "follow-up",
+    "content",
+    "email-campaign",
+    "conversation"
+  ].map((name) => [`marketing-api/${name}`, reducedBackendRoles]),
   ["crm-api/task", reducedBackendRoles],
   ["crm-api/scheduler", reducedBackendRoles],
   ["crm-api/sop", reducedBackendRoles],
@@ -336,10 +328,6 @@ const webModuleRoots = [
   {
     app: "platform-web",
     path: join(process.cwd(), "apps", "platform", "web", "src", "modules")
-  },
-  {
-    app: "project-manager-web",
-    path: join(process.cwd(), "devkits", "project-manager", "web", "src", "modules")
   },
   {
     app: "data-migration-web",

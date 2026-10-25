@@ -49,6 +49,21 @@ import {
   migrateFollowUp,
   seedFollowUp
 } from "./modules/follow-up/index.js";
+import {
+  contentModule,
+  migrateContent,
+  seedContent
+} from "./modules/content/index.js";
+import {
+  emailCampaignModule,
+  migrateEmailCampaign,
+  seedEmailCampaign
+} from "./modules/email-campaign/index.js";
+import {
+  conversationModule,
+  migrateConversation,
+  seedConversation
+} from "./modules/conversation/index.js";
 
 export type { MarketingDatabase, MarketingDependencies, MarketingContext } from "./context.js";
 
@@ -63,7 +78,10 @@ export const marketingApiModuleKeys = [
   qualificationModule.key,
   conversionModule.key,
   outcomeModule.key,
-  followUpModule.key
+  followUpModule.key,
+  contentModule.key,
+  emailCampaignModule.key,
+  conversationModule.key
 ] as const;
 
 export { BrandService } from "./modules/brand/index.js";
@@ -160,6 +178,27 @@ export const marketingMigrationBatch = {
       description: "Marketing follow-ups and reminders.",
       version: 11,
       up: migrateFollowUp
+    },
+    {
+      name: "marketing.content.v1",
+      checksum: "marketing.content.v1",
+      description: "Marketing contents and revision approvals.",
+      version: 12,
+      up: migrateContent
+    },
+    {
+      name: "marketing.email-campaign.v1",
+      checksum: "marketing.email-campaign.v1",
+      description: "Marketing email campaigns, senders, and audience snapshots.",
+      version: 13,
+      up: migrateEmailCampaign
+    },
+    {
+      name: "marketing.conversation.v1",
+      checksum: "marketing.conversation.v1",
+      description: "Marketing conversations, messages, nurture rules, and enrollments.",
+      version: 14,
+      up: migrateConversation
     }
   ]
 };
@@ -180,6 +219,9 @@ export async function seedMarketing(database: Kysely<MarketingDatabase>) {
   await seedConversion(database);
   await seedOutcome(database);
   await seedFollowUp(database);
+  await seedContent(database);
+  await seedEmailCampaign(database);
+  await seedConversation(database);
 }
 
 export async function marketingBrandScope(context: MarketingContext) {
@@ -232,21 +274,39 @@ export async function registerMarketing(
     if (lead.brandUuid !== input.brandUuid)
       throw AppError.validation("Selected lead does not belong to this brand.");
   });
+  contentModule.register(app, deps, async (context, input) => {
+    await parent(context, input);
+    if (input.campaignUuid) {
+      const campaign = await lookupCampaign(context, input.campaignUuid);
+      if (campaign.status !== "active" || campaign.brandUuid !== input.brandUuid)
+        throw AppError.validation("Select an active campaign from this brand.");
+    }
+  });
+  emailCampaignModule.register(app, deps);
+  conversationModule.register(app, deps);
 }
 
 export { lookupCapture } from "./modules/capture/index.js";
 export { lookupCampaign } from "./modules/campaign/index.js";
+export { EmailCampaignService, EmailCampaignRepository } from "./modules/email-campaign/index.js";
+export { ConversationService, ConversationRepository } from "./modules/conversation/index.js";
 export {
   SubmissionService,
   processSubmissionHandoff,
   createSubmissionHandoffJob,
   pendingSubmissionHandoffs,
-  submissionInputSchema
+  submissionInputSchema,
+  handleMetaLeadWebhook,
+  handleGoogleAdsLeadWebhook,
+  verifyMetaSignature,
+  verifyMetaSubscription,
+  verifyGoogleAdsKey
 } from "./modules/submission/index.js";
 export type {
   SubmissionDependencies,
   SubmissionInput,
-  SubmissionRecord
+  SubmissionRecord,
+  SocialWebhookResult
 } from "./modules/submission/index.js";
 
 export { submissionRouting } from "./modules/submission/index.js";
@@ -364,3 +424,24 @@ export type {
   FollowUpActionType,
   FollowUpStatus
 } from "./modules/follow-up/index.js";
+
+export {
+  ContentService,
+  lookupContent,
+  migrateContent,
+  seedContent,
+  contentModule,
+  contentInputSchema,
+  contentRecordSchema,
+  contentStatusSchema,
+  contentChannelSchema,
+  contentPublishModeSchema
+} from "./modules/content/index.js";
+export type {
+  ContentStatus,
+  ContentChannel,
+  ContentPublishMode,
+  ContentInput,
+  ContentRecord,
+  ContentActivity
+} from "./modules/content/index.js";

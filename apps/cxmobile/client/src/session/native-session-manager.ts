@@ -271,6 +271,12 @@ export class NativeSessionManager {
     const rawToken = token ?? undefined;
     const sessionToken = isNative && rawToken ? "[native-isolated]" : rawToken;
 
+    const sessionPermissions =
+      (data as { permissions?: string[] }).permissions ??
+      (data as { grantedPermissions?: string[] }).grantedPermissions ??
+      (data.context as { permissions?: string[] } | undefined)?.permissions ??
+      [];
+
     const session: SessionRecord = {
       activeCompanyId: defaultComp?.companyId,
       activeFinancialYearId: defaultComp?.financialYearId,
@@ -283,6 +289,7 @@ export class NativeSessionManager {
       expiresAt: data.expiresAt,
       loginHost: verifiedHost,
       name: data.name,
+      permissions: sessionPermissions,
       role: data.role,
       sessionGeneration: this._generation,
       sessionIssuedAt: data.sessionIssuedAt,
@@ -398,12 +405,20 @@ export class NativeSessionManager {
     }
 
     const data = body.data;
+    const restoredPermissions =
+      (data as { permissions?: string[] }).permissions ??
+      (data as { grantedPermissions?: string[] }).grantedPermissions ??
+      (data.context as { permissions?: string[] } | undefined)?.permissions ??
+      stored.permissions ??
+      [];
+
     const updatedSession: SessionRecord = {
       ...stored,
       authenticated: true,
       context: data.context ?? stored.context,
       expiresAt: data.expiresAt ?? stored.expiresAt,
       name: data.name ?? stored.name,
+      permissions: restoredPermissions,
       role: data.role ?? stored.role,
       sessionIssuedAt: data.sessionIssuedAt ?? stored.sessionIssuedAt,
       tenantCode: data.tenantCode ?? stored.tenantCode,

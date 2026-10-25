@@ -94,3 +94,30 @@ export {
   FollowUpShow
 } from "./modules/follow-up/index";
 export * from "./modules/follow-up/follow-up.types";
+
+// Wave 2 Publishing & Content Modules
+export {
+  ContentWorkspace,
+  ContentList,
+  ContentForm,
+  ContentShow
+} from "./modules/content/index";
+export * from "./modules/content/content.types";
+
+// Wave 3 Email Campaigns
+export {
+  EmailCampaignWorkspace,
+  EmailCampaignList,
+  EmailCampaignForm,
+  EmailCampaignShow
+} from "./modules/email-campaign/index";
+export * from "./modules/email-campaign/email-campaign.types";
+
+// Wave 4 Conversations & Nurturing
+export {
+  ConversationWorkspace,
+  ConversationList,
+  ConversationForm,
+  ConversationShow
+} from "./modules/conversation/index";
+export * from "./modules/conversation/conversation.types";

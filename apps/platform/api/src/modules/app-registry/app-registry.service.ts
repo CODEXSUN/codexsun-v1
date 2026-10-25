@@ -154,17 +154,6 @@ export const platformAppRegistry: PlatformAppDefinition[] = [
     description: "Tenant ecommerce operations and storefront workspace."
   },
   {
-    alwaysEnabled: false,
-    defaultLanding: false,
-    description: "Platform application and module registry.",
-    appId: "project-manager",
-    id: 0,
-    label: "Project Manager",
-    moduleKey: "project-manager",
-    stack: "project-manager",
-    uuid: ""
-  },
-  {
     alwaysEnabled: true,
     defaultLanding: true,
     description: "Platform workspace, tenant profile, application settings, users, and access.",
@@ -313,14 +302,12 @@ export const platformAppRegistry: PlatformAppDefinition[] = [
 export function resolveEnabledApps(enabledModuleKeys: string[]) {
   const enabled = new Set(["platform.application", ...enabledModuleKeys]);
   if (enabled.has("accounts.accounting")) enabled.add("accounts.overview");
-  return platformAppRegistry
-    .filter((app) => app.appId !== "project-manager")
-    .map((app) => ({
-      ...app,
-      enabled:
-        (app.appId !== "frappe" || enabled.has("crm")) &&
-        (app.alwaysEnabled || enabled.has(app.moduleKey))
-    }));
+  return platformAppRegistry.map((app) => ({
+    ...app,
+    enabled:
+      (app.appId !== "frappe" || enabled.has("crm")) &&
+      (app.alwaysEnabled || enabled.has(app.moduleKey))
+  }));
 }
 
 export function resolveLandingApp(value: unknown, enabledModuleKeys: string[]): PlatformAppId {

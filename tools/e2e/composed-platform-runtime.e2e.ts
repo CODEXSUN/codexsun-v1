@@ -21,8 +21,8 @@ try {
   );
   assert.ok(modules.includes("mail"), "Mail package was not composed into Platform API.");
   assert.ok(
-    modules.includes("project-manager.platform-registry"),
-    "Project Manager package was not composed into Platform API."
+    !modules.includes("project-manager.platform-registry"),
+    "Retired Project Manager module is still exposed."
   );
 
   assert.ok(
@@ -103,8 +103,8 @@ try {
   });
   assert.equal(
     projectManagerResponse.statusCode,
-    403,
-    "Project Manager route is not protected by the host authentication adapter."
+    404,
+    "Retired Project Manager route must return 404."
   );
 
   const applicationHost = new URL(process.env.PLATFORM_WEB_ORIGIN ?? "http://app.codexsun.test");
@@ -275,8 +275,8 @@ try {
   });
   assert.equal(
     authenticatedProjectManagerResponse.statusCode,
-    403,
-    "A tenant session was allowed to access the Super Admin-only Project Manager API."
+    404,
+    "Retired Project Manager route must return 404 for tenant sessions."
   );
   for (const retiredPath of [
     "/devkit/admin/platform-registry/result",
@@ -347,20 +347,11 @@ try {
     method: "GET",
     url: "/project-manager/admin/platform-registry/result"
   });
-  assert.equal(masterProjectManagerResponse.statusCode, 200, masterProjectManagerResponse.body);
-  const masterProjectManager = masterProjectManagerResponse.json() as {
-    data?: { summary?: { totalModules?: number } };
-    success?: boolean;
-  };
-  assert.equal(masterProjectManager.success, true);
-  assert.ok(
-    (masterProjectManager.data?.summary?.totalModules ?? 0) > 0,
-    "Project Manager returned no master registry modules for Super Admin."
-  );
+  assert.equal(masterProjectManagerResponse.statusCode, 404, masterProjectManagerResponse.body);
 
   console.log("Composed Platform runtime E2E passed", {
     apiPort: 7010,
-    composedPackages: ["core", "billing", "mail", "project-manager"],
+    composedPackages: ["core", "billing", "mail"],
     corsOrigin: "http://127.0.0.1:7020",
     webPort: 7020
   });

@@ -26,7 +26,6 @@ export function CampaignList({
   onView,
   onEdit,
   onToggle,
-  onDuplicate
 }: {
   records: CampaignRecord[];
   loading: boolean;

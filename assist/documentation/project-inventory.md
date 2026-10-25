@@ -1,6 +1,6 @@
 # CODEXSUN Project Inventory
 
-> Database boundary update: the Platform master database contains unprefixed global Platform/Super Admin tables. Tenant Platform runtime tables use `app_`; composed apps keep their owner prefixes. Every database records migrations in `migration_schema`. Platform Task Manager stores todos and lookups in the Platform master or enabled tenant database. Project Manager owns Platform Registry data and audit activity under the `project_manager_` table prefix.
+> Database boundary update: the Platform master database contains unprefixed global Platform/Super Admin tables. Tenant Platform runtime tables use `app_`; composed apps keep their owner prefixes. Every database records migrations in `migration_schema`. Platform Task Manager stores todos and lookups in the Platform master or enabled tenant database. Retired Project Manager tables remain preserved as historical data.
 
 ## Purpose
 
@@ -43,7 +43,6 @@ apps/
     web/
 
 devkits/
-  project-manager/
     api/
     web/
   uiux/
@@ -104,20 +103,6 @@ Current Platform Web modules:
 
 - `devkits/uiux`: standalone Vite gallery and Super Admin desk contribution for shared UI foundations, layouts,
   workspace blocks, and components. It imports public `@codexsun/ui` contracts and owns no application data.
-
-### Project Manager
-
-Project Manager owns Platform Registry and Ideas and is composed by Platform through its public API and web contracts.
-
-- `devkits/project-manager/api`: request-scoped Platform Registry and Ideas Fastify modules, migrations, registry JSON seed,
-  and activity records.
-- `devkits/project-manager/web`: the Platform Registry and Ideas workspaces used by the Super Admin desk.
-- Ideas use `project_manager_ideas` and `project_manager_ideas_activity` in the Project Manager migration scope.
-  Rich content is sanitized before persistence; create, update, and archive write activity in the same transaction.
-- The migration preserves applied DevKit checksums, then renames existing registry tables in place to the
-  `project_manager_` prefix in master and tenant databases. Migration state remains in `migration_schema`.
-- Platform supplies the authenticated request database and actor. Project Manager does not resolve tenant identity from
-  browser input and uses the existing HttpOnly CODEXSUN session cookie.
 
 ### Data Migration
 

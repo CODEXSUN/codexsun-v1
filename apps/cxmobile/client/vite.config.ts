@@ -23,6 +23,25 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     port: 18090,
-    strictPort: true
+    strictPort: true,
+    proxy: {
+      "/api/app": {
+        target: "http://127.0.0.1:18010",
+        changeOrigin: false,
+        secure: false
+      }
+    }
+  },
+  preview: {
+    host: "127.0.0.1",
+    port: 18190,
+    strictPort: true,
+    proxy: {
+      "/api/app": {
+        target: "http://127.0.0.1:18010",
+        changeOrigin: false,
+        secure: false
+      }
+    }
   }
 });

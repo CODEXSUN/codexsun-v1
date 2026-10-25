@@ -147,10 +147,6 @@ import {
   type ZetroDatabase,
   type ZetroProviderDatabase
 } from "@codexsun/zetro-api";
-import {
-  migrateProjectManagerDatabase,
-  projectManagerTenantMigrations
-} from "@codexsun/project-manager-api";
 import type { TenantDatabase } from "./schema.js";
 import { qcafeMigrationBatch, migrateQCafeWeb, seedQCafeWeb } from "@codexsun/qcafe-api/cloud";
 import type { Tenant } from "../modules/tenant/tenant.types.js";
@@ -189,15 +185,14 @@ export function tenantDatabaseMigrationsFor(_tenant: Tenant) {
       name,
       statements
     })),
-    ...marketingMigrationBatch.steps.map(({description,name})=>({description,name,statements:[`RUN ${name}`]})),
-    ...coreTenantMigrations.map((migration) => ({
-      ...migration,
-      statements: [`RUN ${migration.name}`]
-    })),
-    ...projectManagerTenantMigrations.map(({ description, name }) => ({
+    ...marketingMigrationBatch.steps.map(({ description, name }) => ({
       description,
       name,
       statements: [`RUN ${name}`]
+    })),
+    ...coreTenantMigrations.map((migration) => ({
+      ...migration,
+      statements: [`RUN ${migration.name}`]
     })),
     ...tconnectTenantMigrations.map((migration) => ({
       ...migration,
@@ -313,7 +308,6 @@ export async function migrateSelectedTenantApps(database: Kysely<TenantDatabase>
     await migrateSiteModule(database as unknown as Kysely<SitesDatabase>);
     provisionedApps.push("sites");
   }
-  await migrateProjectManagerDatabase(database as never);
   await migrateEcommerceTenantDatabase(database as unknown as Kysely<EcommerceDatabase>);
   provisionedApps.push("ecommerce");
   await migrateTconnect(database as never);
@@ -360,7 +354,10 @@ export async function migrateSelectedTenantApps(database: Kysely<TenantDatabase>
 export async function seedSelectedTenantApps(database: Kysely<TenantDatabase>, tenant: Tenant) {
   const enabled = new Set(tenant.enabledModuleKeys);
   const seededApps = ["application"];
-  if(enabled.has("marketing")){await seedMarketing(database as never);seededApps.push("marketing");}
+  if (enabled.has("marketing")) {
+    await seedMarketing(database as never);
+    seededApps.push("marketing");
+  }
   if (enabled.has("codexsun")) {
     await seedCodexsunPermissions(database as unknown as Kysely<CodexsunDatabase>);
     seededApps.push("codexsun");

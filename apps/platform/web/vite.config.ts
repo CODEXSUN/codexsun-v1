@@ -380,11 +380,6 @@ function platformDevelopmentServer(runtimeEnv: Record<string, string | undefined
         ...proxy,
         rewrite: (path: string) => path.replace(/^\/api\/core/u, "") || "/"
       },
-      "/api/project-manager": {
-        ...proxy,
-        rewrite: (path: string) =>
-          `/project-manager${path.replace(/^\/api\/project-manager/u, "") || "/"}`
-      },
       "/api/data-migration": proxy,
       "/api/data-bridge": proxy,
       "/api/zuno": {

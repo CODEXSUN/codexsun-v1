@@ -6,7 +6,6 @@ import {
   CircleGaugeIcon,
   CreditCardIcon,
   DatabaseIcon,
-  FolderKanbanIcon,
   ListChecksIcon,
   PaletteIcon,
   SearchCodeIcon,
@@ -29,9 +28,6 @@ import { SaAppDetails } from "./sa-app-details";
 
 const ZunoWorkspace = lazyWorkspace(() =>
   import("@codexsun/zuno-web").then((module) => module.ZunoWorkspace)
-);
-const ProjectManagerWorkspaceHost = lazyWorkspace(() =>
-  import("@codexsun/project-manager-web").then((module) => module.ProjectManagerWorkspaceHost)
 );
 const DataMigrationWorkspace = lazyWorkspace(() =>
   import("@codexsun/data-migration-web").then((module) => module.DataMigrationWorkspace)
@@ -154,8 +150,6 @@ type SaPage =
   | "overview"
   | "app-operations"
   | "task-manager"
-  | "project-manager-registry"
-  | "project-manager-ideas"
   | "data-migration-analysis"
   | "data-migration-run"
   | "data-migration-transfer-review"
@@ -411,23 +405,6 @@ export function SaDesk() {
       onSelect: () => selectPage("task-manager")
     },
     {
-      title: "Project Manager",
-      icon: FolderKanbanIcon,
-      isActive: page.startsWith("project-manager-"),
-      items: [
-        {
-          title: "Ideas",
-          isActive: page === "project-manager-ideas",
-          onSelect: () => selectPage("project-manager-ideas")
-        },
-        {
-          title: "Platform Registry",
-          isActive: page === "project-manager-registry",
-          onSelect: () => selectPage("project-manager-registry")
-        }
-      ]
-    },
-    {
       title: "Zuno",
       icon: SearchCodeIcon,
       isActive: page === "zuno",
@@ -641,9 +618,6 @@ export function SaDesk() {
                 onTenantChange={selectZetroTenant}
               />
             ) : null}
-            {page.startsWith("project-manager-") ? (
-              <ProjectManagerWorkspaceHost workspaceId={page.slice("project-manager-".length)} />
-            ) : null}
             {page === "data-migration-run" ? (
               <DataMigrationWorkspace
                 initialSelection={migrationSelection}
@@ -779,8 +753,6 @@ function pageFromUrl(pathname: string): SaPage {
   if (page === "data-migration-overview") return "data-migration-run";
   return page === "app-operations" ||
     page === "task-manager" ||
-    page === "project-manager-registry" ||
-    page === "project-manager-ideas" ||
     page === "data-migration-analysis" ||
     page === "data-migration-run" ||
     page === "data-migration-transfer-review" ||

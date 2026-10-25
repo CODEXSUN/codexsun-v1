@@ -90,10 +90,39 @@ export function resolveApiUrl(rawUrl: string | undefined, isRelease: boolean): s
         "Release configuration failure: VITE_PLATFORM_API_URL is missing. Release builds require an explicit secure endpoint."
       );
     }
+    // In local debug browser development/preview on ports 18090 or 18190,
+    // use the same-origin Vite proxy to prevent CORS blocks while preserving the /api/app prefix
+    if (typeof window !== "undefined" && window.location) {
+      const port = window.location.port;
+      if (port === "18090" || port === "18190") {
+        return `${window.location.origin}/api/app`;
+      }
+    }
     return LOCAL_DEBUG_CONFIG.VITE_PLATFORM_API_URL ?? "http://127.0.0.1:18010/api/app";
   }
 
   const url = rawUrl.trim();
+
+  // In local debug mode, when running inside a browser dev/preview server (port 18090 or 18190),
+  // route local loopback 18010 requests through the Vite debug proxy on the same origin.
+  // This preserves the full /api/app prefix and tenant/host headers without requiring CORS changes on Docker.
+  if (!isRelease && typeof window !== "undefined" && window.location) {
+    const port = window.location.port;
+    if (port === "18090" || port === "18190") {
+      try {
+        const parsed = new URL(url);
+        if (
+          (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost") &&
+          parsed.port === "18010" &&
+          (parsed.pathname === "/api/app" || parsed.pathname.startsWith("/api/app/"))
+        ) {
+          return `${window.location.origin}${parsed.pathname}`;
+        }
+      } catch {
+        // Non-standard URL, proceed to ordinary validation
+      }
+    }
+  }
   if (isRelease) {
     let parsed: URL;
     try {

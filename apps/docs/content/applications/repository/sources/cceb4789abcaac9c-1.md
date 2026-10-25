@@ -2,7 +2,7 @@
 
 Repository source: `apps/frappe/agent/TASK.md`
 
-Source SHA-256 (LF line endings): `1c94014c63cd705e71850d3ca73f253b2d044f15f1c87f2f1792363ceac7a7d4`
+Source SHA-256 (LF line endings): `f897cbc4dc13609369fea95bd79118bee2d8a3da3d401621fc2e0f9ef71d62e0`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -10,6 +10,30 @@ Historical notes and unchecked plans retain their original status.
 
 ```markdown
 # Frappe tasks
+
+## Frappe daily server hours and offline queue holds - 2026-10-25
+
+- [x] Add a tenant Server availability settings page, timezone, daily hours, and explicit live connection check.
+- [x] Add tracked availability-v11 storage and a shared health-probe lease with offline cooldown.
+- [x] Gate scheduled and immediate dispatch before queue creation. Hold existing jobs before claiming attempts.
+- [x] Keep the same BullMQ delivery delayed until recovery. Preserve checkpoints and stable retry identities.
+- [x] Verify schedule boundaries, daylight saving, offline cooldown, lease sharing, duplicate-safe recovery, and queue attempts in disposable databases.
+- [x] Verify real BullMQ/Redis hold and recovery on the isolated local clone with one job, zero held attempts, one completion, and no failures.
+- [x] Replay the migration in four local clone tenants. Preserve TECHMEDIA's 2,083 enquiries and existing numbers.
+- [x] Verify saved hours after browser reload and the local Super Admin waiting display. Preserve historical failed jobs.
+- [x] Verify the cloned scheduler at 21:30: zero probes, zero jobs, and unchanged last schedule/checkpoint.
+- [x] Final Platform API and web builds pass. The local clone uses a verified patch of affected modules on its captured API image.
+- No VPS change, commit, push, mobile build, or remote Frappe write is part of this stage.
+
+## Tenant Frappe switch audit - 2026-10-25
+
+- [x] Hide CRM Frappe columns, detail indicators, and verification actions when tenant live sync is off.
+- [x] Check app activation before reading optional Frappe settings. Scope web capability caching by tenant and database.
+- [x] Gate immediate jobs, relays, manual requests, and queued worker execution. Preserve pending events and source identities.
+- [x] Give deferred deliveries a fresh generation so re-enabling sync can resume pending work.
+- [x] Verify disposable-database switch and queue behavior, tenant-scoped table rendering, and existing duty persistence/retry behavior.
+- [ ] Live browser and remote Frappe verification: intentionally not performed in this local-only task.
+- No version change, commit, push, or deployment is authorized for this task.
 
 ## Bidirectional delivery and visible failures — 2026-10-23
 
@@ -198,16 +222,5 @@ The live VPS smoke test exercised the shared BullMQ + Redis queue with the non-b
 
 - [x] Deploy and verify TECHMEDIA Frappe enquiry import with source serials, creation/modified dates, mapped owner/assignee, site-scoped Customer identity, comments, audit history, and live Redis/BullMQ batches. Begin with a small selected-row test, then continue the queue until all current source enquiries are accounted for. Do not touch other tenant databases.
 
-  Live evidence: selected-row import verified ENQ1–ENQ5. Redis/BullMQ jobs 14, 24, and 29 ran in creation order over all 1,984 current Frappe enquiries; final job 29 completed with 1,984 scanned and zero failures. Reconciliation verified 1,984 unique source links and matching serials, creation timestamps, and modified timestamps to MariaDB second precision. All 14 of 15 distinct Frappe owners mapped; the remaining owner’s source email is preserved as `created_by`. All 18 distinct assigned employee codes mapped, and all 389 rows without a source assignee remain unassigned. All 575 source Customer rows have contact links; rows lacking a Frappe Customer were not linked by mobile alone. Frappe contained 4,066 embedded `enquiry_messages` and 69 standalone Enquiry comments; CRM contains 4,135 retry-keyed imported comments. Release 1.1.17 imports embedded messages with source author/time and stable retry keys. API, web, shop, and all CXApp containers report healthy; live CODEXSUN, shop, and API health routes passed. Only `techmedia_db` was used; no backup, schema migration, or tenant database creation occurred. Focused CRM/Frappe tests (101) and three isolated integration suites passed, as did Frappe API typecheck/lint/build, module boundaries, version consistency, and diff checks.
-
-- [x] Separate Frappe-to-CRM imports from CRM-to-Frappe exports in the API and web labels.
-- [x] Report connection usability and queue-worker availability to the web client.
-- [x] Reject queued import and export jobs when the background worker is disabled.
-- [x] Keep direct selected-row imports available without a background worker.
-      Evidence: `sync-readiness.test.ts`, `npm run test:crm-frappe`, and Frappe/Platform typechecks.
-- [ ] Resolve the CRM policy for automatic Contact, Enquiry, Activity, and Call Log exports.
-      CRM documentation approves automatic outbound transfer only for SOP and Duty records.
-- [x] Verify both Contact directions and the queued CRM-to-Frappe export through the browser.
-      Evidence: `npm run test:e2e:frappe-contacts-live` on `logicx.tmnext.in` imported Customer `C9138` into disposable local Core storage, confirmed the same local ID on retry, then created and read back one unique Mobile Contact using only `mobile_number`; repeat export updated that same document and cleanup deleted it. The mismatch path remained blocked.
-      The local browser export page verified Customer `C9138`, showed “Create Mobile Contact” and “Ready · mobile number only”, queued the export, and completed with 1 exported and 0 failed. Remote readback confirmed the Mobile Contact ID and `mobile_number` were `6886246988`
+  Live evidence: selected-row import verified ENQ1–ENQ5. Redis/BullMQ jobs 14, 24, and 29 ran in creation order over all 1,984 current Frappe enquiries; final job 29 completed with 1,984 scanned and zero failures. Reconciliation verified 1,984 unique source links and matching serials, creation timestamps, and modified timestamps to MariaDB second precision. All 14 of 15 distinct Frappe owners mapped; the remaining owner’s source email is preserved as `created_by`. A
 ```

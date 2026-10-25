@@ -1,5 +1,14 @@
 # Deployment Model
 
+## Release Promotion Policy
+
+Follow [Worktree And Version Release Workflow](../operations/worktree-release-workflow.md).
+Integrate app worktrees into reviewed `main`, then prepare a frozen versioned candidate.
+Build candidate images once, test staging, and promote the approved digests to production after explicit authorization.
+Staging must use separate data, queues, storage, secrets, and integration settings.
+The current VPS updater still builds source. Immutable image promotion requires a separate implementation task.
+This policy does not authorize deployment or create additional app containers.
+
 ## Deployment Goal
 
 CODEXSUN should support flexible deployment while keeping development simple.

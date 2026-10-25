@@ -1,0 +1,118 @@
+# cxmobile independent branch acceptance
+
+## Scope and evidence rules
+
+Workspace: `C:\Users\sunda\.codex\worktrees\cxmobile\codexsun`.
+Branch: `codex/cxmobile`.
+Baseline: `55e8035bcdd8fc1d4185c568d65dd6c2fbe3c041` plus local changes.
+Date: 25 October 2026.
+
+The user confirmed that no Mac is available and selected Android/browser completion first.
+iOS implementation, signing, and device acceptance remain deferred and must stay explicit in the final handoff.
+
+This file records independent checks from the coordinating Codex chat.
+It does not replace the supervisor's feature ledger or approve worker implementation.
+Keep Node contracts, Java helper tests, installed-device behavior, and Docker persistence evidence separate.
+The replacement Antigravity reviewer is `dc3bf7fa-acad-48fc-99b5-6c5bb2a50f14`.
+Its inspected report correctly keeps overall acceptance conditional rather than marking the application complete.
+
+## Verified observations
+
+- The branch setup passed 127 Node tests, typecheck, lint, module boundaries, dependency layout, and a debug web build.
+- The first Gradle report contained seven `NativeSecureStoragePluginTest` tests plus one generated example.
+- The latest report in root `dist` contains nine native Java tests with zero failures or errors.
+- The supervisor removed the generated example test and added byte-integrity helper cases.
+- Those tests execute Java validation helpers. They do not establish native bridge, KeyStore hardware, or authenticated device workflow acceptance.
+- The branch preview runs on `http://127.0.0.1:18190/`.
+- A fresh isolated browser context rendered the shared login at a 390 by 844 mobile viewport.
+- The rendered screen includes the logo, Corporate ID, username, password, recovery button, and sign-in button.
+- Initial direct tenant-context requests failed because Docker did not allow the new browser origin through CORS.
+- After the debug proxy repair, browser requests to `/api/app/auth/tenant-context` through port 18190 returned HTTP 200.
+- Docker gateway health returned HTTP 200.
+- A read-only query through the database container's internal password environment returned `root@localhost` without printing credentials.
+- Local fixture work therefore has a usable database access mechanism. Customer schemas remain outside the write scope.
+
+## Loading check
+
+The supervisor changed the four owner workspaces to lazy imports.
+A generated-file check included the entry, immediate client/bootstrap chunks, application root, and their static JavaScript dependencies.
+The combined gzip size was 135,826 bytes across nine files.
+This is below the 500 KiB initial JavaScript budget for that inspected build.
+It excludes later owner navigation and does not measure device cold launch, list usability, or network timing.
+Measure actual startup before closing the performance gate.
+
+## Open acceptance
+
+1. Run real positive login with disposable local fixtures, then verify saved and reloaded workflows across all four applications.
+2. Verify browser and installed Android company/year changes, role denials, foreign tenant records, revocation, and second-account cleanup.
+3. Verify native sockets, binary download, multipart upload, and media after native bearer isolation.
+4. Preserve native scope binding and secret protection throughout those repairs.
+5. Verify all generated native outputs stay within root `dist`. The latest JVM report is there, but the final layout check remains pending.
+6. Repair password recovery navigation. A live click changed the browser URL to `/forgot-password?desk=tenant` but rendered the login form again.
+7. Check all required phone widths, supported themes, keyboard, back navigation, and safe areas.
+8. Keep iPhone build, Keychain, signing, and device proof open until a suitable macOS host is available.
+
+The full application is not accepted as complete.
+Do not merge, deploy, publish, or replace these gates with unit-test totals.
+
+## Native transfer repair review
+
+The active repair now routes binary downloads and media through the native dispatcher using base64 responses.
+It also encodes multipart bodies for native dispatch.
+The inspected multipart catch still falls back to browser fetch after dispatcher or encoding errors.
+Keep native errors explicit rather than silently changing transport after native credential isolation.
+Verify byte integrity, cancellation, size limits, expiry, and context changes with actual native execution.
+The new code is under active supervisor repair and is not accepted by this source observation.
+
+## Owner transport integration remains unverified
+
+The visible workspaces compose owner React screens, but that does not connect their requests to the native dispatcher.
+`apps/crm/web/src/crm-request.ts` calls global `fetch` with ambient credentials.
+`apps/billing/web/src/shared/api/billing-api.ts` also calls global `fetch` and reads its token through the web tenant-context contract.
+The inspected `NativeSessionProvider` creates `NativeHttpTransport` and exposes it through context.
+It does not install an owner request transport seam.
+Verify actual owner screen requests on installed Android after native login.
+Do not assume tests of mobile service classes or slices exercise those owner requests.
+Any repair must use reviewed public infrastructure contracts and preserve native-owned bearer isolation.
+
+## Fixture execution stopped for safety repair
+
+The initial `test/docker-fixture-runner.ts` contains a hardcoded database password.
+Do not print or retain that value in source, reports, or logs.
+The runner also deletes a fixed schema and tenant registration before checking fixture ownership.
+The coordinating chat interrupted the supervisor and required repair before another execution.
+
+Use internally supplied secrets and a unique run identity.
+Refuse collisions with existing schemas or tenant records.
+Track every created resource and clean up only resources owned by that run.
+Use owner migrations and seeds against a new empty schema.
+Have the independent reviewer inspect these controls before provisioning resumes.
+This review does not establish that any earlier fixed-name resource belonged to the fixture.
+
+## Fixture and recovery follow-up
+
+The rewritten fixture has unique identifiers, no literal database password, collision refusal, owner migration calls, and run-scoped cleanup.
+The independent reviewer approved that rewrite for execution.
+One remaining guard needs review: `getDatabaseCredentials` accepts `process.env.DB_HOST` and `DB_PORT` without enforcing the verified local destination.
+Refuse remote database overrides before any connection or write.
+
+The fixture enables leaf module keys such as `crm.enquiry` and `billing.quotation`.
+Platform returns those keys unchanged in session context.
+The inspected mobile app activation predicate accepts root app keys but does not recognize leaf keys.
+Verify a real fixture login can reach its enabled owner screens without broadening resource permissions.
+
+The recovery repair currently displays an administrator-contact information panel.
+That is improved navigation but does not establish reuse of the existing recovery workflow.
+Keep recovery behavior open until the supported owner flow or a documented product decision has evidence.
+
+## Native fetch bridge review
+
+The supervisor added `installNativeFetchInterceptor` in `native-session-provider.tsx`.
+This is new infrastructure under active repair, not accepted integration evidence.
+The inspected implementation creates a JSON response with status 200 for every successful native request.
+It reads method, headers, and body only from `init`, ignoring those fields when the caller supplies a `Request` object.
+It also falls back to browser fetch after unclassified native errors.
+That fallback can change authentication and repeat a mutation whose first outcome is unknown.
+Owner PDF/media requests need a raw response contract with byte integrity, actual status, filtered headers, and cancellation.
+Keep errors explicit for requests already selected for native dispatch.
+Verify the bridge through actual owner helpers and installed Android requests before closing this gap.

@@ -8,6 +8,10 @@ import {
   appMenuItemsFor
 } from "./app-registry";
 import { appRegistrySchema } from "../modules/app-registry/app-registry.schema";
+import {
+  marketingNavigationItems,
+  marketingPageFromPath
+} from "../modules/marketing/marketing-navigation";
 
 test("Marketing loader entry is tenant activated and reaches every implemented workspace", () => {
   const app = platformAppRegistry.find((item) => item.id === "marketing");
@@ -39,6 +43,8 @@ test("Marketing loader entry is tenant activated and reaches every implemented w
   assert.deepEqual(selected, [
     "marketing.brands",
     "marketing.campaigns",
+    "marketing.email-campaigns",
+    "marketing.conversations",
     "marketing.captures",
     "marketing.submissions",
     "marketing.leads",
@@ -47,6 +53,33 @@ test("Marketing loader entry is tenant activated and reaches every implemented w
     "marketing.outcomes",
     "marketing.followups",
     "marketing.connections",
-    "marketing.consents"
+    "marketing.consents",
+    "marketing.contents"
   ]);
+});
+
+test("Marketing navigation defines all 14 workspaces including email-campaigns, conversations and content", () => {
+  assert.equal(marketingNavigationItems.length, 14);
+  assert.equal(marketingPageFromPath("/app/marketing/contents"), "marketing.contents");
+  assert.equal(marketingPageFromPath("/app/marketing/email-campaigns"), "marketing.email-campaigns");
+  assert.equal(marketingPageFromPath("/app/marketing/conversations"), "marketing.conversations");
+  assert.deepEqual(
+    marketingNavigationItems.map((item) => item.page),
+    [
+      "marketing.brands",
+      "marketing.campaigns",
+      "marketing.email-campaigns",
+      "marketing.conversations",
+      "marketing.contents",
+      "marketing.captures",
+      "marketing.submissions",
+      "marketing.leads",
+      "marketing.qualifications",
+      "marketing.conversions",
+      "marketing.outcomes",
+      "marketing.followups",
+      "marketing.connections",
+      "marketing.consents"
+    ]
+  );
 });

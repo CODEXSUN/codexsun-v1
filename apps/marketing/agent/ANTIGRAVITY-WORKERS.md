@@ -10,7 +10,9 @@ Copy this envelope into each actual worker task. Replace every bracket before di
 
 ```text
 Role: [MKT / UI / INT / QA]. Supervisor: [actual parent task ID].
-Workspace: D:\workspace\codexsun. Wave/task IDs: [exact IDs].
+Workspace: C:\Users\sunda\.codex\worktrees\marketing\codexsun.
+Required branch: codex/marketing. Verify actual cwd and branch before edits.
+Wave/task IDs: [exact IDs].
 Objective: [one bounded deliverable and expected behavior].
 Read: root AGENTS, Assist guide/governance, applicable architecture/design references,
 Marketing ANTIGRAVITY-HANDOFF, PLAN/TASK, and [affected source/public contract].

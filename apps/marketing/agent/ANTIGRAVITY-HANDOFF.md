@@ -1,6 +1,9 @@
 # Marketing supervisor prompt
 
-Prepared: 25-10-2026. Workspace: `D:\workspace\codexsun`. Chat name: `marketing`.
+Prepared: 25-10-2026. Chat name: `marketing`.
+Active workspace: `C:\Users\sunda\.codex\worktrees\marketing\codexsun`, branch `codex/marketing`.
+Read [BRANCH-WORKFLOW](BRANCH-WORKFLOW.md) before continuing. It supersedes older workspace paths for this assignment.
+Do not edit the shared `D:\workspace\codexsun` checkout. Other app workers use it in parallel.
 
 ## Authorization and objective
 

@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.66
+Current version: 1.1.67
 
-Release tag: v-1.1.66
+Release tag: v-1.1.67
 
-Changelog label: v 1.1.66
+Changelog label: v 1.1.67
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,25 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.67
+
+### [v 1.1.67] 2026-10-25 10:58 pm - Integrate Marketing and CXMobile and reset app worktrees
+
+#### Database Changes
+
+- Database update: Yes (manual). Integrated Marketing module migrations require staging review. No database operation ran.
+
+#### App Codebase Changes
+
+- Integrate the scoped uncommitted Marketing and CXMobile changes into main with recoverable worktree snapshots.
+- Add Marketing Content, Email Campaign, Conversation, social webhook handling, and navigation wiring.
+- Integrate CXMobile native session, HTTP, Android transfer, lazy workspace, and fixture changes. Repair compile blockers without claiming device acceptance.
+- Remove the incomplete Project Manager DevKit and its Platform, startup, build, catalog, and documentation wiring. Preserve existing data.
+- Record app selection and the app worktree -> main -> candidate -> staging -> approved cloud workflow.
+- Archive old CODEXSUN chats and prepare fresh CXMobile, Marketing, CRM, and Billing checkouts without npm installation.
+- Add missing Marketing and existing Ecommerce developer references, and align all registered package and lockfile versions to 1.1.67.
+- Record verification boundaries and the fresh checkout plan in `.container/docs/RELEASE-1.1.67.md`. No deployment.
 
 ## v-1.1.66
 

@@ -4,6 +4,9 @@ import {
   ConsentWorkspace,
   BrandWorkspace,
   CampaignWorkspace,
+  EmailCampaignWorkspace,
+  ConversationWorkspace,
+  ContentWorkspace,
   CaptureWorkspace,
   ConnectionWorkspace,
   LeadWorkspace,
@@ -35,6 +38,15 @@ export function MarketingHost({ page, companyId }: { page: string; companyId: nu
       {page === "marketing.submissions" ? <SubmissionWorkspace /> : null}
       {page === "marketing.brands" ? <BrandWorkspace /> : null}
       {page === "marketing.campaigns" ? <CampaignWorkspace /> : null}
+      {page === "marketing.email-campaigns" || page === "/app/marketing/email-campaigns" ? (
+        <EmailCampaignWorkspace />
+      ) : null}
+      {page === "marketing.conversations" || page === "/app/marketing/conversations" ? (
+        <ConversationWorkspace />
+      ) : null}
+      {page === "marketing.contents" || page === "/app/marketing/contents" ? (
+        <ContentWorkspace />
+      ) : null}
       {page === "marketing.captures" ? <CaptureWorkspace /> : null}
       {page === "marketing.connections" ? <ConnectionWorkspace /> : null}
       {page === "marketing.leads" ? <LeadWorkspace /> : null}

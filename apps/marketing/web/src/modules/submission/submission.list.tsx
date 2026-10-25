@@ -24,7 +24,6 @@ export function SubmissionList({
   onColumnFilterChange,
   onHideInlineFilters,
   onView,
-  onRetry
 }: {
   records: SubmissionRecord[];
   loading: boolean;

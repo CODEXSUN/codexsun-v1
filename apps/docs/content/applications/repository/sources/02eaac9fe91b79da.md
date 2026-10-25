@@ -2,7 +2,7 @@
 
 Repository source: `apps/platform/agent/SKILLS.md`
 
-Source SHA-256 (LF line endings): `0fee3176747184bfc360b325dab2973da4929b3b73b0fa5d8f8a55267fda7b36`
+Source SHA-256 (LF line endings): `a913e4c12fd0b00cf10822a93e0e15ac0d8a81c529d8c66e822a24011f12f862`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -14,7 +14,8 @@ Historical notes and unchecked plans retain their original status.
 ## Apply this guidance
 
 Use this file when planning, implementing, debugging, or reviewing Platform.
-Read [the README](../README.md), [TASK.md](TASK.md), and [PLAN.md](PLAN.md) first.
+For normal focused work, read the affected source and its public composition contract first.
+Read the Platform README, TASK, and PLAN only for architecture, permissions, tenancy, operations, release, audit, or documentation work.
 This file is component guidance. It does not install a global Codex skill or grant a runtime capability.
 
 ## Domain responsibilities
@@ -31,9 +32,11 @@ Composition registers public app contracts. Business CRUD stays in each owner. P
 - Add worker, event, or sync roles only when they contain real implemented behavior.
 - Keep secrets, generated files, and local runtime data out of source control.
 - Run npm commands from the repository root. Write generated output under root `dist`.
-- Update this owner documentation when scope, contracts, or supported operations change.
+- Do not update owner documentation for normal bug fixes or UI work. Update it only for contract, architecture, operations, or explicitly requested documentation changes.
 
 ## Review and evidence
+
+Use the smallest relevant check for focused work. The full list below is for release, architectural, tenancy, permission, or cross-module changes, and for an explicit full verification request.
 
 - `node tools/check-module-boundaries.mjs platform`
 - `npm run typecheck -w @codexsun/platform-api`
@@ -57,4 +60,10 @@ Do not treat Platform staff permissions as ownership of buyer-seller conversatio
 
 Do not grant TConnect credential review to portal identities. Credential approval belongs to explicitly authorized staff.
 Keep credential persistence, expiry, evidence, publication, and audit rules inside TConnect.
+
+## Data Bridge company media
+
+Storage Manager owns safe file reads, validation, target file writes, and storage-object registration.
+The host composes source-ID/database-bound read-only media roots and Core's public branding update contract.
+Do not resolve arbitrary URLs or accept a caller-selected filesystem root. Preserve conflicting target images.
 ```

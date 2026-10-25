@@ -5,7 +5,7 @@ import {
   readKnowledgeSource,
   searchDeveloperReference
 } from "./knowledge.content.js";
-test("repository catalog covers 19 app groups with readable SHA-checked sources", async () => {
+test("repository catalog covers active app groups with readable SHA-checked sources", async () => {
   const sources = await knowledgeSources();
   assert.ok(sources.length >= 225);
   assert.equal(new Set(sources.map((s) => s.pageKey)).size, sources.length);
@@ -22,7 +22,6 @@ test("repository catalog covers 19 app groups with readable SHA-checked sources"
     "auditor",
     "zetro",
     "zuno",
-    "project-manager",
     "uiux",
     "qcafe",
     "hrms",

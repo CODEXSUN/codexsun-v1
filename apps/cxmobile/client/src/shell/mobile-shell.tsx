@@ -9,14 +9,23 @@ import {
 } from "lucide-react";
 import { mainLayoutTechnicalNames } from "@codexsun/ui/layouts/main-layouts/main-layout-identifiers.js";
 import { useNativeSession } from "../app/native-session-provider.js";
-import { BillingMobileWorkspace } from "../domains/billing/index.js";
-import { ChatMobileWorkspace } from "../domains/chat/index.js";
-import { CrmMobileWorkspace } from "../domains/crm/index.js";
-import { EcommerceMobileWorkspace } from "../domains/ecommerce/index.js";
 import { NetworkMonitor } from "../native/network.js";
 import { AppSwitcher } from "./app-switcher.js";
 import { MobileDrawer } from "./mobile-drawer.js";
 import { MobileLogin } from "./mobile-login.js";
+
+const BillingMobileWorkspace = React.lazy(() =>
+  import("../domains/billing/index.js").then((m) => ({ default: m.BillingMobileWorkspace }))
+);
+const ChatMobileWorkspace = React.lazy(() =>
+  import("../domains/chat/index.js").then((m) => ({ default: m.ChatMobileWorkspace }))
+);
+const CrmMobileWorkspace = React.lazy(() =>
+  import("../domains/crm/index.js").then((m) => ({ default: m.CrmMobileWorkspace }))
+);
+const EcommerceMobileWorkspace = React.lazy(() =>
+  import("../domains/ecommerce/index.js").then((m) => ({ default: m.EcommerceMobileWorkspace }))
+);
 
 const APP_META = {
   billing: {
@@ -185,15 +194,26 @@ export function MobileShell() {
         >
           {!isAuthenticated ? (
             <MobileLogin />
-          ) : activeApp === "crm" ? (
-            <CrmMobileWorkspace />
-          ) : activeApp === "billing" ? (
-            <BillingMobileWorkspace />
-          ) : activeApp === "chat" ? (
-            <ChatMobileWorkspace />
-          ) : activeApp === "ecommerce" ? (
-            <EcommerceMobileWorkspace />
-          ) : null}
+          ) : (
+            <React.Suspense
+              fallback={
+                <div className="flex h-64 flex-col items-center justify-center gap-2 p-6 text-muted-foreground">
+                  <div className="size-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <span className="text-xs">Loading {currentAppMeta.title}...</span>
+                </div>
+              }
+            >
+              {activeApp === "crm" ? (
+                <CrmMobileWorkspace />
+              ) : activeApp === "billing" ? (
+                <BillingMobileWorkspace />
+              ) : activeApp === "chat" ? (
+                <ChatMobileWorkspace />
+              ) : activeApp === "ecommerce" ? (
+                <EcommerceMobileWorkspace />
+              ) : null}
+            </React.Suspense>
+          )}
         </main>
       </div>
 

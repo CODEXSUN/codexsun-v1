@@ -1,5 +1,17 @@
 # Versioning And Releases
 
+## Worktree And Candidate Release Policy
+
+Follow [Worktree And Version Release Workflow](worktree-release-workflow.md) before preparing a candidate or integrating app branches.
+Use hyphenated version folders, dotted package versions, and `codex/release/<version>` candidate branches.
+Create a candidate from an exact reviewed `main` commit only after authorization.
+A reserved folder does not authorize a version bump or code checkout.
+Keep routine app changes on the current baseline. Update lockstep versions only through an authorized version task.
+Freeze candidate features, return candidate fixes to `main`, and verify each replacement candidate.
+Promote the tested image digests after staging and explicit deployment approval.
+Retain the release tag and deployment record before deleting a completed candidate branch.
+Existing command examples below are procedures, not standing permission to commit, push, tag, or deploy.
+
 ## Version Policy
 
 CODEXSUN uses lockstep versioning across the root package and all workspaces.

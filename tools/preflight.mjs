@@ -55,14 +55,6 @@ const apps = {
     command: process.execPath,
     args: [nodePackageBin("vite", "bin/vite.js"), "--strictPort"]
   },
-  "project-manager-web": {
-    displayName: "project manager web",
-    cwd: "devkits/project-manager/web",
-    envKey: "CODEXSUN_PROJECT_MANAGER_WEB_PORT",
-    host: "127.0.0.1",
-    command: process.execPath,
-    args: [nodePackageBin("vite", "bin/vite.js"), "--strictPort"]
-  },
   "tconnect-web": {
     displayName: "Sites · Tirupur Connect",
     cwd: "apps/sites/clients",
@@ -179,12 +171,7 @@ await freePort(port, host);
 
 if (app === "platform-api") {
   ensurePlatformApiDependencies();
-} else if (
-  app === "platform-web" ||
-  app === "ecommerce-web" ||
-  app === "tconnect-web" ||
-  app === "project-manager-web"
-) {
+} else if (app === "platform-web" || app === "ecommerce-web" || app === "tconnect-web") {
   await waitForPlatformApi(
     requiredDevPort(process.env.PLATFORM_API_PORT ?? env.PLATFORM_API_PORT, "PLATFORM_API_PORT")
   );
