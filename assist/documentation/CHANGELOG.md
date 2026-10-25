@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.68
+Current version: 1.1.69
 
-Release tag: v-1.1.68
+Release tag: v-1.1.69
 
-Changelog label: v 1.1.68
+Changelog label: v 1.1.69
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,24 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.69
+
+### [v 1.1.69] 2026-10-25 11:49 pm - Define Prompt Manager drafting and dispatch boundaries
+
+#### Database Changes
+
+- Database update: No (manual).
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.69.
+- Define Prompt Manager analysis, drafting, explicit dispatch, and recipient-template boundaries without granting execution permissions.
+- Route app implementation to owner chats and preserve supervisor ownership of Git integration, version updates, and publication.
+- Link the shared Prompt Manager role from repository entry points, governance, versioning, worktree workflow, and deployment rules.
+- Consolidate identical app and deploy entry-point edits on main, and synchronize available registered worktrees after publication.
+- Record checks, preservation evidence, and the unavailable retained Platform checkout in `.container/docs/RELEASE-1.1.69.md`.
+- Update lockstep package versions, internal ranges, lockfile metadata, Windows manifests, and deployment sample without installation. No tag or deployment.
 
 ## v-1.1.68
 

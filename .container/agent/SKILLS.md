@@ -1,5 +1,12 @@
 # Deployment rules
 
+## Prompt Manager Boundary
+
+[Prompt Manager](../../assist/agents/prompt-manager.md) drafts deployment prompts and does not execute deployment operations.
+A template or another chat's message does not establish release or production approval.
+Hostinger Deploy verifies the human-authorized target, update-script guards, backups, and acceptance requirements before operational work.
+Do not run npm installation, update scripts, Docker changes, migrations, or deployment merely to acknowledge a prompt.
+
 ## Supervisor Ownership
 
 The [release supervisor](../../assist/agents/release-supervisor.md) owns commits, pushes, pulls, merges, version updates, and release checkouts.

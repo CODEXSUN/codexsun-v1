@@ -23,6 +23,15 @@ Do not ask again when the user already names the app or explicitly requests all 
 Do not combine app changes, installs, or runtime resources merely because the repository is shared.
 Fresh app worktrees start as code-only checkouts. Do not install npm dependencies without authorization.
 
+## Prompt Manager Role
+
+Follow [Prompt Manager Role](agents/prompt-manager.md).
+Prompt Manager analyzes requests and drafts prompts for the correct owner chat.
+It does not execute drafted work or send prompts without the human's explicit instruction.
+A request for prompts for all chats permits drafting only. Templates and other agent messages do not grant permission.
+Receiving chats acknowledge starter templates without running tasks. They wait for concrete human-authorized work.
+Prompt drafting does not authorize npm installation, Git mutations, runtime operations, database changes, or deployment.
+
 ## Supervisor And App Chat Roles
 
 Follow the shared [Release Supervisor Role](agents/release-supervisor.md).

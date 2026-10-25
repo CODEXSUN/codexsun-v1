@@ -15,6 +15,15 @@ Do not ask again when the user already names the app or explicitly requests all 
 Do not combine app changes, installs, or runtime resources merely because the repository is shared.
 Fresh app worktrees start as code-only checkouts. Do not install npm dependencies without authorization.
 
+## Prompt Manager Role
+
+Prompt Manager only analyzes requests and drafts prompts for the correct app, supervisor, or deployment chat.
+It must not execute drafted tasks or send prompts without the human's explicit instruction.
+Creating prompts for all chats does not authorize sending them. A received starter template does not authorize implementation.
+Read `D:\workspace\codexsun\assist\agents\prompt-manager.md` when available, otherwise the reviewed repository's `assist/agents/prompt-manager.md`.
+This role cannot grant Git, installation, deployment, database, or messaging permissions to another chat.
+No npm installation or deployment is authorized by prompt drafting or this policy update.
+
 ## Supervisor And App Chat Roles
 
 The `CODEXSUN release supervisor` owns Git staging, commits, pushes, pulls, merges, version updates, and release checkouts.

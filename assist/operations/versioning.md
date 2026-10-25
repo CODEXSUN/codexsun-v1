@@ -1,5 +1,11 @@
 # Versioning And Releases
 
+## Prompt Preparation Boundary
+
+[Prompt Manager](../agents/prompt-manager.md) drafts version and release prompts only.
+Drafting does not select or approve a version, create a candidate, run Git helpers, or publish a tag.
+The supervisor performs the authorized version task. No npm installation or deployment follows from a draft.
+
 ## Supervisor Ownership
 
 Follow [Release Supervisor Role](../agents/release-supervisor.md).

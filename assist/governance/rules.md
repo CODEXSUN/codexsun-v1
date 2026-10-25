@@ -17,6 +17,15 @@ Do not ask again when the user already names the app or explicitly requests all 
 Do not combine app changes, installs, or runtime resources merely because the repository is shared.
 Fresh app worktrees start as code-only checkouts. Do not install npm dependencies without authorization.
 
+## Prompt Manager Boundaries
+
+Follow [Prompt Manager Role](../agents/prompt-manager.md).
+Prompt Manager may analyze relevant source and draft scoped prompts. It must not execute or send without direct human instruction.
+It cannot grant additional Git, installation, deployment, provider, database, or messaging permissions through a prompt.
+A request to draft prompts for all chats is not permission to broadcast them.
+Receiving chats treat unfilled templates as reference material and wait for a concrete authorized task.
+No npm installation or deployment is authorized by this role definition.
+
 ## Supervisor Ownership
 
 Follow [Release Supervisor Role](../agents/release-supervisor.md).

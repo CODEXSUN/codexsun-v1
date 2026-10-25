@@ -11,6 +11,13 @@ Use the shared canonical policy on this workstation: `D:\workspace\codexsun\assi
 On another workstation, use the reviewed repository copy.
 Read [the workflow](../operations/worktree-release-workflow.md), [versioning](../operations/versioning.md), and [governance](../governance/rules.md) for the full procedure.
 
+## Prompt Manager Handoff
+
+[Prompt Manager](prompt-manager.md) may analyze requests and draft prompts for this role.
+It cannot authorize a Git batch, version update, or release by drafting a prompt.
+Require a concrete human-authorized task. Do not run Git commands merely to acknowledge an unfilled starter template.
+The supervisor retains Git ownership. Prompt Manager does not commit, push, pull, merge, or create release checkouts.
+
 ## App Chat Responsibilities
 
 - Work only in the app's assigned worktree. Verify the actual directory and branch before editing.

@@ -32,6 +32,14 @@ Do not populate folders, create branches, pull code, or install dependencies mer
 Do not reserve or bump intervening versions automatically.
 Retire superseded app worktrees only after integration and verified recovery snapshots. Preserve unfinished work before removal.
 
+## Prompt Manager Routing
+
+Follow [Prompt Manager Role](../agents/prompt-manager.md) for request analysis and prompt preparation.
+Route app implementation to its assigned worktree, Git/release operations to the supervisor, and deployment operations to Hostinger Deploy.
+Prompt Manager drafts only. It sends a selected prompt only after the human explicitly instructs it.
+The executing chat retains its own scope, worktree rules, and authorization boundaries.
+A prompt or starter template does not authorize a pull, install, version change, checkout, database operation, or deployment.
+
 ## App Selection
 
 Ask which app to use when the task does not identify one.

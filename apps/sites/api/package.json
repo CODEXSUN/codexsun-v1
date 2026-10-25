@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/sites-api",
-  "version": "1.1.68",
+  "version": "1.1.69",
   "private": true,
   "type": "module",
   "exports": {
@@ -30,7 +30,7 @@
     "mysql2": "^3.24.5"
   },
   "dependencies": {
-    "@codexsun/framework": "^1.1.68",
+    "@codexsun/framework": "^1.1.69",
     "fastify": "^5.12.5",
     "kysely": "^0.29.6",
     "zod": "^4.6.5"
