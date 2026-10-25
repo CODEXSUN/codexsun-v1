@@ -70,6 +70,10 @@ export class BusinessImportEngine {
           run.actor
         );
         for (const row of session.rows) {
+          for (const warning of row.branding?.warnings ?? []) {
+            const issue = `Company ${row.sourceId} branding: ${warning}`;
+            if (!run.issues.includes(issue)) run.issues.push(issue);
+          }
           if (row.status === "imported") {
             if (row.reuse) entry.updated = (entry.updated ?? 0) + 1;
             else entry.imported++;

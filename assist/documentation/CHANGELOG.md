@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.60
+Current version: 1.1.62
 
-Release tag: v-1.1.60
+Release tag: v-1.1.62
 
-Changelog label: v 1.1.60
+Changelog label: v 1.1.62
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,26 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.62
+
+### [v 1.1.62] 2026-10-25 11:28 am - Verify four-client Data Bridge migrations and approved corrections
+
+#### Database Changes
+
+- Database update: Yes. Import business rows into ASKNITS, SUNLIGHT, MATHAN and AARAN targets through Common → Masters → Billing. Preserve every source database.
+- Verify 132 invoices and 232 invoice items with target foreign IDs. Repeat all four imports with zero business inserts, updates or new users.
+- Apply approved target-only Nos placeholder-product mappings for ASKNITS, SUNLIGHT and MATHAN. Keep hyphen unit ID 1 and existing references.
+- Match MATHAN current-year flags to its source while preserving year identities, dates and the default-company FY 2026–27 pointer.
+- Reuse existing company identities. Retain Billing settings warnings and SUNLIGHT/AARAN navigation preferences. No schema migration is required.
+
+#### App Codebase Changes
+
+- Update lockstep release metadata to 1.1.62. This source release does not deploy new cloud images.
+- Copy company logos and favicons through source-bound read-only media mappings and the Core branding contract. Preserve conflicting target files and report missing assets.
+- Permit user transfer when only the landing-app preference differs after strict source/target, company, year and singleton verification. Keep all other identity conflicts blocked.
+- Record queue jobs, approved corrections, source fingerprints, repeat-import proof and dashboard SQL comparisons in the Data Bridge cloud log.
+- Verify focused branding/user-context tests, Data Bridge API build and lockstep version checks. Keep unrelated CRM, deployment, ecommerce and Codeit work outside this commit.
 
 ## v-1.1.60
 

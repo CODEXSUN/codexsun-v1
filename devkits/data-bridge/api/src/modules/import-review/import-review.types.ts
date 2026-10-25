@@ -24,6 +24,15 @@ export type ImportReport = {
 
 export type CommonTableImportHost = {
   database: Kysely<unknown>;
+  copyCompanyBranding?: (input: {
+    sourceId: number;
+    sourceDatabase: string;
+    targetTenantId: number;
+    sourceCompanyId: number;
+    targetCompanyId: number;
+    paths: Record<string, string>;
+    actor: string;
+  }) => Promise<{ copied: number; existing: number; warnings: string[] }>;
   copyUsers?: (input: { sourceId: number; targetTenantId: number; actor: string }) => Promise<{
     imported: number;
     existing: number;

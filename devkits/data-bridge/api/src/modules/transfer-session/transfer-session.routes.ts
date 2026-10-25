@@ -21,6 +21,14 @@ const record = z.record(z.string(), z.unknown());
 const row = z
   .object({
     sourceId: z.number().int(),
+    branding: z
+      .object({
+        copied: z.number().int(),
+        existing: z.number().int(),
+        warnings: z.array(z.string())
+      })
+      .strict()
+      .optional(),
     reuse: z
       .object({ targetId: z.number().int(), before: record, sourceCount: z.number().int() })
       .strict()

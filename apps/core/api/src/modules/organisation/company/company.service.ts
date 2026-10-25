@@ -112,6 +112,18 @@ export class CompanyService {
 export function getCompanyForDatabase(databaseName: string, companyId: number) {
   return runWithCoreDatabase(databaseName, () => new CompanyService().find(String(companyId)));
 }
+export function updateCompanyBrandingForDatabase(
+  databaseName: string,
+  companyId: number,
+  paths: { logoPath?: string; logoDarkPath?: string; faviconPath?: string }
+) {
+  return runWithCoreDatabase(databaseName, async () => {
+    const service = new CompanyService();
+    const company = await service.find(String(companyId));
+    if (!company) throw AppError.notFound("Target company was not found for branding transfer.");
+    return service.update(String(companyId), { name: company.name, ...paths });
+  });
+}
 function assertParent(
   label: string,
   actualParentId: number | null | undefined,

@@ -21,3 +21,4 @@ export {
 export * from "./storage-manager.repository.js";
 export * from "./storage-manager.service.js";
 export * from "./storage-manager.types.js";
+export { CompanyBrandingTransfer } from "./storage-manager.branding-transfer.js";

@@ -13,3 +13,4 @@ export {
   connectionPair
 } from "./transfer-session.catalog.js";
 export { transferSessionSchema } from "./transfer-session.routes.js";
+export { companyBrandingFields } from "./transfer-session.branding.js";

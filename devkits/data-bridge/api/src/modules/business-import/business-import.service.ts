@@ -7,6 +7,8 @@ import { BusinessImportPlan } from "./business-import.plan.js";
 import { BusinessImportEngine } from "./business-import.engine.js";
 import { BusinessInvoiceAudit } from "./business-import.invoices.js";
 import { BusinessIntegrity } from "./business-import.integrity.js";
+import { verifiedUserCompanyContext } from "./business-import.users.js";
+import { TransferService } from "../transfer-session/index.js";
 import {
   businessSummary,
   type BusinessRun,
@@ -149,17 +151,8 @@ export class BusinessImportService {
           run.message =
             "Copying missing tenant users with preserved credentials and target User-role access.";
           await progress();
-          const companyContext = ["core_companies", "core_default_company_settings"].every(
-            (table) => {
-              const entry = run.tables.find((item) => item.table === table);
-              return (
-                entry &&
-                entry.sourceRows > 0 &&
-                entry.status === "success" &&
-                entry.verified &&
-                !entry.blocked
-              );
-            }
+          const companyContext = await verifiedUserCompanyContext(run, (id) =>
+            new TransferService(this.host).get(id)
           );
           run.users = companyContext
             ? await this.host.copyUsers({

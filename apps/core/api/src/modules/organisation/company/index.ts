@@ -14,3 +14,4 @@ export type {
 } from "./company.types.js";
 
 export { isUntouchedCompanySeed } from "./company.seed-policy.js";
+export { updateCompanyBrandingForDatabase } from "./company.service.js";

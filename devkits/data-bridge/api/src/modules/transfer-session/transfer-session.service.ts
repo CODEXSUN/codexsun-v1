@@ -1,4 +1,5 @@
 import { CompanySeedReuse } from "../master-tables/index.js";
+import { companyBrandingFields, transferCompanyBranding } from "./transfer-session.branding.js";
 import { TransferReferences } from "./transfer-session.references.js";
 import { randomUUID, randomBytes, createHash } from "node:crypto";
 import { AppError } from "@codexsun/framework/errors";
@@ -101,6 +102,11 @@ export class TransferService {
   }
   async mapFields(id: string, revision: number, fields: TransferField[], actor: string) {
     return this.change(id, revision, async (session) => {
+      fields = companyBrandingFields(
+        session.targetTable,
+        fields,
+        Boolean(this.host.copyCompanyBranding)
+      );
       if (!session.sourceTable) throw AppError.validation("Verify tables first.");
       const schema = await this.connect(session, (db) =>
         db.verify(session.sourceTable, session.targetTable, fields)
@@ -393,6 +399,7 @@ export class TransferService {
           } finally {
             await db.target.query("SELECT RELEASE_LOCK(?)", [lockName]);
           }
+          await transferCompanyBranding(this.host, session, db);
         });
         session.status = "completed";
         session.message = "Import complete. Review row results.";

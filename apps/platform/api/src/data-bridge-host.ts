@@ -12,6 +12,9 @@ import {
 import { seedCrmUserAccess } from "@codexsun/crm-api";
 import {
   hasActiveTransferCompanyContext,
+  getCompanyForDatabase,
+  updateCompanyBrandingForDatabase,
+  registerCoreTenantDatabaseConnection,
   seedCoreStandardUserAccess,
   isUntouchedCompanySeed
 } from "@codexsun/core-api";
@@ -33,6 +36,7 @@ import { TenantRepository } from "./modules/tenant/tenant.repository.js";
 import { QueueManagerService } from "./modules/queue-manager/queue-manager.service.js";
 import { registerQueueJobProcessor } from "./modules/queue-manager/queue-manager.worker.js";
 import { env } from "./env.js";
+import { CompanyBrandingTransfer, StorageManagerService } from "./modules/storage-manager/index.js";
 
 const tenants = new TenantRepository();
 
@@ -64,6 +68,41 @@ export async function registerDataBridgeHost(
   };
   const host: CommonTableImportHost = {
     database: migrationHost.database,
+    async copyCompanyBranding(input) {
+      if (!(await new CredentialRecoveryRepository().isActiveSuperAdmin(input.actor)))
+        throw AppError.forbidden("An active Super Admin must authorize branding transfer.");
+      const target = await tenants.findByIdOrCode(String(input.targetTenantId));
+      if (
+        !target ||
+        target.id !== input.targetTenantId ||
+        target.status !== "active" ||
+        target.dbType !== "mariadb"
+      )
+        throw AppError.forbidden("The registered target tenant is unavailable.");
+      const source = await createDataMigrationBridgeAccess(migrationHost).resolveSource(
+        input.sourceId
+      );
+      if (source.database !== input.sourceDatabase)
+        throw AppError.conflict("Source routing changed.");
+      registerCoreTenantDatabaseConnection({
+        database: target.dbName,
+        host: target.dbHost,
+        port: target.dbPort,
+        user: target.dbUser,
+        password: resolveTenantDatabasePassword(target)
+      });
+      const current = await getCompanyForDatabase(target.dbName, input.targetCompanyId);
+      if (!current) throw AppError.notFound("Mapped target company was not found.");
+      const result = await new CompanyBrandingTransfer(new StorageManagerService()).copy({
+        ...input,
+        configuration: env.CODEXSUN_DATA_BRIDGE_MEDIA_SOURCES,
+        targetTenantId: target.uuid,
+        current
+      });
+      if (Object.keys(result.paths).length)
+        await updateCompanyBrandingForDatabase(target.dbName, input.targetCompanyId, result.paths);
+      return { copied: result.copied, existing: result.existing, warnings: result.warnings };
+    },
     isCompanySeed: isUntouchedCompanySeed,
     async copyUsers(input) {
       const authorize = async () => {

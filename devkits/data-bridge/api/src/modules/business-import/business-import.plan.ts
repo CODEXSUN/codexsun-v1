@@ -8,7 +8,7 @@ import {
 import { CommonTablesService } from "../common-tables/index.js";
 import { MasterTablesService } from "../master-tables/index.js";
 import { BillingTablesService } from "../billing-tables/index.js";
-import { TransferService } from "../transfer-session/index.js";
+import { TransferService, companyBrandingFields } from "../transfer-session/index.js";
 import { withConnections, type CommonTableImportHost } from "../import-review/index.js";
 import { sourceFingerprint } from "./business-import.values.js";
 import type { BusinessRun, BusinessTable, BusinessGroup } from "./business-import.types.js";
@@ -106,16 +106,20 @@ export class BusinessImportPlan {
           }
           try {
             const schema = await database.schema(sourceTable, table.table);
-            entry.fields = defaultBusinessFields(schema.source, schema.target).map((field) => {
-              const previous = mapping?.fields.find((f) => f.target === field.target);
-              return previous &&
-                !schema.target.find((c) => c.name === field.target)?.generated &&
-                !["id", "uuid", "created_at", "updated_at"].includes(field.target) &&
-                !/_by$/u.test(field.target) &&
-                !["now", "uuid"].includes(previous.mode)
-                ? previous
-                : field;
-            });
+            entry.fields = companyBrandingFields(
+              table.table,
+              defaultBusinessFields(schema.source, schema.target).map((field) => {
+                const previous = mapping?.fields.find((f) => f.target === field.target);
+                return previous &&
+                  !schema.target.find((c) => c.name === field.target)?.generated &&
+                  !["id", "uuid", "created_at", "updated_at"].includes(field.target) &&
+                  !/_by$/u.test(field.target) &&
+                  !["now", "uuid"].includes(previous.mode)
+                  ? previous
+                  : field;
+              }),
+              Boolean(this.host.copyCompanyBranding)
+            );
 
             if (
               mapping?.fields.some(

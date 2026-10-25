@@ -49,3 +49,9 @@ Do not treat Platform staff permissions as ownership of buyer-seller conversatio
 
 Do not grant TConnect credential review to portal identities. Credential approval belongs to explicitly authorized staff.
 Keep credential persistence, expiry, evidence, publication, and audit rules inside TConnect.
+
+## Data Bridge company media
+
+Storage Manager owns safe file reads, validation, target file writes, and storage-object registration.
+The host composes source-ID/database-bound read-only media roots and Core's public branding update contract.
+Do not resolve arbitrary URLs or accept a caller-selected filesystem root. Preserve conflicting target images.

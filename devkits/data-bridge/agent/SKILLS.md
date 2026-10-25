@@ -235,7 +235,9 @@ Match unit names with case and surrounding whitespace normalized. Preserve the m
 For example, source `Nos` and target `nos` can share identity without changing either stored source values or target IDs.
 Keep other mapped values under normal conflict checks. Do not guess aliases between different unit names.
 
-Hold account transfer until company and default-company results pass verification.
+Hold account transfer until company identity and the mapped active default-company/year context pass verification.
+A sole landing_app difference may remain a preserved warning after target-scoped singleton row verification.
+Reject changed sources, cross-tenant sessions, mismatched company/year/status, constant parent fields, and additional mapped differences.
 Require an active mapped target company, default setting, and financial year before copying credentials.
 Use the narrow owner User-access seed contracts. Do not run full app boot seeds from account transfer.
 Existing account-role links must stay unchanged. Only new accounts receive the target User role.
@@ -262,3 +264,16 @@ The Platform host refreshes Billing projections after business, mapped, and comm
 Resolve the target tenant from the registry. Never rebuild or migrate the external source database.
 Check the queue job completion as well as the import report: a failed projection keeps the job retryable.
 Repeat imports repair cached dashboards even when no missing business rows remain.
+
+## Company media transfer
+
+Company file paths are not portable business values. The transfer owner excludes branding fields from business identity comparisons.
+After commit, use the audited target company ID. Do not reuse the numeric source company ID.
+The Platform host resolves the active registered target and rechecks the Super Admin actor.
+Storage Manager reads only configured source media roots and uploads through its image validation and storage-object owner.
+Configure CODEXSUN_DATA_BRIDGE_MEDIA_SOURCES as JSON entries with sourceId, database, tenantKey, and absolute root.
+Bind every source ID and database explicitly. Mount legacy source storage read-only. Reject traversal and realpath escapes.
+Copy light logo, dark logo, and favicon when available. Preserve a different existing target image with a warning.
+Save returned paths through Core Company, preserving its business identity and references.
+Row branding results contain copied/existing counts and warnings. Business reports include media warnings without blocking valid invoice parents.
+A repeat must report existing images, make no media writes, and leave target company metadata unchanged.

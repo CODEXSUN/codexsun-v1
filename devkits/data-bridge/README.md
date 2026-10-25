@@ -115,3 +115,19 @@ Each target retains one Billing settings warning. See [release proof](agent/RELE
 The cloud Data Bridge endpoint and real Redis worker completed both client imports and repeat checks.
 All 321 invoices and their child rows matched. Sources remained unchanged and repeats produced no duplicate business rows.
 Each target retains one Billing settings warning. See [cloud proof](agent/CLOUD-1.1.59.md) for job IDs, reports, backups, and limits.
+
+## Automatic company branding
+
+Company transfers also copy configured light/dark logos and favicons after the target company commits.
+Branding paths are excluded from business identity comparison. Existing different target images are preserved.
+Platform requires a trusted read-only source-media mapping in CODEXSUN_DATA_BRIDGE_MEDIA_SOURCES.
+Missing or unsafe files produce report warnings. Copy results are persisted on each company transfer row.
+
+## User readiness and preserved navigation
+
+Account transfer requires verified company data and an active mapped default company and financial year.
+If the only remaining singleton difference is landing_app, retain the target navigation choice as a warning.
+Verify the completed transfer session belongs to the exact source and target pair.
+Require one active singleton, translated positive company/year IDs, source-mode identity fields, and matching remaining mapped values.
+Changed source data, ambiguous settings, cross-tenant sessions, or other differences keep user copying blocked.
+Platform still rechecks active Super Admin authority and active target context before copying supported credentials and User-role grants.

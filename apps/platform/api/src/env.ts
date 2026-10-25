@@ -40,6 +40,7 @@ const envSchema = z
     CODEXSUN_ZETRO_BASE_URL: z.string().default("https://api.openai.com/v1"),
     CODEXSUN_ZETRO_MODEL: z.string().default(""),
     CODEXSUN_ZUNO_SOURCE_ROOT: z.string().default(""),
+    CODEXSUN_DATA_BRIDGE_MEDIA_SOURCES: z.string().default("[]"),
     CODEXSUN_ZUNO_PLATFORM_LOG_PATH: z.string().default(""),
     CODEXSUN_ZUNO_PROVIDER_BASE_URL: z.string().default(""),
     CODEXSUN_ZUNO_PROVIDER_MODEL: z.string().default(""),

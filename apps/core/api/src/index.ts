@@ -24,6 +24,7 @@ export {
 } from "./modules/organisation/default-company/index.js";
 export {
   getCompanyForDatabase,
+  updateCompanyBrandingForDatabase,
   isUntouchedCompanySeed
 } from "./modules/organisation/company/index.js";
 export type { ApplicationCompanyBranding } from "./modules/organisation/default-company/index.js";

@@ -206,11 +206,12 @@ export class TransferDatabase {
     const audit = new CommonTableRowAudit(this.target, table, columns);
     const keys = await audit.uniqueKeys();
     const result = await audit.row({ rowNumber: row.sourceId, data: row.data }, keys);
-    row.target = await new CommonTableRowAudit(
-      this.target,
-      table,
-      fields.filter((field) => field.mode !== "default").map((field) => field.target)
-    ).matchingData(row.data, keys);
+    row.target = await new CommonTableRowAudit(this.target, table, [
+      ...new Set([
+        ...(table === "core_companies" ? ["id"] : []),
+        ...fields.filter((field) => field.mode !== "default").map((field) => field.target)
+      ])
+    ]).matchingData(row.data, keys);
     row.status =
       result.status === "ready" ? "ready" : result.status === "existing" ? "existing" : "warning";
     row.message = result.message;

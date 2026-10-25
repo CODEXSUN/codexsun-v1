@@ -12,6 +12,14 @@ const record = z.record(z.string(), z.unknown());
 export const businessRowSchema = z
   .object({
     sourceId: z.number(),
+    branding: z
+      .object({
+        copied: z.number().int(),
+        existing: z.number().int(),
+        warnings: z.array(z.string())
+      })
+      .strict()
+      .optional(),
     source: record,
     data: record,
     target: record.nullable(),

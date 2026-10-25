@@ -50,3 +50,9 @@ Do not identify a reusable seed by ID 1 or company name alone. Require its owner
 Clear seed status when the owner edits a record or Data Bridge confirms its business identity.
 Preserve established company IDs, UUIDs, creation metadata, and dependent references.
 Do not automatically merge or delete existing companies. Ambiguous identities require reviewed mapping.
+
+## Company branding imports
+
+Expose target branding updates through updateCompanyBrandingForDatabase.
+Data Bridge must use the audited target company ID and register the exact target database connection first.
+Preserve company identity, creation metadata, and dependent references. Do not copy source IDs to choose the target company.
