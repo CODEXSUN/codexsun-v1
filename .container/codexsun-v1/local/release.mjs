@@ -11,30 +11,34 @@ import {
 } from "./config.mjs";
 import { backup, verifyBackup } from "./backup.mjs";
 import { digest, privateDirectory, privateWrite } from "./files.mjs";
+import { createSourceSnapshot, verifySourceSnapshot } from "./source-snapshot.mjs";
 
 export async function release(docker, root, config, mode, base) {
   const stamp = `${Date.now()}-${randomBytes(3).toString("hex")}`;
   const directory = await privateDirectory(join(base, stamp));
   const initial = inspectDeployment(docker, config, mode);
-  const candidate = await buildModel(root, initial.model, stamp);
+  console.log("Backing up local SQL, Redis, storage, and configuration before build.");
+  await backup(docker, initial, join(directory, "before-build"));
+  console.log("Capturing and verifying a fixed snapshot of the current build sources.");
+  const snapshot = await createSourceSnapshot(root, directory);
+  const candidate = await buildModel(snapshot.root, initial.model, stamp);
   const candidateFile = join(directory, "candidate.private.json");
   await privateWrite(candidateFile, candidate);
   const compose = (file, args) => ["compose", "-p", config.project, "-f", file, ...args];
   docker.run(compose(candidateFile, ["config", "--quiet"]));
-  console.log("Backing up local SQL, Redis, storage, and configuration before build.");
-  await backup(docker, initial, join(directory, "before-build"));
-  const fingerprint = await sourceChecksum(root);
+  const fingerprint = snapshot.checksum;
   const bindings = await bindingChecksums(initial.model);
   console.log(`Building five local images. Private log: ${join(directory, "build.log")}`);
   await docker.logged(
     compose(candidateFile, ["build", ...applications]),
     join(directory, "build.log")
   );
-  assert.equal(
-    await sourceChecksum(root),
-    fingerprint,
-    "Source changed during build. Nothing was replaced. Retry after edits finish."
-  );
+  await verifySourceSnapshot(snapshot);
+  const workingTreeChangedDuringBuild = (await sourceChecksum(root)) !== fingerprint;
+  if (workingTreeChangedDuringBuild)
+    console.log(
+      "Newer working-tree edits will be included in the next local update. The verified build snapshot is unchanged."
+    );
   assert.deepEqual(
     await bindingChecksums(initial.model),
     bindings,
@@ -88,6 +92,7 @@ export async function release(docker, root, config, mode, base) {
     await privateWrite(join(directory, "result.json"), {
       success: true,
       sourceChecksum: fingerprint,
+      workingTreeChangedDuringBuild,
       databasePreserved: current.database.Id,
       redisPreserved: current.redis.Id
     });

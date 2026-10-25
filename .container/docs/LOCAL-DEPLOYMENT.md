@@ -44,8 +44,10 @@ bash update-local.sh
 ```
 
 Update requires all five local app containers to be healthy and owned by `codexsun-local-cloud`.
-Finish source edits before running it. The script rejects source changes detected during the build.
-It builds the current working tree with the shared `codexsun-v1/Dockerfile` and Docker cache.
+The script copies tracked and non-ignored build sources into a private snapshot before building.
+It checks source consistency during capture and validates every copied file with SHA-256 after building.
+Later working-tree edits go into the next update. They do not alter the captured build.
+It builds the snapshot with the shared `codexsun-v1/Dockerfile` and Docker cache.
 Every run creates unique local image tags, then pins their immutable image IDs.
 No clean Git checkout, release version bump, or GitHub push is required.
 The existing `setup.sh`, `update.sh`, and VPS deployment implementation keep their current behavior.

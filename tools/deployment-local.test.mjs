@@ -13,6 +13,7 @@ import { LocalDocker } from "../.container/codexsun-v1/local/docker.mjs";
 import { recover, release } from "../.container/codexsun-v1/local/release.mjs";
 import { verifyBackup } from "../.container/codexsun-v1/local/backup.mjs";
 import { withLock } from "../.container/codexsun-v1/local/files.mjs";
+import { verifySourceSnapshot } from "../.container/codexsun-v1/local/source-snapshot.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 
@@ -171,6 +172,19 @@ test("cancellation stops only tracked CLI children and permits application recov
   assert.doesNotThrow(() => docker.assertActive());
   docker.interrupt();
   assert.deepEqual(signals, ["SIGTERM"]);
+});
+
+test("a fixed build snapshot detects corruption independently of working-tree edits", async () => {
+  const directory = await temporary();
+  const content = "export const version = 1;";
+  await writeFile(join(directory, "source.ts"), content);
+  const snapshot = {
+    root: directory,
+    files: { "source.ts": createHash("sha256").update(content).digest("hex") }
+  };
+  await verifySourceSnapshot(snapshot);
+  await writeFile(join(directory, "source.ts"), "changed");
+  await assert.rejects(() => verifySourceSnapshot(snapshot), /snapshot changed/u);
 });
 
 function fixture() {

@@ -2129,6 +2129,58 @@ try {
       });
       assert.equal(missingCollectionProduct.statusCode, 400, missingCollectionProduct.body);
 
+      const failedAtomicCreate = await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: {
+          productInformationIds: [productId, 99999999],
+          slug: `a15-atomic-${suffix}`,
+          title: `A15 atomic ${suffix}`
+        },
+        url: "/ecommerce/catalog/collections"
+      });
+      assert.equal(failedAtomicCreate.statusCode, 400, failedAtomicCreate.body);
+      const afterFailedCreate = await app!.inject({
+        headers: sessionA.headers,
+        method: "GET",
+        url: "/ecommerce/catalog/collections"
+      });
+      assert.equal(
+        (afterFailedCreate.json() as { data: Array<Record<string, unknown>> }).data.some(
+          (row) => row.slug === `a15-atomic-${suffix}`
+        ),
+        false,
+        "A failed atomic collection create must not leave a record behind."
+      );
+
+      const failedAtomicUpdate = await app!.inject({
+        headers: sessionA.headers,
+        method: "PUT",
+        payload: {
+          expectedRevision: Number(collection.revision),
+          productInformationIds: [productId, 99999999],
+          slug: String(collection.slug),
+          title: "A15 featured"
+        },
+        url: `/ecommerce/catalog/collections/${collectionId}`
+      });
+      assert.equal(failedAtomicUpdate.statusCode, 400, failedAtomicUpdate.body);
+      const afterFailedUpdate = await app!.inject({
+        headers: sessionA.headers,
+        method: "GET",
+        url: `/ecommerce/catalog/collections/${collectionId}`
+      });
+      assert.equal(
+        (afterFailedUpdate.json() as { data: Record<string, unknown> }).data.itemCount,
+        1,
+        "A failed atomic collection update must preserve the previous membership."
+      );
+      assert.equal(
+        (afterFailedUpdate.json() as { data: Record<string, unknown> }).data.revision,
+        collection.revision,
+        "A failed atomic collection update must not advance the revision."
+      );
+
       const draftCollectionPublic = await app!.inject({
         headers: { host: tenantADomain },
         method: "GET",
@@ -3018,7 +3070,7 @@ async function verifyFixtureBrowser(
     await page.waitFor(
       `location.pathname.startsWith('/app/')&&!document.body.innerText.includes('Preparing your workspace')`,
       "staff authenticated workspace",
-      450
+      900
     );
     const catalogShows = [
       {
@@ -3128,6 +3180,64 @@ async function verifyFixtureBrowser(
           await page.waitFor(
             `document.body.innerText.includes(${JSON.stringify(show.term)})`,
             `attribute list after validation at ${width}px`
+          );
+        }
+        if (show.name === "specification") {
+          await page.evaluate(
+            `[...document.querySelectorAll('button')].find((button)=>button.textContent.trim()==='New specification')?.click()`
+          );
+          await page.waitFor(
+            `document.body.innerText.includes('Specifications are labelled product facts shown on the storefront.')`,
+            `specification form at ${width}px`
+          );
+          await page.evaluate(
+            `[...document.querySelectorAll('button')].find((button)=>button.textContent.trim()==='Save')?.click()`
+          );
+          await page.waitFor(
+            `document.body.innerText.includes('Choose a product.')&&document.body.innerText.includes('Specification label is required.')&&document.body.innerText.includes('Specification value is required.')`,
+            `specification field errors at ${width}px`
+          );
+          const formOverflow = await page.evaluate(
+            "document.documentElement.scrollWidth>document.documentElement.clientWidth+1"
+          );
+          assert.equal(formOverflow, false, `Specification form overflowed at ${width}px.`);
+          await page.screenshot(
+            resolve(browserRoot, `staff-specification-form-errors-${width}.png`)
+          );
+          await page.evaluate(
+            `[...document.querySelectorAll('button')].find((button)=>button.textContent.trim()==='Cancel')?.click()`
+          );
+          await page.waitFor(
+            `document.body.innerText.includes(${JSON.stringify(show.term)})`,
+            `specification list after validation at ${width}px`
+          );
+        }
+        if (show.name === "collection") {
+          await page.evaluate(
+            `[...document.querySelectorAll('button')].find((button)=>button.textContent.trim()==='New collection')?.click()`
+          );
+          await page.waitFor(
+            `document.body.innerText.includes('Curate an ordered product collection and publish it to the storefront.')`,
+            `collection form at ${width}px`
+          );
+          await page.evaluate(
+            `[...document.querySelectorAll('button')].find((button)=>button.textContent.trim()==='Save')?.click()`
+          );
+          await page.waitFor(
+            `document.body.innerText.includes('Collection slug is required.')&&document.body.innerText.includes('Collection title is required.')`,
+            `collection field errors at ${width}px`
+          );
+          const formOverflow = await page.evaluate(
+            "document.documentElement.scrollWidth>document.documentElement.clientWidth+1"
+          );
+          assert.equal(formOverflow, false, `Collection form overflowed at ${width}px.`);
+          await page.screenshot(resolve(browserRoot, `staff-collection-form-errors-${width}.png`));
+          await page.evaluate(
+            `[...document.querySelectorAll('button')].find((button)=>button.textContent.trim()==='Cancel')?.click()`
+          );
+          await page.waitFor(
+            `document.body.innerText.includes(${JSON.stringify(show.term)})`,
+            `collection list after validation at ${width}px`
           );
         }
         const opened = await page.evaluate(`(() => {

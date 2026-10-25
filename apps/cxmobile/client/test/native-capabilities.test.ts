@@ -879,14 +879,17 @@ describe("Native Capabilities & Plugin Verification", () => {
       assert.equal(val, null);
     });
 
-    it("enforces adversarial destination binding and rejects foreign origins without credential transmission", async () => {
+    it("enforces adversarial destination binding, slash boundary, and rejects missing metadata or sibling escapes", async () => {
       const approvedOrigin = "https://api.codexsun.invalid";
       const approvedBaseUrl = "https://api.codexsun.invalid/api/app";
 
-      // Simulated native plugin destination validator matching NativeSecureStoragePlugin.java assertValidDestination
-      const nativeDestinationValidator = (targetUrl: string, session: { apiBaseUrl: string; apiOrigin: string }) => {
+      // Simulated native plugin destination validator matching revised NativeSecureStoragePlugin.java assertValidDestination
+      const nativeDestinationValidator = (targetUrl: string, session: { apiBaseUrl?: string | undefined; apiOrigin?: string | undefined }) => {
         if (targetUrl.includes("..") || targetUrl.toLowerCase().includes("%2e%2e")) {
           throw new Error(`Path traversal denied: ${targetUrl}`);
+        }
+        if (!session.apiOrigin || !session.apiBaseUrl) {
+          throw new Error("Authenticated dispatch denied: Session record is missing required native origin or base-path scope metadata.");
         }
         const parsed = new URL(targetUrl);
         const approved = new URL(session.apiOrigin);
@@ -894,37 +897,141 @@ describe("Native Capabilities & Plugin Verification", () => {
           throw new Error(`Destination origin '${parsed.origin}' does not match approved session origin '${session.apiOrigin}'. Cross-origin credential injection denied.`);
         }
         const approvedBase = new URL(session.apiBaseUrl);
-        if (!parsed.pathname.startsWith(approvedBase.pathname)) {
-          throw new Error(`Destination path '${parsed.pathname}' escapes approved API scope '${approvedBase.pathname}'. Scope escape denied.`);
+        const approvedBasePath = approvedBase.pathname.replace(/\/+$/u, "");
+        const canonicalPath = parsed.pathname.replace(/\/+$/u, "");
+
+        const isExact = canonicalPath === approvedBasePath;
+        const isChild = parsed.pathname.startsWith(`${approvedBasePath}/`);
+
+        if (!isExact && !isChild) {
+          throw new Error(`Destination path '${parsed.pathname}' escapes approved API scope '${approvedBasePath}'. Scope escape denied.`);
         }
         return true;
       };
 
-      const session = { apiBaseUrl: approvedBaseUrl, apiOrigin: approvedOrigin };
+      const validSession = { apiBaseUrl: approvedBaseUrl, apiOrigin: approvedOrigin };
 
-      // 1. Foreign origin attempt
+      // 1. Foreign origin attempt denied
       assert.throws(
-        () => nativeDestinationValidator("https://attacker.invalid/steal", session),
+        () => nativeDestinationValidator("https://attacker.invalid/steal", validSession),
         /does not match approved session origin/
       );
 
-      // 2. Scope escape attempt
+      // 2. Scope escape attempt denied
       assert.throws(
-        () => nativeDestinationValidator("https://api.codexsun.invalid/admin/secret", session),
+        () => nativeDestinationValidator("https://api.codexsun.invalid/admin/secret", validSession),
         /escapes approved API scope/
       );
 
-      // 3. Path traversal escape attempt
+      // 3. Sibling prefix escape attempts: /api/application must NOT be accepted for /api/app
       assert.throws(
-        () => nativeDestinationValidator("https://api.codexsun.invalid/api/app/../../etc/passwd", session),
+        () => nativeDestinationValidator("https://api.codexsun.invalid/api/application", validSession),
+        /escapes approved API scope/
+      );
+      assert.throws(
+        () => nativeDestinationValidator("https://api.codexsun.invalid/api/application/users", validSession),
+        /escapes approved API scope/
+      );
+      assert.throws(
+        () => nativeDestinationValidator("https://api.codexsun.invalid/api/app-other", validSession),
+        /escapes approved API scope/
+      );
+
+      // 4. Path traversal escape attempt denied
+      assert.throws(
+        () => nativeDestinationValidator("https://api.codexsun.invalid/api/app/../../etc/passwd", validSession),
         /Path traversal denied/
       );
 
-      // 4. Approved endpoint within scope succeeds
+      // 5. Missing metadata in session denies authenticated dispatch (never skipped)
+      assert.throws(
+        () => nativeDestinationValidator("https://api.codexsun.invalid/api/app/crm/enquiries", { apiBaseUrl: "", apiOrigin: approvedOrigin }),
+        /missing required native origin or base-path scope metadata/
+      );
+      assert.throws(
+        () => nativeDestinationValidator("https://api.codexsun.invalid/api/app/crm/enquiries", { apiBaseUrl: approvedBaseUrl, apiOrigin: "" }),
+        /missing required native origin or base-path scope metadata/
+      );
+
+      // 6. Approved endpoint matching exact base path succeeds
       assert.equal(
-        nativeDestinationValidator("https://api.codexsun.invalid/api/app/crm/enquiries", session),
+        nativeDestinationValidator("https://api.codexsun.invalid/api/app", validSession),
         true
       );
+      assert.equal(
+        nativeDestinationValidator("https://api.codexsun.invalid/api/app/", validSession),
+        true
+      );
+
+      // 7. Approved child endpoint within slash boundary succeeds
+      assert.equal(
+        nativeDestinationValidator("https://api.codexsun.invalid/api/app/crm/enquiries", validSession),
+        true
+      );
+    });
+
+    it("ensures generic bridge setSecret/removeSecret cannot overwrite native-owned session or credentials", async () => {
+      // Simulates bridge protection logic in NativeSecureStoragePlugin.java
+      const isNativeOwnedKey = (key: string): boolean => {
+        const lower = key.toLowerCase();
+        return (
+          lower.endsWith("auth.session_record") ||
+          lower.endsWith("auth.session_secret") ||
+          lower.endsWith("auth.active_host") ||
+          lower.endsWith("auth.api_base_url") ||
+          lower.endsWith("auth.session_slot") ||
+          lower.includes(".token") ||
+          lower.includes(".bearer")
+        );
+      };
+
+      const simulateBridgeSetSecret = (key: string, _value: string) => {
+        if (isNativeOwnedKey(key)) {
+          throw new Error("Permission denied: Native-owned session credentials and endpoint bindings are immutable from the JavaScript bridge.");
+        }
+        return true;
+      };
+
+      const simulateBridgeRemoveSecret = (key: string) => {
+        if (isNativeOwnedKey(key)) {
+          throw new Error("Permission denied: Native-owned session credentials cannot be removed via generic bridge removeSecret. Use performNativeLogout or performNativeRevoke.");
+        }
+        return true;
+      };
+
+      // Deny bridge modifying bearer secret
+      assert.throws(
+        () => simulateBridgeSetSecret("codexsun.cxmobile.auth.session_secret", "rogue-token"),
+        /Native-owned session credentials and endpoint bindings are immutable/
+      );
+
+      // Deny bridge modifying session record
+      assert.throws(
+        () => simulateBridgeSetSecret("codexsun.cxmobile.auth.session_record", '{"apiOrigin":"https://attacker.invalid"}'),
+        /Native-owned session credentials and endpoint bindings are immutable/
+      );
+
+      // Deny bridge modifying active host
+      assert.throws(
+        () => simulateBridgeSetSecret("codexsun.cxmobile.auth.active_host", "attacker.invalid"),
+        /Native-owned session credentials and endpoint bindings are immutable/
+      );
+
+      // Deny bridge modifying api base url
+      assert.throws(
+        () => simulateBridgeSetSecret("codexsun.cxmobile.auth.api_base_url", "https://attacker.invalid/api"),
+        /Native-owned session credentials and endpoint bindings are immutable/
+      );
+
+      // Deny bridge removing session record
+      assert.throws(
+        () => simulateBridgeRemoveSecret("codexsun.cxmobile.auth.session_record"),
+        /Native-owned session credentials cannot be removed via generic bridge removeSecret/
+      );
+
+      // Non-auth keys are permitted
+      assert.equal(simulateBridgeSetSecret("codexsun.cxmobile.ui.theme_preference", "dark"), true);
+      assert.equal(simulateBridgeRemoveSecret("codexsun.cxmobile.ui.theme_preference"), true);
     });
 
     it("filters Set-Cookie, Cookie, and Authorization response headers before returning to JavaScript", async () => {
@@ -1016,6 +1123,64 @@ describe("Native Capabilities & Plugin Verification", () => {
       assert.equal(finalHeaders["Authorization"], "Bearer genuine-native-keystore-token");
       assert.equal(finalHeaders["x-codexsun-session-slot"], "genuine-native-slot");
       assert.equal(finalHeaders["x-custom-request"], "payload-123");
+    });
+
+    it("safely mutates session context (company switch/restore) without modifying immutable origin or exposing tokens", async () => {
+      // Simulates updateSessionMetadata in NativeSecureStoragePlugin.java
+      const initialSession = {
+        activeCompanyId: 101,
+        activeFinancialYearId: 2026,
+        apiBaseUrl: "https://api.codexsun.invalid/api/app",
+        apiOrigin: "https://api.codexsun.invalid",
+        context: { role: "admin", user: "dev" },
+        loginHost: "api.codexsun.invalid",
+        name: "Initial User",
+        role: "admin",
+        sessionSlot: "slot-xyz",
+        token: "[native-isolated]"
+      };
+
+      const simulateUpdateSessionMetadata = (
+        current: typeof initialSession,
+        mutations: {
+          activeCompanyId?: number;
+          activeFinancialYearId?: number;
+          context?: Record<string, unknown>;
+          expiresAt?: string;
+          name?: string;
+          role?: string;
+        }
+      ) => {
+        // Safe mutations only
+        const updated = {
+          ...current,
+          ...(mutations.activeCompanyId !== undefined ? { activeCompanyId: mutations.activeCompanyId } : {}),
+          ...(mutations.activeFinancialYearId !== undefined ? { activeFinancialYearId: mutations.activeFinancialYearId } : {}),
+          ...(mutations.context !== undefined ? { context: mutations.context } : {}),
+          ...(mutations.name !== undefined ? { name: mutations.name } : {}),
+          ...(mutations.role !== undefined ? { role: mutations.role } : {})
+        };
+        // Enforce immutability of endpoint bindings & tokens
+        updated.apiOrigin = current.apiOrigin;
+        updated.apiBaseUrl = current.apiBaseUrl;
+        updated.loginHost = current.loginHost;
+        updated.token = "[native-isolated]";
+        return updated;
+      };
+
+      const switched = simulateUpdateSessionMetadata(initialSession, {
+        activeCompanyId: 202,
+        activeFinancialYearId: 2027,
+        context: { role: "manager" }
+      });
+
+      assert.equal(switched.activeCompanyId, 202);
+      assert.equal(switched.activeFinancialYearId, 2027);
+      assert.deepEqual(switched.context, { role: "manager" });
+      assert.equal(switched.apiOrigin, "https://api.codexsun.invalid");
+      assert.equal(switched.apiBaseUrl, "https://api.codexsun.invalid/api/app");
+      assert.equal(switched.loginHost, "api.codexsun.invalid");
+      assert.equal(switched.token, "[native-isolated]");
     });
   });
 });

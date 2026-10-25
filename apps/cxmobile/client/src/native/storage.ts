@@ -61,6 +61,14 @@ export interface NativeHardwareKeystorePlugin {
   performNativeRevoke?(): Promise<{ success: boolean }>;
   removeSecret(options: { key: string }): Promise<{ success: boolean }>;
   setSecret(options: { key: string; value: string }): Promise<{ success: boolean }>;
+  updateSessionMetadata?(options: {
+    activeCompanyId?: number | undefined;
+    activeFinancialYearId?: number | undefined;
+    context?: Record<string, unknown> | undefined;
+    expiresAt?: string | undefined;
+    name?: string | undefined;
+    role?: string | undefined;
+  }): Promise<{ session: Record<string, unknown>; success: boolean }>;
 }
 
 export const NativeSecureKeyStore = registerPlugin<NativeHardwareKeystorePlugin>("NativeSecureStorage");
@@ -185,6 +193,22 @@ export class NativeSecureStorage {
 
   async storeSession(session: SessionRecord, rawToken?: string): Promise<void> {
     const isNative = Capacitor.isNativePlatform();
+    if (isNative && NativeSecureKeyStore.updateSessionMetadata) {
+      try {
+        await NativeSecureKeyStore.updateSessionMetadata({
+          activeCompanyId: session.activeCompanyId,
+          activeFinancialYearId: session.activeFinancialYearId,
+          context: session.context as Record<string, unknown> | undefined,
+          expiresAt: session.expiresAt,
+          name: session.name,
+          role: session.role
+        });
+        return;
+      } catch {
+        // Fall back to adapter write for mock or hybrid environments
+      }
+    }
+
     const tokenToPersist = rawToken ?? (session.token !== "[native-isolated]" ? session.token : undefined);
 
     if (tokenToPersist) {
@@ -207,6 +231,16 @@ export class NativeSecureStorage {
   }
 
   async getStoredSession(): Promise<SessionRecord | null> {
+    if (Capacitor.isNativePlatform() && NativeSecureKeyStore.performNativeRestore) {
+      try {
+        const res = await NativeSecureKeyStore.performNativeRestore();
+        if (res?.session) {
+          return res.session as unknown as SessionRecord;
+        }
+      } catch {
+        // Fall back to adapter
+      }
+    }
     const raw = await this.getSecret(NativeSecureStorage.SESSION_RECORD_KEY);
     if (!raw) return null;
     try {
@@ -269,10 +303,25 @@ export class NativeSecureStorage {
   }
 
   async clearSession(): Promise<void> {
-    await this.removeSecret(NativeSecureStorage.SESSION_RECORD_KEY);
-    await this.removeSecret(NativeSecureStorage.SESSION_SLOT_KEY);
-    await this.removeSecret(NativeSecureStorage.SESSION_SECRET_KEY);
-    await this.removeSecret(NativeSecureStorage.ACTIVE_HOST_KEY);
+    if (Capacitor.isNativePlatform() && NativeSecureKeyStore.performNativeRevoke) {
+      try {
+        await NativeSecureKeyStore.performNativeRevoke();
+      } catch {
+        // Best effort
+      }
+    }
+    try {
+      await this.removeSecret(NativeSecureStorage.SESSION_RECORD_KEY);
+    } catch {}
+    try {
+      await this.removeSecret(NativeSecureStorage.SESSION_SLOT_KEY);
+    } catch {}
+    try {
+      await this.removeSecret(NativeSecureStorage.SESSION_SECRET_KEY);
+    } catch {}
+    try {
+      await this.removeSecret(NativeSecureStorage.ACTIVE_HOST_KEY);
+    } catch {}
   }
 
   async clearAll(): Promise<void> {

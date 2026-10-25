@@ -195,7 +195,7 @@ export class ConsentRepository {
     ).rows[0];
 
     if (row && Boolean(row.blocked)) {
-      return { allowed: false, reason: "do_not_contact" };
+      return { allowed: false, reason: row.reason || "do_not_contact" };
     }
     return { allowed: true, reason: "no_restriction" };
   }

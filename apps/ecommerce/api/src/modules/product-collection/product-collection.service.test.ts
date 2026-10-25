@@ -98,6 +98,35 @@ test("stale collection revisions conflict instead of overwriting", async () => {
   );
 });
 
+test("collection save rejects invalid membership before writing the record", async () => {
+  const { created, repository: fake } = repository();
+  const service = new ProductCollectionService(fake as Repository);
+  await assert.rejects(
+    () =>
+      service.create({
+        productInformationIds: [1, 99],
+        slug: "atomic",
+        title: "Atomic"
+      }),
+    (error: unknown) => isAppError(error) && error.statusCode === 400
+  );
+  assert.equal(created.length, 0, "A failed atomic create must not persist a collection.");
+
+  await service.create({ productInformationIds: [1], slug: "atomic", title: "Atomic" });
+  const before = created[0];
+  await assert.rejects(
+    () =>
+      service.update(1, {
+        expectedRevision: 1,
+        productInformationIds: [1, 99],
+        slug: "atomic",
+        title: "Changed"
+      }),
+    (error: unknown) => isAppError(error) && error.statusCode === 400
+  );
+  assert.equal(created[0], before, "A failed atomic update must leave the record unchanged.");
+});
+
 test("collection membership rejects missing products and removes duplicates", async () => {
   const { repository: fake } = repository();
   const service = new ProductCollectionService(fake as Repository);

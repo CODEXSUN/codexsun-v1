@@ -46,7 +46,10 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
   const variants = new Map<string, Map<number, ProductVariantRecord>>();
   const images = new Map<string, Map<number, ProductImageRecord>>();
   const attributes = new Map<string, Map<number, ProductAttributeRecord>>();
-  const attributeAssignments = new Map<string, Map<number, Array<{ attributeId: number; values: string[] }>>>();
+  const attributeAssignments = new Map<
+    string,
+    Map<number, Array<{ attributeId: number; values: string[] }>>
+  >();
   const specifications = new Map<string, Map<number, ProductSpecificationRecord>>();
   const collections = new Map<string, Map<number, ProductCollectionRecord>>();
   const collectionItems = new Map<string, Map<number, number[]>>();
@@ -181,7 +184,10 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           return;
         }
 
-        if (url.pathname === "/ecommerce/overview/storefront-runtime/start" && req.method === "POST") {
+        if (
+          url.pathname === "/ecommerce/overview/storefront-runtime/start" &&
+          req.method === "POST"
+        ) {
           sendJson(200, {
             data: { port: 4200, state: "running" },
             success: true
@@ -194,7 +200,10 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
         // ==========================================
         const tProducts = getTenantStore(products, tenantId);
 
-        if (url.pathname === "/ecommerce/catalog/product-information/core-products" && req.method === "GET") {
+        if (
+          url.pathname === "/ecommerce/catalog/product-information/core-products" &&
+          req.method === "GET"
+        ) {
           sendJson(200, {
             data: [
               { id: 101, name: "Pure Linen Shirt" },
@@ -205,7 +214,10 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           return;
         }
 
-        if (url.pathname === "/ecommerce/catalog/product-information/core-brands" && req.method === "GET") {
+        if (
+          url.pathname === "/ecommerce/catalog/product-information/core-brands" &&
+          req.method === "GET"
+        ) {
           sendJson(200, {
             data: [
               { id: 501, name: "Solaris Heritage" },
@@ -222,7 +234,11 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
 
           const items = Array.from(tProducts.values()).filter((p) => {
             if (statusFilter && p.publicationStatus !== statusFilter) return false;
-            if (search && !p.storefrontTitle.toLowerCase().includes(search) && !p.slug.toLowerCase().includes(search)) {
+            if (
+              search &&
+              !p.storefrontTitle.toLowerCase().includes(search) &&
+              !p.slug.toLowerCase().includes(search)
+            ) {
               return false;
             }
             return true;
@@ -266,7 +282,8 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
             material: (body.material as string) ?? "100% Linen",
             maximumOrderQuantity: (body.maximumOrderQuantity as number) ?? null,
             minimumOrderQuantity: (body.minimumOrderQuantity as number) ?? 1,
-            publicationStatus: (body.publicationStatus as "draft" | "published" | "archived") ?? "draft",
+            publicationStatus:
+              (body.publicationStatus as "draft" | "published" | "archived") ?? "draft",
             returnPolicy: (body.returnPolicy as string) ?? "30-day returns",
             revision: 1,
             seoDescription: (body.seoDescription as string) ?? "",
@@ -287,7 +304,9 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           return;
         }
 
-        const productMatch = url.pathname.match(/^\/ecommerce\/catalog\/product-information\/(\d+)$/);
+        const productMatch = url.pathname.match(
+          /^\/ecommerce\/catalog\/product-information\/(\d+)$/
+        );
         if (productMatch) {
           const id = Number(productMatch[1]);
           const existing = tProducts.get(id);
@@ -305,7 +324,9 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
             const expectedRev = body.expectedRevision as number | undefined;
             if (expectedRev !== undefined && expectedRev !== existing.revision) {
               sendJson(409, {
-                error: { message: "This product was changed by someone else. Reload and try again." },
+                error: {
+                  message: "This product was changed by someone else. Reload and try again."
+                },
                 success: false
               });
               return;
@@ -323,7 +344,9 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           }
         }
 
-        const productArchiveMatch = url.pathname.match(/^\/ecommerce\/catalog\/product-information\/(\d+)\/archive$/);
+        const productArchiveMatch = url.pathname.match(
+          /^\/ecommerce\/catalog\/product-information\/(\d+)\/archive$/
+        );
         if (productArchiveMatch && req.method === "POST") {
           const id = Number(productArchiveMatch[1]);
           const existing = tProducts.get(id);
@@ -344,7 +367,10 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
 
         if (url.pathname === "/ecommerce/catalog/variants/products" && req.method === "GET") {
           sendJson(200, {
-            data: Array.from(tProducts.values()).map((p) => ({ id: p.id, title: p.storefrontTitle })),
+            data: Array.from(tProducts.values()).map((p) => ({
+              id: p.id,
+              title: p.storefrontTitle
+            })),
             success: true
           });
           return;
@@ -368,7 +394,8 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
               statusCounts: {
                 active: Array.from(tVariants.values()).filter((v) => v.status === "active").length,
                 all: tVariants.size,
-                inactive: Array.from(tVariants.values()).filter((v) => v.status === "inactive").length
+                inactive: Array.from(tVariants.values()).filter((v) => v.status === "inactive")
+                  .length
               },
               total: items.length
             },
@@ -435,7 +462,9 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           }
         }
 
-        const variantActionMatch = url.pathname.match(/^\/ecommerce\/catalog\/variants\/(\d+)\/(activate|deactivate)$/);
+        const variantActionMatch = url.pathname.match(
+          /^\/ecommerce\/catalog\/variants\/(\d+)\/(activate|deactivate)$/
+        );
         if (variantActionMatch && req.method === "POST") {
           const id = Number(variantActionMatch[1]);
           const action = variantActionMatch[2];
@@ -471,7 +500,10 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
 
         if (url.pathname === "/ecommerce/catalog/images/products" && req.method === "GET") {
           sendJson(200, {
-            data: Array.from(tProducts.values()).map((p) => ({ id: p.id, title: p.storefrontTitle })),
+            data: Array.from(tProducts.values()).map((p) => ({
+              id: p.id,
+              title: p.storefrontTitle
+            })),
             success: true
           });
           return;
@@ -549,7 +581,9 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           }
         }
 
-        const imageActionMatch = url.pathname.match(/^\/ecommerce\/catalog\/images\/(\d+)\/(activate|deactivate)$/);
+        const imageActionMatch = url.pathname.match(
+          /^\/ecommerce\/catalog\/images\/(\d+)\/(activate|deactivate)$/
+        );
         if (imageActionMatch && req.method === "POST") {
           const id = Number(imageActionMatch[1]);
           const action = imageActionMatch[2];
@@ -583,10 +617,12 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           const rec: ProductAttributeRecord = {
             code: (body.code as string) ?? "attr",
             createdAt: new Date().toISOString(),
-            dataType: (body.dataType as "text" | "number" | "boolean" | "select" | "color") ?? "text",
+            dataType:
+              (body.dataType as "text" | "number" | "boolean" | "select" | "color") ?? "text",
             id,
             isFilterable: (body.isFilterable as boolean) ?? true,
             name: (body.name as string) ?? "Attribute",
+            revision: 1,
             sortOrder: (body.sortOrder as number) ?? 1000,
             status: (body.status as "active" | "inactive") ?? "active",
             unit: (body.unit as string) ?? "",
@@ -607,13 +643,24 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
             sendJson(404, { error: { message: "Attribute not found." }, success: false });
             return;
           }
-          const updated = { ...existing, ...body, updatedAt: new Date().toISOString() };
+          if (body.expectedRevision !== existing.revision) {
+            sendJson(409, { error: { message: "Stale attribute." }, success: false });
+            return;
+          }
+          const updated = {
+            ...existing,
+            ...body,
+            revision: existing.revision + 1,
+            updatedAt: new Date().toISOString()
+          };
           tAttributes.set(id, updated);
           sendJson(200, { data: updated, success: true });
           return;
         }
 
-        const attrProdMatch = url.pathname.match(/^\/ecommerce\/catalog\/attributes\/products\/(\d+)$/);
+        const attrProdMatch = url.pathname.match(
+          /^\/ecommerce\/catalog\/attributes\/products\/(\d+)$/
+        );
         if (attrProdMatch) {
           const pId = Number(attrProdMatch[1]);
           if (req.method === "GET") {
@@ -657,17 +704,43 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
         if (url.pathname === "/ecommerce/catalog/specifications" && req.method === "POST") {
           const id = specificationCounter++;
           const rec: ProductSpecificationRecord = {
-            category: (body.category as string) ?? "General",
             createdAt: new Date().toISOString(),
             id,
-            name: (body.name as string) ?? "Spec",
+            label: (body.label as string) ?? "Spec",
+            productInformationId: (body.productInformationId as number) ?? 1,
+            productTitle: "Test product",
+            revision: 1,
             sortOrder: (body.sortOrder as number) ?? 1000,
             status: (body.status as "active" | "inactive") ?? "active",
             updatedAt: new Date().toISOString(),
-            uuid: `spec${id.toString().padStart(4, "0")}`
+            uuid: `spec${id.toString().padStart(4, "0")}`,
+            value: (body.value as string) ?? "Value"
           };
           tSpecifications.set(id, rec);
           sendJson(200, { data: rec, success: true });
+          return;
+        }
+
+        const specMatch = url.pathname.match(/^\/ecommerce\/catalog\/specifications\/(\d+)$/);
+        if (specMatch && req.method === "PUT") {
+          const id = Number(specMatch[1]);
+          const existing = tSpecifications.get(id);
+          if (!existing) {
+            sendJson(404, { error: { message: "Specification not found." }, success: false });
+            return;
+          }
+          if (body.expectedRevision !== existing.revision) {
+            sendJson(409, { error: { message: "Stale specification." }, success: false });
+            return;
+          }
+          const updated = {
+            ...existing,
+            ...body,
+            revision: existing.revision + 1,
+            updatedAt: new Date().toISOString()
+          };
+          tSpecifications.set(id, updated);
+          sendJson(200, { data: updated, success: true });
           return;
         }
 
@@ -684,7 +757,8 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
             heroImageUrl: (body.heroImageUrl as string) ?? "",
             id,
             itemCount: 0,
-            publicationStatus: (body.publicationStatus as "draft" | "published" | "archived") ?? "draft",
+            publicationStatus:
+              (body.publicationStatus as "draft" | "published" | "archived") ?? "draft",
             revision: 1,
             slug: (body.slug as string) ?? `coll-${id}`,
             sortOrder: (body.sortOrder as number) ?? 1000,
@@ -697,7 +771,32 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           return;
         }
 
-        const collItemMatch = url.pathname.match(/^\/ecommerce\/catalog\/collections\/(\d+)\/items$/);
+        const collMatch = url.pathname.match(/^\/ecommerce\/catalog\/collections\/(\d+)$/);
+        if (collMatch && req.method === "PUT") {
+          const id = Number(collMatch[1]);
+          const existing = tCollections.get(id);
+          if (!existing) {
+            sendJson(404, { error: { message: "Collection not found." }, success: false });
+            return;
+          }
+          if (body.expectedRevision !== existing.revision) {
+            sendJson(409, { error: { message: "Stale collection." }, success: false });
+            return;
+          }
+          const updated = {
+            ...existing,
+            ...body,
+            revision: existing.revision + 1,
+            updatedAt: new Date().toISOString()
+          };
+          tCollections.set(id, updated);
+          sendJson(200, { data: updated, success: true });
+          return;
+        }
+
+        const collItemMatch = url.pathname.match(
+          /^\/ecommerce\/catalog\/collections\/(\d+)\/items$/
+        );
         if (collItemMatch && req.method === "PUT") {
           const id = Number(collItemMatch[1]);
           const pIds = (body.productInformationIds as number[]) ?? [];
@@ -839,7 +938,10 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           return;
         }
 
-        if (url.pathname === "/ecommerce/settings/data-source/frappe-items" && req.method === "GET") {
+        if (
+          url.pathname === "/ecommerce/settings/data-source/frappe-items" &&
+          req.method === "GET"
+        ) {
           sendJson(200, {
             data: [
               {
@@ -860,7 +962,9 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           return;
         }
 
-        const frappeItemMatch = url.pathname.match(/^\/ecommerce\/settings\/data-source\/frappe-items\/([^/]+)$/);
+        const frappeItemMatch = url.pathname.match(
+          /^\/ecommerce\/settings\/data-source\/frappe-items\/([^/]+)$/
+        );
         if (frappeItemMatch && req.method === "GET") {
           const itemCode = decodeURIComponent(frappeItemMatch[1] ?? "");
           sendJson(200, {
@@ -952,7 +1056,9 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           }
         }
 
-        const sliderActionMatch = url.pathname.match(/^\/ecommerce\/storefront\/sliders\/(\d+)\/(activate|deactivate)$/);
+        const sliderActionMatch = url.pathname.match(
+          /^\/ecommerce\/storefront\/sliders\/(\d+)\/(activate|deactivate)$/
+        );
         if (sliderActionMatch && req.method === "POST") {
           const id = Number(sliderActionMatch[1]);
           const action = sliderActionMatch[2];
@@ -978,7 +1084,9 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
             actionLabel: (body.actionLabel as string) ?? "Claim Offer",
             actionUrl: (body.actionUrl as string) ?? "/offers",
             badge: (body.badge as string) ?? "30% OFF",
-            badgePosition: (body.badgePosition as "top-left" | "top-right" | "bottom-left" | "bottom-right") ?? "top-right",
+            badgePosition:
+              (body.badgePosition as "top-left" | "top-right" | "bottom-left" | "bottom-right") ??
+              "top-right",
             badgeTextColor: (body.badgeTextColor as string) ?? "#ffffff",
             badgeTint: (body.badgeTint as string) ?? "brand",
             createdAt: new Date().toISOString(),
@@ -1188,7 +1296,12 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           sendJson(200, {
             data: {
               brands: [
-                { logoAlt: "Solaris Heritage", logoUrl: "/brands/solaris.png", name: "Solaris Heritage", productCount: 15 }
+                {
+                  logoAlt: "Solaris Heritage",
+                  logoUrl: "/brands/solaris.png",
+                  name: "Solaris Heritage",
+                  productCount: 15
+                }
               ],
               categories: [{ name: "Shirts", productCount: 12 }],
               priceRange: { maximum: 5000, minimum: 500 }
@@ -1202,7 +1315,14 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           sendJson(200, {
             data: {
               announcement: null,
-              brandStrips: [{ logoAlt: "Solaris", logoUrl: "/brands/solaris.png", name: "Solaris", productCount: 10 }],
+              brandStrips: [
+                {
+                  logoAlt: "Solaris",
+                  logoUrl: "/brands/solaris.png",
+                  name: "Solaris",
+                  productCount: 10
+                }
+              ],
               campaignEvents: [],
               discovery: {
                 brands: [],
@@ -1302,12 +1422,14 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
-  function createTestEcommerceService(options: {
-    role?: "admin" | "editor" | "viewer" | undefined;
-    tenantId?: string | undefined;
-    tenantCode?: string | undefined;
-    unauthenticated?: boolean | undefined;
-  } = {}): {
+  function createTestEcommerceService(
+    options: {
+      role?: "admin" | "editor" | "viewer" | undefined;
+      tenantId?: string | undefined;
+      tenantCode?: string | undefined;
+      unauthenticated?: boolean | undefined;
+    } = {}
+  ): {
     ecommerce: EcommerceService;
     sessionManager: NativeSessionManager;
     transport: NativeHttpTransport;
@@ -1367,7 +1489,11 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
           enabledModuleKeys: ["ecommerce"],
           landingPage: "/ecommerce",
           safeSettings: {},
-          tenant: { code: tenantCode, id: tenantId, name: tenantId === "ten-a" ? "Solaris Textiles" : "Foreign Mart" }
+          tenant: {
+            code: tenantCode,
+            id: tenantId,
+            name: tenantId === "ten-a" ? "Solaris Textiles" : "Foreign Mart"
+          }
         },
         desk: "tenant" as const,
         email: "staff@codexsun.invalid",
@@ -1386,7 +1512,9 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
         userType: "tenant"
       };
 
-      (sessionManager as unknown as { _activeSession: typeof sessionRecord; _status: string })._activeSession = sessionRecord;
+      (
+        sessionManager as unknown as { _activeSession: typeof sessionRecord; _status: string }
+      )._activeSession = sessionRecord;
       (sessionManager as unknown as { _status: string })._status = "authenticated";
     }
 
@@ -1434,7 +1562,10 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
     const viewerRoutes = getAccessibleEcommerceRoutes(viewerPerms);
     assert.equal(viewerRoutes.length, 2); // overview & preview
     assert.ok(hasRequiredEcommercePermission("ecommerce.overview", viewerPerms));
-    assert.equal(hasRequiredEcommercePermission("ecommerce.product-information", viewerPerms), false);
+    assert.equal(
+      hasRequiredEcommercePermission("ecommerce.product-information", viewerPerms),
+      false
+    );
 
     const catalogRoutes = getEcommerceRoutesBySection("catalog", adminPerms);
     assert.ok(catalogRoutes.length >= 6);
@@ -1631,7 +1762,10 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
     assert.ok(Array.isArray(varOpts));
 
     // 1. Upload base64 image
-    const uploadRes = await ecommerce.uploadProductImage("shirt-front.webp", "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+    const uploadRes = await ecommerce.uploadProductImage(
+      "shirt-front.webp",
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    );
     assert.equal(uploadRes.fileName, "shirt-front.webp");
     assert.ok(uploadRes.url.includes("shirt-front.webp"));
 
@@ -1697,6 +1831,28 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
       unit: ""
     });
     assert.equal(attr.code, "color_swatch");
+    const updatedAttr = await ecommerce.updateProductAttribute(attr.id, {
+      code: "color_swatch",
+      dataType: "color",
+      expectedRevision: attr.revision,
+      isFilterable: true,
+      name: "Colour swatch",
+      sortOrder: 20,
+      status: "active",
+      unit: ""
+    });
+    assert.equal(updatedAttr.name, "Colour swatch");
+    assert.equal(updatedAttr.revision, 2);
+    await assert.rejects(
+      () =>
+        ecommerce.updateProductAttribute(attr.id, {
+          code: "color_swatch",
+          dataType: "color",
+          expectedRevision: attr.revision,
+          name: "Stale swatch"
+        }),
+      (err: unknown) => err instanceof PlatformApiError && err.statusCode === 409
+    );
 
     const assigned = await ecommerce.assignProductAttributes(1, [
       { attributeId: attr.id, values: ["#FFFFFF", "#000000"] }
@@ -1708,12 +1864,33 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
 
     // Specifications
     const spec = await ecommerce.createProductSpecification({
-      category: "Fabric Details",
-      name: "Thread Count",
+      label: "Thread count",
+      productInformationId: 1,
       sortOrder: 10,
-      status: "active"
+      status: "active",
+      value: "400"
     });
-    assert.equal(spec.name, "Thread Count");
+    assert.equal(spec.label, "Thread count");
+    const updatedSpec = await ecommerce.updateProductSpecification(spec.id, {
+      expectedRevision: spec.revision,
+      label: "Thread count",
+      productInformationId: 1,
+      sortOrder: 20,
+      status: "active",
+      value: "500"
+    });
+    assert.equal(updatedSpec.value, "500");
+    assert.equal(updatedSpec.revision, 2);
+    await assert.rejects(
+      () =>
+        ecommerce.updateProductSpecification(spec.id, {
+          expectedRevision: spec.revision,
+          label: "Thread count",
+          productInformationId: 1,
+          value: "600"
+        }),
+      (err: unknown) => err instanceof PlatformApiError && err.statusCode === 409
+    );
 
     // Collections
     const coll = await ecommerce.createProductCollection({
@@ -1724,6 +1901,23 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
       title: "Summer Breeze Collection"
     });
     assert.equal(coll.slug, "summer-breeze");
+    const updatedCollection = await ecommerce.updateProductCollection(coll.id, {
+      expectedRevision: coll.revision,
+      publicationStatus: "published",
+      slug: "summer-breeze",
+      title: "Summer Breeze"
+    });
+    assert.equal(updatedCollection.title, "Summer Breeze");
+    assert.equal(updatedCollection.revision, 2);
+    await assert.rejects(
+      () =>
+        ecommerce.updateProductCollection(coll.id, {
+          expectedRevision: coll.revision,
+          slug: "summer-breeze",
+          title: "Stale breeze"
+        }),
+      (err: unknown) => err instanceof PlatformApiError && err.statusCode === 409
+    );
 
     const collWithItems = await ecommerce.assignCollectionItems(coll.id, [1, 2]);
     assert.equal(collWithItems.itemCount, 2);
@@ -1740,10 +1934,14 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
     assert.equal(settings.verificationStatus, "live");
 
     const switchedProvider = await ecommerce.switchDataSourceProvider("products", "frappe");
-    assert.ok(switchedProvider.modules.some((m) => m.module === "products" && m.provider === "frappe"));
+    assert.ok(
+      switchedProvider.modules.some((m) => m.module === "products" && m.provider === "frappe")
+    );
 
     const switchedVisibility = await ecommerce.switchDataSourceVisibility("products", false);
-    assert.ok(switchedVisibility.modules.some((m) => m.module === "products" && m.enabled === false));
+    assert.ok(
+      switchedVisibility.modules.some((m) => m.module === "products" && m.enabled === false)
+    );
 
     const connTest = await ecommerce.testDataSourceConnection("frappe");
     assert.equal(connTest.connected, true);
@@ -1945,7 +2143,11 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
     const { ecommerce } = createTestEcommerceService({ role: "admin", tenantCode: "TEN-A" });
 
     // Test direct helper and service method
-    const helperConfig = buildStorefrontPreviewConfig(serverOrigin, "TEN-A", "solaris-textiles.localhost");
+    const helperConfig = buildStorefrontPreviewConfig(
+      serverOrigin,
+      "TEN-A",
+      "solaris-textiles.localhost"
+    );
     assert.equal(helperConfig.credentialsForwarded, false);
 
     const previewConfig = ecommerce.getStorefrontPreviewConfig(
@@ -2072,7 +2274,11 @@ describe("Ecommerce Mobile Parity - M0 Workflow Verification", () => {
 
     assert.throws(
       () => {
-        assertEcommercePermission("ecommerce.catalog.edit", () => false, "ecommerce.product-information");
+        assertEcommercePermission(
+          "ecommerce.catalog.edit",
+          () => false,
+          "ecommerce.product-information"
+        );
       },
       (err: Error) => {
         assert.ok(err instanceof EcommercePermissionDeniedError);

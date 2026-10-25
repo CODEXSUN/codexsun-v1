@@ -1,26 +1,41 @@
 # Ecommerce supervisor execution
 
-## Current repair execution - 2026-10-24 (N01-N06)
+## Current execution - 2026-10-25 (EC-T03/EC-T05 browser repair)
 
-Status: N01-N04 are implemented and verified locally; N05 provider contracts are reconciled without
-provider behavior changes; N06 reconciliation is current. Independent review of N01-N06 and the
-remaining EC-T03/EC-T05 scope are still pending.
+Status: EC-T03/EC-T05 are implemented and locally verified; independent review is still required before
+acceptance. HEAD is `5b1685bc4029514f7e04c22139acb2462acbba69` (Ecommerce source through the attribute,
+specification, collection, activity and atomic-save slice). Current uncommitted work is the E2E harness
+and the cxmobile revision-aware consumer; unrelated owner changes are preserved.
 
-- Current HEAD: `8d67a35115585838c8b8cfaeed7958ecbede32e9`; Ecommerce work remains uncommitted.
-- N01-N03: canonical option identity/migration/seed, registered composition migration `1.0.85`, and
-  imported/native projection. Focused suite: 32/32 pass.
-- N04: backend filters and status counts, shared paging, page reset/clamp, pager hidden at <=100 and
-  20/50/100 above 100. Helper tests 4/4 pass.
-- Disposable tenancy E2E without browser: exit `0`, 13 assertion groups, A11-A13 pass, cleanup
-  `remaining=0` (`dist/ecommerce-scratch/evidence/ec-n04-postfix.log`).
-- Disposable tenancy E2E with Chrome: exit `0`, 14 assertion groups, R04 and staff product/variant
-  paging at 1440/1024/390 pass. Screenshots under
-  `dist/ecommerce-scratch/ecommerce-browser-1792864760930/`; log
-  `dist/ecommerce-scratch/evidence/ec-n04-browser.log`.
-- Gates: API/web typecheck, API/web lint and module boundaries pass. No real tenant, master database,
-  provider or Git remote was modified.
-- Remaining: independent N01-N06 review; attributes/specifications/collections; Show/App Header
-  actions, activity, invalid-field feedback and 768/320 checks before EC-T03/EC-T05 acceptance.
+- Migration: 34 committed Ecommerce steps remain byte/order stable; six forward steps append at 35-40.
+  `node --import tsx --test apps/ecommerce/api/src/modules/ecommerce-composition/ecommerce-composition.migration.test.ts`
+  exit `0` (2/2: applied versions never shift; new migrations append after the committed ledger).
+- Catalog: product/variant/attribute/specification/collection List/Show/Upsert, App Header actions,
+  activity, backend filters/status counts, paging and optimistic revisions. Collection create/update
+  replace membership inside one transaction; invalid membership fails before any write and leaves
+  revision/item count unchanged.
+- Catalog focused suite: 17 files, 60/60 tests pass, exit `0` (`node --import tsx --test` on all
+  `apps/ecommerce/{api,web}/src/**/*.test.ts`). Includes stale attribute/specification/collection
+  revisions, atomic collection failure, migration ordering, product-information attribution and
+  storefront projection.
+- Consumer: cxmobile list clients still receive bare arrays when `page`/`pageSize` are absent; paged
+  envelopes are opt-in. Attribute/specification/collection update types now require the loaded
+  `expectedRevision`, with 409 coverage. `apps/cxmobile/client/test/ecommerce-parity.test.ts` exit `0`
+  (13/13); `npm run typecheck -w @codexsun/cxmobile-client` exit `0`.
+- Disposable tenancy E2E with Chrome: exit `0`, 16 assertion groups, A1-A15 and R04 pass, cleanup
+  `generated databases remaining=0`. Log `dist/ecommerce-scratch/evidence/ec-supervisor-browser-2026-10-25n.log`,
+  exit file `...n.exit`; screenshots under `dist/ecommerce-scratch/ecommerce-browser-1792934411662/`.
+  Coverage: List/Show/Upsert, activity and server field errors for all five catalog pages at
+  1440/768/390/320, plus product/variant paging at 1440/1024/390.
+- Failed-run record: `ec-supervisor-browser-2026-10-25k.exit` is `1` because the staff workspace wait
+  expired during a cold Vite transform (90 seconds). `...-l.log` also ended without a summary. The
+  harness now waits for an idle login form and up to 180 seconds for the workspace; only the `n` run is
+  acceptance evidence.
+- Gates on the current tree: API/web/cxmobile typecheck, API/web/cxmobile lint and Ecommerce module
+  boundary check pass. No real tenant/master database, provider, deployment or Git push was touched.
+- Remaining: independent review of this slice, then EC-T04 media/gallery/file manager and EC-T06.
+  EC-T07+ remain blocked by the owner decisions recorded in `TASK.md`. Raw HTML SEO is still a known
+  failing requirement (client-only SPA).
 
 Historical sections below are retained and are not current status.
 

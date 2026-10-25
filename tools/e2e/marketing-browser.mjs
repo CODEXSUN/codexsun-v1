@@ -10,6 +10,7 @@ import { BrowserPage } from "./tconnect-negotiation-browser.mjs";
 /** Loopback-only harness uses the real Marketing screens and the caller's disposable database API. */
 export async function verifyMarketingBrowser(app) {
   const directory = resolve("dist/.cache/codexsun-marketing-browser-" + Date.now());
+  const chromeDir = resolve("dist/.cache/chrome-profile-" + Date.now());
   await mkdir(directory, { recursive: true });
   await writeFile(
     resolve(directory, "index.html"),
@@ -51,7 +52,7 @@ export async function verifyMarketingBrowser(app) {
       host: "127.0.0.1",
       port: 0,
       hmr: false,
-      watch: { ignored: ["**/chrome/**"] },
+      watch: null,
       fs: { allow: [process.cwd()] }
     }
   });
@@ -66,7 +67,7 @@ export async function verifyMarketingBrowser(app) {
       "--disable-gpu",
       "--no-first-run",
       "--no-default-browser-check",
-      "--user-data-dir=" + resolve(directory, "chrome"),
+      "--user-data-dir=" + chromeDir,
       "--remote-debugging-port=0",
       "about:blank"
     ],
@@ -78,7 +79,7 @@ export async function verifyMarketingBrowser(app) {
     for (let attempt = 0; attempt < 100 && !port; attempt++) {
       try {
         port = Number(
-          (await readFile(resolve(directory, "chrome/DevToolsActivePort"), "utf8")).split("\n")[0]
+          (await readFile(resolve(chromeDir, "DevToolsActivePort"), "utf8")).split("\n")[0]
         );
       } catch {}
       if (!port) await new Promise((done) => setTimeout(done, 100));
@@ -91,13 +92,15 @@ export async function verifyMarketingBrowser(app) {
     const info = targets.find((row) => row.id === target.targetId);
     assert(info);
     page = await BrowserPage.connect(info.webSocketDebuggerUrl);
+    await page.waitFor("Boolean(document.body)", "DOM ready");
     await page.waitFor(
-      "document.body.innerText.includes('New Brand')",
-      "Marketing brand workspace"
+      "Boolean(document.body?.innerText?.includes('New Brand'))",
+      "Marketing brand workspace",
+      200
     );
     await page.clickText("New Brand");
     await page.waitFor(
-      "Boolean(document.querySelector('input[aria-label=Name]'))",
+      "Boolean(document.querySelector(\"input[aria-label='Brand name'], input[aria-label='Name']\"))",
       "CRM-style upsert"
     );
     assert.equal(
@@ -107,11 +110,11 @@ export async function verifyMarketingBrowser(app) {
     );
     await page.clickText("Save");
     await page.waitFor(
-      "document.body.innerText.includes('Check the required fields')",
+      "Boolean(document.body?.innerText?.includes('Check the required fields'))",
       "required-field validation"
     );
     await page.evaluate(
-      `(()=>{const input=document.querySelector('input[aria-label=Name]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Browser verified brand');input.dispatchEvent(new Event('input',{bubbles:true}));})()`
+      `(()=>{const input=document.querySelector('input[aria-label="Brand name"], input[aria-label="Name"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Browser verified brand');input.dispatchEvent(new Event('input',{bubbles:true}));})()`
     );
     await page.clickText("Save");
     await page.waitFor(
@@ -122,18 +125,18 @@ export async function verifyMarketingBrowser(app) {
       `(()=>{const row=[...document.querySelectorAll('tbody tr')].find(item=>item.innerText.includes('Browser verified brand'));row.click();})()`
     );
     await page.waitFor(
-      "document.body.innerText.includes('Brand details and activity')",
+      "Boolean(document.body?.innerText?.includes('Brand Details'))",
       "Show details and activity"
     );
     assert.match(await page.evaluate("location.search"), /show=[a-f0-9]{8}/);
     await page.send("Page.reload");
     await page.waitFor(
-      "document.body.innerText.includes('Brand details and activity')",
+      "Boolean(document.body?.innerText?.includes('Brand Details'))",
       "Show survives browser refresh"
     );
     await page.clickText("Edit");
     await page.waitFor(
-      "document.querySelector('input[aria-label=Name]')?.value==='Browser verified brand'",
+      "document.querySelector(\"input[aria-label='Brand name'], input[aria-label='Name']\")?.value==='Browser verified brand'",
       "Edit current record"
     );
     assert.match(await page.evaluate("location.search"), /form=edit/);
@@ -153,7 +156,7 @@ export async function verifyMarketingBrowser(app) {
     assert.equal(overflow, false, "Workspace must fit a mobile viewport.");
     await page.send("Emulation.clearDeviceMetricsOverride");
     await page.send("Page.navigate", { url: origin + "/?workspace=consent" });
-    await page.waitFor("document.body.innerText.includes('Record consent')", "Consent list");
+    await page.waitFor("Boolean(document.body?.innerText?.includes('Record consent'))", "Consent list");
     await page.clickText("Record consent");
     await page.waitFor(
       `Boolean(document.querySelector('input[aria-label="Recipient email"]'))`,
@@ -162,7 +165,7 @@ export async function verifyMarketingBrowser(app) {
     assert.equal(await page.evaluate("Boolean(document.querySelector('table'))"), false);
     await page.clickText("Record evidence");
     await page.waitFor(
-      "document.body.innerText.includes('Check the required fields')",
+      "Boolean(document.body?.innerText?.includes('Check the required fields'))",
       "Consent required-field validation"
     );
     await page.evaluate(`document.querySelector('[aria-label="Brand"]').focus()`);
@@ -184,20 +187,20 @@ export async function verifyMarketingBrowser(app) {
     await page.evaluate(
       `([...document.querySelectorAll('tbody tr')].find(row=>row.innerText.includes('browser-consent@example.test'))).click()`
     );
-    await page.waitFor("document.body.innerText.includes('Check eligibility')", "Consent Show");
+    await page.waitFor("Boolean(document.body?.innerText?.includes('Check eligibility'))", "Consent Show");
     await page.clickText("Check eligibility");
     await page.waitFor(
-      "document.body.innerText.includes('Eligible at check time')",
+      "Boolean(document.body?.innerText?.includes('Eligible at check time'))",
       "Live owner eligibility check"
     );
     await page.screenshot(resolve("dist/marketing-consent-show-local.png"));
     await page.send("Page.reload");
     await page.waitFor(
-      "document.body.innerText.includes('Check eligibility')",
+      "Boolean(document.body?.innerText?.includes('Check eligibility'))",
       "Consent Show refresh"
     );
     assert.equal(
-      await page.evaluate("document.body.innerText.includes('Eligible at check time')"),
+      await page.evaluate("document.body?.innerText.includes('Eligible at check time')"),
       false,
       "Reload must not restore a cached allow result."
     );

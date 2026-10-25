@@ -151,24 +151,45 @@ export async function buildModel(root, model, stamp) {
   return candidate;
 }
 
+export const buildSourcePaths = [
+  "apps",
+  "packages",
+  "devkits",
+  "tools",
+  ".container/codexsun-v1/Dockerfile",
+  ".container/codexsun-v1/nginx-web.conf",
+  ".container/codexsun-v1/nginx-shop.conf",
+  ".container/codexsun-v1/api-entrypoint.sh",
+  "package.json",
+  "package-lock.json",
+  ".npmrc",
+  ".dockerignore",
+  "tsconfig.json",
+  "tsconfig.base.json",
+  "turbo.json"
+];
+
+export function sourceFiles(root) {
+  return [
+    ...new Set(
+      execFileSync(
+        "git",
+        ["ls-files", "--cached", "--others", "--exclude-standard", "-z", "--", ...buildSourcePaths],
+        {
+          cwd: root,
+          encoding: "utf8",
+          maxBuffer: 128 * 1024 * 1024,
+          stdio: ["ignore", "pipe", "pipe"]
+        }
+      )
+        .split("\0")
+        .filter((name) => name && existsSync(join(root, name)))
+    )
+  ].sort();
+}
+
 export async function sourceChecksum(root) {
-  const paths = [
-    "apps",
-    "packages",
-    "devkits",
-    "tools",
-    ".container/codexsun-v1/Dockerfile",
-    ".container/codexsun-v1/nginx-web.conf",
-    ".container/codexsun-v1/nginx-shop.conf",
-    ".container/codexsun-v1/api-entrypoint.sh",
-    "package.json",
-    "package-lock.json",
-    ".npmrc",
-    ".dockerignore",
-    "tsconfig.json",
-    "tsconfig.base.json",
-    "turbo.json"
-  ];
+  const paths = buildSourcePaths;
   const options = {
     cwd: root,
     maxBuffer: 128 * 1024 * 1024,

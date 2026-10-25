@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.64
+Current version: 1.1.65
 
-Release tag: v-1.1.64
+Release tag: v-1.1.65
 
-Changelog label: v 1.1.64
+Changelog label: v 1.1.65
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,18 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.65
+
+### [v 1.1.65] 2026-10-25 6:58 pm - woking on cxmobile
+
+#### Database Changes
+
+- Database update: No (auto-check).
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.65.
 
 ## v-1.1.64
 

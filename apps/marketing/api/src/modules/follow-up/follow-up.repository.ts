@@ -4,6 +4,12 @@ import { sql } from "kysely";
 import type { MarketingContext } from "../../context.js";
 import type { FollowUpInput, FollowUpRecord, FollowUpActivity } from "./follow-up.types.js";
 
+function toSqlDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toISOString().slice(0, 19).replace("T", " ");
+}
+
 export class FollowUpRepository {
   constructor(private readonly ctx: MarketingContext) {}
 
@@ -61,6 +67,7 @@ export class FollowUpRepository {
     const identity = uuid ?? randomBytes(4).toString("hex");
     const notes = input.notes ?? "";
     const status = input.status ?? "pending";
+    const dueAt = toSqlDateTime(input.dueAt);
 
     await this.ctx.database.transaction().execute(async (database) => {
       if (uuid) {
@@ -75,11 +82,11 @@ export class FollowUpRepository {
         if (input.expectedRevision !== undefined && current.revision !== input.expectedRevision) {
           throw AppError.conflict("This record changed. Refresh it before saving.");
         }
-        await sql`UPDATE marketing_follow_ups SET revision=revision+1, action_type=${input.actionType}, subject=${input.subject}, notes=${notes}, due_at=${input.dueAt}, assigned_to=${input.assignedTo}, status=${status}, updated_by=${this.ctx.actorEmail}
+        await sql`UPDATE marketing_follow_ups SET revision=revision+1, action_type=${input.actionType}, subject=${input.subject}, notes=${notes}, due_at=${dueAt}, assigned_to=${input.assignedTo}, status=${status}, updated_by=${this.ctx.actorEmail}
     WHERE uuid=${identity} AND company_id=${this.ctx.companyId} ${this.scope()}`.execute(database);
       } else {
         await sql`INSERT INTO marketing_follow_ups(uuid, company_id, brand_uuid, lead_uuid, action_type, subject, notes, due_at, assigned_to, status, created_by, updated_by)
-    VALUES(${identity}, ${this.ctx.companyId}, ${input.brandUuid}, ${input.leadUuid}, ${input.actionType}, ${input.subject}, ${notes}, ${input.dueAt}, ${input.assignedTo}, ${status}, ${this.ctx.actorEmail}, ${this.ctx.actorEmail})`.execute(
+    VALUES(${identity}, ${this.ctx.companyId}, ${input.brandUuid}, ${input.leadUuid}, ${input.actionType}, ${input.subject}, ${notes}, ${dueAt}, ${input.assignedTo}, ${status}, ${this.ctx.actorEmail}, ${this.ctx.actorEmail})`.execute(
           database
         );
       }

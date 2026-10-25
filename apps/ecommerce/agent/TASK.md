@@ -1,16 +1,23 @@
 # Ecommerce tasks
 
-## Current status - authoritative, 2026-10-24 (N01-N06 reconciliation)
+## Current status - authoritative, 2026-10-25 (EC-T03/EC-T05 browser repair)
 
 This section is the single current status source. Every section below it is historical evidence and
 must not be read as a current acceptance claim.
 
-Current HEAD is `8d67a35115585838c8b8cfaeed7958ecbede32e9`. The Ecommerce repair work is an uncommitted
-working tree on the earlier `ef5b3b3` baseline; unrelated workstream commits advanced HEAD during the
-session. EC-T00 contracts were frozen at `fec76ade`; the independent reviewer re-verified them at
-`61710dd9`. This repair session ran in OpenCode with effective model
-`opencode/deepseek-v4.1-flash-free`. The earlier DeepSeek Harness session (`deepseek-flash`) remains
-historical and no repair work is claimed under it.
+Current HEAD is `5b1685bc4029514f7e04c22139acb2462acbba69`; the Ecommerce source through the
+attribute/specification/collection slice is in that commit. Uncommitted current work is limited to
+`tools/e2e/ecommerce-tenancy.e2e.ts` (browser login/wait repair plus field-error coverage) and
+`apps/cxmobile/client/{src/domains/ecommerce,test/ecommerce-parity.test.ts}` (revision-aware consumer
+contract). Unrelated `.container`, marketing and cxmobile session edits remain preserved. EC-T00
+contracts were frozen at `fec76ade`; independent review is still required for the current slice.
+This session ran in OpenCode with effective model `opencode/deepseek-v4.1-flash-free`.
+
+Migration order is fixed: the committed ledger has 34 Ecommerce steps and six forward steps append at
+versions 35-40 (`product-attribute`, `product-attribute-revision`, `product-specification`,
+`product-specification-revision`, `product-collection`, `catalog-activity`). Existing applied versions
+are never renumbered; checksum/version compatibility is covered by
+`ecommerce-composition.migration.test.ts`.
 
 ### Task status
 
@@ -28,9 +35,9 @@ historical and no repair work is claimed under it.
 | EC-R07 | done, pending owner review       | Five concrete packets under `agent/contracts/`; no provider code changed.                                                                                                           |
 | EC-R08 | done, pending independent review | Legacy scripts retired to their disposable replacements; cleanup guards and a forced-failure drill pass.                                                                            |
 | EC-R09 | done, pending review             | Product/slider media now use the verified tenant public root, with idempotent legacy copy-on-read and migration tests.                                                              |
-| EC-T03 | in progress                      | Product/variant upsert, publication and optimistic edits pass A11; paging, filters and browser checks pass A13/N04. Attributes, specifications, collections and full staff acceptance remain. |
-| EC-T04 | pending                          | Amended by EC-R09; media and gallery.                                                                                                                                               |
-| EC-T05 | pending                          | Shared paging/filter contract passes A13 and browser checks. List/Show/Upsert, App Header actions, activity, validation and 768/320 checks remain.                                  |
+| EC-T03 | implemented, pending review      | Product/variant/attribute/specification/collection List/Show/Upsert, publication, activity, server filters, paging, atomic collection save and optimistic revisions pass A11-A15. |
+| EC-T04 | next                             | Amended by EC-R09; media/gallery/file manager and remaining media acceptance after EC-T03/EC-T05 review.                                                                            |
+| EC-T05 | implemented, pending review      | List/Show/Upsert, App Header actions, activity, server field errors and 1440/768/390/320 browser acceptance pass for all five catalog pages.                                         |
 | EC-T06 | pending                          | Depends on EC-T03/EC-T04/EC-T05.                                                                                                                                                    |
 | EC-T07 | blocked                          | EC-C02 portal principal contract (EC-R07 packet 01).                                                                                                                                |
 | EC-T08 | design-ready                     | Stock allocation design is EC-owned (EC-D02); Billing price/tax handoff blocked by EC-R07 packet 02.                                                                                |
@@ -51,9 +58,9 @@ historical and no repair work is claimed under it.
 | N01 | verified                       | Public list, details, categories, discovery and content share one imported/native projection. Projection tests and A12 pass.                                                                                                     |
 | N02 | verified                       | Canonical option names/values, complete slots, sorted JSON and SHA-256 `CHAR(64)` signatures; migration detects collisions before DDL. Identity tests pass.                                                                       |
 | N03 | verified                       | Delimiter-bearing values cannot collide, duplicate writes return 409, maximum legal payloads fit 64 hex characters. A11 passes.                                                                                                  |
-| N04 | verified                       | Shared pager, hidden at totals <=100, 20/50/100 above 100, backend filters/counts, page reset/clamp. Helper tests 4/4, A13 passes, staff browser passes 1440/1024/390. Show/App Header/activity/invalid-field and 768/320 checks remain. |
+| N04 | verified                       | Shared pager hidden at <=100, 20/50/100 above 100, backend filters/counts, page reset/clamp. Helper 4/4, A13 passes; product/variant staff paging 1440/1024/390 and all-page List/Show/field-error 1440/768/390/320 pass. |
 | N05 | contract reconciled, review    | C02/C03/C06/C08/C10 use integer tenant-local IDs, `CHAR(8)` public UUIDs and VARCHAR domains; portal master/tenant identity is explicit. No provider behavior changed. Restricted portal proof remains blocked on EC-T07 code.     |
-| N06 | reconciliation done, review    | This ledger, EXECUTION, REPAIR-EVIDENCE, test inventory and entry points are current; historical records are retained. Independent N01-N06 review is still required.                                                              |
+| N06 | reconciliation done, review    | This ledger and EXECUTION now describe the 2026-10-25 tree, 34+6 migration append, atomic collection save, cxmobile revision consumer and current browser evidence. Independent review is still required.                          |
 
 ### Current evidence limits (must accompany any summary)
 
@@ -62,9 +69,14 @@ historical and no repair work is claimed under it.
   real-tenant content claim. The older live-tenant smoke run remains a limit-only record.
 - EC-T01 evidence is tenant-database boundary evidence. Company/customer/vendor record scope and
   portal principals are not tested because no portal principal contract exists.
-- EC-T03 A11-A13 are API/database evidence through the composed Platform app. N04 staff browser checks
-  cover paging/filtering at 1440/1024/390 only; Show/App Header actions, activity, invalid-field
-  feedback, 768/320, attributes, specifications, collections and an independent review remain.
+- EC-T03/EC-T05 A11-A15 are API/database evidence through the composed Platform app. Current Chrome
+  evidence is exit `0`, 16 assertion groups, cleanup `remaining=0`: List/Show/Upsert, App Header
+  actions, activity and field errors for product, variant, attribute, specification and collection at
+  1440/768/390/320 (product/variant paging also 1024). Evidence:
+  `dist/ecommerce-scratch/evidence/ec-supervisor-browser-2026-10-25n.log` (exit `0`). An earlier
+  `...-k.exit` run failed at the 90-second workspace wait and is not acceptance evidence; the harness
+  now waits for an idle login form and 180 seconds for the workspace.
+- Current source still needs independent review before EC-T03/EC-T05 are accepted. EC-T04 is next.
 - Raw HTML SEO is a known failing requirement (client-only SPA), not a pass.
 - No checkout, payment, fulfillment, return, refund or vendor capability exists or is claimed.
 - Only disposable databases and generated storage roots were mutated. The real tenants
@@ -74,7 +86,7 @@ historical and no repair work is claimed under it.
 - Provider packets are proposals only. EC-T07-EC-T14 remain blocked until their owner accepts and
   lands the contract.
 
-### Test file inventory at reconciliation (paths relative to repository root)
+### Test file inventory (2026-10-25, paths relative to repository root)
 
 - `apps/ecommerce/api/src/modules/catalog-pagination.test.ts`
 - `apps/ecommerce/api/src/modules/catalog-data-source/catalog-data-source.service.test.ts`
@@ -84,11 +96,16 @@ historical and no repair work is claimed under it.
 - `apps/ecommerce/api/src/modules/overview/overview.storefront-runtime.test.ts`
 - `apps/ecommerce/api/src/modules/product-image/product-image.service.test.ts`
 - `apps/ecommerce/api/src/modules/product-image/product-image.storage.test.ts`
+- `apps/ecommerce/api/src/modules/product-attribute/product-attribute.service.test.ts`
+- `apps/ecommerce/api/src/modules/product-specification/product-specification.service.test.ts`
+- `apps/ecommerce/api/src/modules/product-collection/product-collection.service.test.ts`
+- `apps/ecommerce/api/src/modules/ecommerce-composition/ecommerce-composition.migration.test.ts`
 - `apps/ecommerce/api/src/modules/product-variant/product-variant.identity.test.ts`
 - `apps/ecommerce/api/src/modules/product-variant/product-variant.service.test.ts`
 - `apps/ecommerce/api/src/modules/storefront-organisation/storefront-organisation.storage.test.ts`
 - `apps/ecommerce/web/src/modules/storefront/storefront.blog.test.ts`
-- `tools/e2e/ecommerce-tenancy.e2e.ts` (A1-A13; `ECOM_TENANCY_BROWSER=1` adds R04 and staff N04 checks)
+- `tools/e2e/ecommerce-tenancy.e2e.ts` (A1-A15; `ECOM_TENANCY_BROWSER=1` adds R04 and staff List/Show/Upsert/field-error checks)
+- `apps/cxmobile/client/test/ecommerce-parity.test.ts` (paged-list compatibility and revision-aware attribute/specification/collection updates)
 - `tools/e2e/ecommerce-storefront-browser.e2e.mjs` (live-tenant smoke; empty-catalog limit only)
 - `tools/e2e/ecommerce-access.e2e.ts` (retired shim; replacement is tenancy A1-A6/A10)
 - `tools/e2e/ecommerce-modules.e2e.ts` (retired shim; replacement is tenancy A10)

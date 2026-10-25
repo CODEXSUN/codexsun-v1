@@ -216,3 +216,32 @@ Independent review of N01-N06 is still required before acceptance.
 - The preflight storefront on port 7030 was stopped after verification; port 7030 is free.
 
 Formatting did not change behavior: the same focused and tenancy suites passed after it.
+
+## EC-T03/EC-T05 catalog slice - 2026-10-25
+
+This supersedes the N04-only limit above. HEAD `5b1685bc` contains the attribute, specification,
+collection, activity, paging and atomic-save slice; the current uncommitted delta is the E2E login/wait
+repair plus the cxmobile consumer contract.
+
+- Migration: `ecommerce-composition.migration.test.ts` exit `0` (2/2). 34 applied versions stay fixed;
+  `product-attribute`, `product-attribute-revision`, `product-specification`,
+  `product-specification-revision`, `product-collection` and `catalog-activity` append at 35-40.
+- Paging contract: all three lists return a bare array when no `page`/`pageSize` is sent
+  (cxmobile-compatible) and a `{items,page,pageSize,total,statusCounts}` envelope when paged. A15
+  asserts both shapes and the app-level status counts.
+- Atomic collection save: create and update insert/replace membership in one transaction. A15 proves
+  create-with-items, update-with-items, failed create leaves no row and failed update keeps item count
+  and revision. Unit coverage proves invalid membership is rejected before the repository write.
+- Concurrency: attribute, specification and collection updates require `expectedRevision`; stale
+  updates return 409 in unit tests and A15. Collection status changes also advance revision.
+- Browser: `ECOM_TENANCY_BROWSER=1` tenancy run exit `0`, 16 groups, cleanup `remaining=0`
+  (`ec-supervisor-browser-2026-10-25n.log` / `.exit`). Staff List/Show/Upsert, activity, header
+  actions and field errors pass at 1440/768/390/320 for product, variant, attribute, specification and
+  collection; product/variant paging also passes at 1024. Screenshots:
+  `dist/ecommerce-scratch/ecommerce-browser-1792934411662/`.
+- Earlier `...-k.exit` is `1` (workspace wait expired after 90 seconds during cold Vite optimization);
+  `...-l.log` has no summary. Those are failure records, not acceptance.
+- Focused catalog tests: 60/60 pass. cxmobile parity: 13/13 pass, including paged-list compatibility
+  and revision-aware updates with 409 rejection. Typecheck/lint/boundaries pass.
+- Remaining: independent review before accepting EC-T03/EC-T05; then EC-T04. Raw HTML SEO remains a
+  known failure; no checkout/payment/vendor capability is claimed.

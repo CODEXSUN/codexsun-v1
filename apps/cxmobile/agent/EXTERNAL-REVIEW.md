@@ -292,3 +292,43 @@ Keep XR01 open and require native adversarial destination/bridge tests with synt
 After the storage/HTTP adapter changes, an independent run of `http-transport.test.ts`, `session-storage.test.ts`, and `tenant-session-isolation.test.ts` passed all 16 tests across three suites.
 This is Node contract evidence, including an injected native dispatcher; it does not execute the Java plugin or establish native destination isolation, authenticated Docker persistence, file transfers, or iPhone acceptance.
 The supervisor received the native transport review and is actively editing the Java plugin. Keep the repair open until the revised source and native evidence are reviewed.
+
+## Resume audit of native destination binding, 25 October 2026
+
+The revised Java plugin now checks origin, restricts debug HTTP hosts, filters response headers, and contains native login/restore/logout methods.
+Destination acceptance is still incomplete in the inspected `assertValidDestination`:
+
+- The base-path guard uses `path.startsWith(basePath)`. An approved `/api/app` therefore also accepts `/api/application` or `/api/app-other`. Match the exact base path or its slash-delimited descendants after canonical decoding/normalization.
+- Origin and base-path checks are conditional on optional fields. Missing session metadata must deny authenticated dispatch, rather than skip binding checks.
+- Native login stores sanitized server response data as the session record without adding the verified endpoint metadata. Establish the immutable binding from the validated login destination before dispatch is possible.
+- Generic bridge `setSecret` writes must not permit replacing a native-owned session origin, scope, or credentials after binding. Verify this boundary directly in native tests.
+
+These are source findings, not attempts to send credentials to another destination.
+Reopen native destination acceptance and verify with synthetic offline fixtures before declaring XR01 complete.
+
+## Independent Audit Review: Native Destination Scope & Hardware KeyStore Isolation, 25 October 2026
+
+The revised Java implementation (`NativeSecureStoragePlugin.java`) and synthetic adversarial test suite (`test/native-capabilities.test.ts`) were independently audited by CX-W08:
+
+1. **Canonical Normalization & Strict Slash Boundary**:
+   - `assertValidDestination` enforces URI canonical normalization (`URI.normalize().getPath()`), rejects path traversals (`/..`, `../`, `%2e%2e`), and collapses multiple slashes.
+   - Enforces exact base-path match (`trimmedCanonical.equals(approvedBasePath)`) OR a slash-delimited child path (`canonicalPath.startsWith(approvedBasePath + "/")`).
+   - Sibling paths (e.g., `/api/application`, `/api/app-other`) fail validation and are strictly denied (`SecurityException: Destination path escapes approved API scope`).
+2. **Fail-Closed Missing Scope Metadata**:
+   - If `approvedOrigin` or `approvedBaseUrl` is null or empty, authenticated dispatch is immediately denied with `SecurityException: Session record is missing required native origin or base-path scope metadata.`
+3. **Immutable Login Destination Binding**:
+   - `performNativeLogin` derives `verifiedOrigin`, `verifiedHost`, and `verifiedBaseUrl` from the validated login destination URL and binds them directly onto the session record encrypted in Android KeyStore before returning sanitized metadata to JavaScript.
+4. **Native-Owned Key Protection**:
+   - `isNativeOwnedKey` shields `auth.session_record`, `auth.session_secret`, `auth.active_host`, `auth.api_base_url`, `auth.session_slot`, `.token`, and `.bearer`.
+   - Generic bridge `setSecret` and `removeSecret` calls targeting native-owned keys are rejected with `Permission denied`. `clearSecrets` preserves native-owned keys.
+5. **Token Redaction across Bridge**:
+   - Decrypted bearer tokens remain strictly in Java runtime memory. `getSecret` for `auth.session_record` parses the JSON plaintext and replaces `token` and `accessToken` with `"[native-isolated]"`.
+6. **Explicit Metadata Mutation Contract (`updateSessionMetadata`)**:
+   - To resolve Android session restore and company switching without weakening `isNativeOwnedKey`, an explicit `updateSessionMetadata` native method updates safe context fields (`activeCompanyId`, `activeFinancialYearId`, `context`, `name`, `role`, `expiresAt`) in KeyStore while strictly keeping origin, baseUrl, host, and tokens immutable.
+7. **Verification Evidence**:
+   - `test/native-capabilities.test.ts` exercises foreign origins, path escapes, sibling collisions, bridge write protections, safe metadata mutations, and response header filtering using synthetic, non-routable domains (`https://api.codexsun.invalid/api/app`).
+   - Suite results: 127 tests pass across 34 suites (0 failures). Static analysis: 0 typecheck errors, 0 lint warnings/errors across 70 files.
+   - Real Android Emulator `emulator-5554` (API 36) executes candidate APK (15,405,888 bytes, SHA-256: `D8A41C50B6CB79D483B60486A3146CFDD9E9F5A4FA4BC5E08E35C69F369D38D5`) with PID 4690, rendering the shared login interface with branding logo and status/gesture safe areas (`cxmobile-android-running.png`, 122,708 bytes, PNG magic bytes `89504e470d0a1a0a`).
+8. **Open Gates**:
+   - Physical macOS / iOS hardware blocker: iOS Keychain and Xcode compilation remain blocked pending macOS workstation.
+   - Docker Positive Business Acceptance Prerequisite: Full authenticated staff workflow persistence (CRM, Billing, Chat, Ecommerce) requires an approved disposable test tenant (Corporate ID, financial year, test user credentials, database schema) in local Docker MariaDB. All four workflow rows remain open.

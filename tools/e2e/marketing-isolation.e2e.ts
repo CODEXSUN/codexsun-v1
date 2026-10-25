@@ -35,10 +35,11 @@ import {
 import { migrateTenantRuntimeModule } from "../../apps/platform/api/src/modules/tenant/tenant.migration.js";
 import {
   migrateCrmTenantDatabase,
-  seedCrmTenantDatabase,
-  acceptMarketingLead
+  seedCrmTenantDatabase
+
 } from "../../apps/crm/api/src/index.js";
 import { registerConnectionAuthorization } from "../../apps/marketing/api/src/index.js";
+import { verifyMarketingLifecycle } from "./marketing-lifecycle.e2e.js";
 
 test(
   "Marketing routes persist in separate tenant databases and reject company/brand context swaps",
@@ -413,28 +414,23 @@ test(
       409
     );
     const scope = await context();
-    const intake = (row: typeof captured) =>
-      acceptMarketingLead(
-        {
-          database: scope.database,
-          companyId: scope.companyId,
-          actorEmail: scope.actorEmail,
-          authorize: scope.authorize
-        },
-        {
-          submissionUuid: row.uuid,
-          campaignUuid: row.campaignUuid,
-          campaignLabel: row.campaignLabel,
-          name: row.name,
-          email: row.email,
-          phone: row.phone,
-          message: row.message,
-          source: "marketing:" + row.captureUuid
-        }
-      );
-    const first = await processSubmissionHandoff(scope, captured.uuid, intake);
-    const second = await processSubmissionHandoff(scope, captured.uuid, intake);
+    const first = await processSubmissionHandoff(scope, captured.uuid);
+    const second = await processSubmissionHandoff(scope, captured.uuid);
     assert.equal(first.leadUuid, second.leadUuid);
+    assert.equal(first.status, "delivered");
+    assert.equal(second.status, "delivered");
+
+    // PROVE submission handoff produces a Marketing Lead in marketing_leads
+    const marketingLeadsCount = Number(
+      (
+        await sql<{ count: number }>`SELECT COUNT(*) AS count FROM marketing_leads WHERE submission_uuid = ${captured.uuid}`.execute(
+          scope.database
+        )
+      ).rows[0]!.count
+    );
+    assert.equal(marketingLeadsCount, 1, "Submission handoff must produce exactly 1 Marketing Lead in marketing_leads.");
+
+    // PROVE ZERO CRM WRITES: assert that crm_leads, crm_tasks, crm_enquiries, crm_frappe_sync_queue have 0 count
     assert.equal(
       Number(
         (
@@ -443,7 +439,8 @@ test(
           )
         ).rows[0]!.count
       ),
-      1
+      0,
+      "PROVE ZERO CRM WRITES: crm_leads count must be 0"
     );
     assert.equal(
       Number(
@@ -453,7 +450,8 @@ test(
           )
         ).rows[0]!.count
       ),
-      1
+      0,
+      "PROVE ZERO CRM WRITES: crm_tasks count must be 0"
     );
     assert.equal(
       Number(
@@ -463,7 +461,8 @@ test(
           )
         ).rows[0]!.count
       ),
-      0
+      0,
+      "PROVE ZERO CRM WRITES: crm_enquiries count must be 0"
     );
     assert.equal(
       Number(
@@ -473,7 +472,28 @@ test(
           )
         ).rows[0]!.count
       ),
-      0
+      0,
+      "PROVE ZERO CRM WRITES: crm_frappe_sync_queue count must be 0"
+    );
+
+    // Verify retry via API is idempotent
+    const retryRes = await app.inject({
+      method: "POST",
+      url: `/marketing/submissions/${captured.uuid}/retry`
+    });
+    assert.equal(retryRes.statusCode, 200);
+    const retryHandoff = await processSubmissionHandoff(scope, captured.uuid);
+    assert.equal(retryHandoff.leadUuid, first.leadUuid);
+    assert.equal(
+      Number(
+        (
+          await sql<{ count: number }>`SELECT COUNT(*) AS count FROM marketing_leads WHERE submission_uuid = ${captured.uuid}`.execute(
+            scope.database
+          )
+        ).rows[0]!.count
+      ),
+      1,
+      "Retrying handoff must not duplicate leads in marketing_leads"
     );
     selected = 1;
     assert.equal(
@@ -540,6 +560,21 @@ test(
       "Promotional eligibility, immutable evidence, safety blocks, tenant scope, and withdrawal races",
       async () => {
         await verifyConsentEligibility(
+          app,
+          context,
+          names,
+          (tenant, company = 1, email = "owner@example.test") => {
+            selected = tenant;
+            companyId = company;
+            actor = email;
+          }
+        );
+      }
+    );
+    await suite.test(
+      "Marketing lifecycle: Lead, Qualification, Sales Conversion, Outcome, Follow-up, Restrictions, and Multi-tenant Isolation",
+      async () => {
+        await verifyMarketingLifecycle(
           app,
           context,
           names,

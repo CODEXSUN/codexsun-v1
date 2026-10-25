@@ -295,8 +295,11 @@ export class NativeSessionManager {
       userType: data.userType
     };
 
-    // Store in native secure storage: raw token is encrypted in KeyStore, session in JS heap holds "[native-isolated]"
-    await this.storage.storeSession(session, rawToken);
+    // Store in secure storage: on non-native environments, store into adapter;
+    // on native devices with hardware vault, performNativeLogin already established the immutable KeyStore record.
+    if (!(isNative && Boolean(NativeSecureKeyStore.performNativeLogin))) {
+      await this.storage.storeSession(session, rawToken);
+    }
 
     this._activeSession = session;
     this._status = "authenticated";

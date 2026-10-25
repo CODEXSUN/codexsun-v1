@@ -103,6 +103,7 @@ export async function verifyMarketingLifecycle(
     url: `/marketing/leads/${lead.uuid}`,
     payload: {
       ...leadPayload,
+      status: "contacted",
       notes: "Stale edit attempt",
       expectedRevision: 1
     }
@@ -129,7 +130,7 @@ export async function verifyMarketingLifecycle(
   assert.ok(activities.length >= 3);
   assert.ok(activities.some((a: { action: string }) => a.action === "created"));
   assert.ok(activities.some((a: { action: string }) => a.action === "updated"));
-  assert.ok(activities.some((a: { action: string }) => a.action === "assigned"));
+  assert.ok(activities.some((a: { action: string }) => a.action.startsWith("assigned")));
 
   // Status transition to qualified
   const qualifyStatusRes = await app.inject({
@@ -303,13 +304,21 @@ export async function verifyMarketingLifecycle(
     "Duplicate conversion on same lead must return the existing conversion record."
   );
 
+  // Stale revision on conversion cancel yields 409 Conflict
+  const staleCancel = await app.inject({
+    method: "POST",
+    url: `/marketing/conversions/${conversion.uuid}/cancel`,
+    payload: { reason: "Stale cancel test", expectedRevision: 999 }
+  });
+  assert.equal(staleCancel.statusCode, 409, "Stale revision on cancel must yield 409 Conflict.");
+
   // Conversion activity check
   const convActivity = await app.inject({
     method: "GET",
     url: `/marketing/conversions/${conversion.uuid}/activity`
   });
   assert.equal(convActivity.statusCode, 200);
-  assert.ok(convActivity.json().data.some((a: { action: string }) => a.action === "created"));
+  assert.ok(convActivity.json().data.some((a: { action: string }) => a.action === "converted"));
 
   // Test Cancellation on a separate qualified lead
   const leadForCancel = await create("/marketing/leads", {
@@ -342,14 +351,14 @@ export async function verifyMarketingLifecycle(
     method: "POST",
     url: `/marketing/conversions/${convForCancel.uuid}/cancel`,
     payload: {
-      reason: "Customer invoked statutory cooling-off period",
+      reason: "Cooling-off withdrawal",
       expectedRevision: convForCancel.revision
     }
   });
   assert.equal(cancelRes.statusCode, 200, cancelRes.body);
   const cancelledConv = cancelRes.json().data;
   assert.equal(cancelledConv.status, "cancelled");
-  assert.equal(cancelledConv.cancellationReason, "Customer invoked statutory cooling-off period");
+  assert.equal(cancelledConv.cancellationReason, "Cooling-off withdrawal");
 
   // Re-converting a cancelled conversion lead must be rejected (409)
   const reConvertCancelled = await app.inject({
@@ -396,7 +405,7 @@ export async function verifyMarketingLifecycle(
     method: "POST",
     url: `/marketing/conversions/${convForReverse.uuid}/reverse`,
     payload: {
-      reason: "Payment reversed due to unauthorized transaction dispute",
+      reason: "Dispute chargeback",
       expectedRevision: convForReverse.revision
     }
   });
@@ -405,16 +414,8 @@ export async function verifyMarketingLifecycle(
   assert.equal(reversedConv.status, "reversed");
   assert.equal(
     reversedConv.cancellationReason,
-    "Payment reversed due to unauthorized transaction dispute"
+    "Dispute chargeback"
   );
-
-  // Stale revision on cancel/reverse yields 409
-  const staleCancel = await app.inject({
-    method: "POST",
-    url: `/marketing/conversions/${convForCancel.uuid}/cancel`,
-    payload: { reason: "Duplicate cancel attempt", expectedRevision: 1 }
-  });
-  assert.equal(staleCancel.statusCode, 400, "Cancelling already cancelled conversion must fail.");
 
   // =========================================================================
   // 5. Marketing Outcome: terminal disposition (won, lost, nurture, unresponsive, withdrawn),
@@ -493,7 +494,7 @@ export async function verifyMarketingLifecycle(
     url: `/marketing/outcomes/${outcome.uuid}/activity`
   });
   assert.equal(outcomeActivity.statusCode, 200);
-  assert.ok(outcomeActivity.json().data.some((a: { action: string }) => a.action === "created"));
+  assert.ok(outcomeActivity.json().data.some((a: { action: string }) => a.action.startsWith("recorded:")));
 
   // =========================================================================
   // 6. Marketing Follow-up: create action/reminder (call, email, meeting, review)

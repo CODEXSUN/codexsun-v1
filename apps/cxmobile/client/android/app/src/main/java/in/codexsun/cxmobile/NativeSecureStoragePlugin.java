@@ -108,6 +108,18 @@ public class NativeSecureStoragePlugin extends Plugin {
         return new String(decrypted, StandardCharsets.UTF_8);
     }
 
+    private boolean isNativeOwnedKey(String key) {
+        if (key == null) return false;
+        String lower = key.toLowerCase();
+        return lower.endsWith("auth.session_record") ||
+               lower.endsWith("auth.session_secret") ||
+               lower.endsWith("auth.active_host") ||
+               lower.endsWith("auth.api_base_url") ||
+               lower.endsWith("auth.session_slot") ||
+               lower.contains(".token") ||
+               lower.contains(".bearer");
+    }
+
     @PluginMethod
     public void setSecret(PluginCall call) {
         String key = call.getString("key");
@@ -115,6 +127,12 @@ public class NativeSecureStoragePlugin extends Plugin {
 
         if (key == null || value == null) {
             call.reject("Key and value are required");
+            return;
+        }
+
+        // Generic bridge setSecret must NOT permit replacing or overwriting native-owned session origin, scope, or credentials
+        if (isNativeOwnedKey(key)) {
+            call.reject("Permission denied: Native-owned session credentials and endpoint bindings are immutable from the JavaScript bridge.");
             return;
         }
 
@@ -197,6 +215,11 @@ public class NativeSecureStoragePlugin extends Plugin {
             return;
         }
 
+        if (isNativeOwnedKey(key)) {
+            call.reject("Permission denied: Native-owned session credentials cannot be removed via generic bridge removeSecret. Use performNativeLogout or performNativeRevoke.");
+            return;
+        }
+
         SharedPreferences prefs = getContext().getSharedPreferences(VAULT_PREFS, Context.MODE_PRIVATE);
         prefs.edit().remove(key).apply();
 
@@ -208,7 +231,14 @@ public class NativeSecureStoragePlugin extends Plugin {
     @PluginMethod
     public void clearSecrets(PluginCall call) {
         SharedPreferences prefs = getContext().getSharedPreferences(VAULT_PREFS, Context.MODE_PRIVATE);
-        prefs.edit().clear().apply();
+        SharedPreferences.Editor editor = prefs.edit();
+        Map<String, ?> all = prefs.getAll();
+        for (String k : all.keySet()) {
+            if (!isNativeOwnedKey(k)) {
+                editor.remove(k);
+            }
+        }
+        editor.apply();
 
         JSObject ret = new JSObject();
         ret.put("success", true);
@@ -265,45 +295,62 @@ public class NativeSecureStoragePlugin extends Plugin {
             }
         }
 
-        // Path traversal denial on raw URL string and normalized path
-        String path = destUrl.getPath();
+        // Canonical path normalization and traversal checks
+        String rawPath = destUrl.getPath();
+        if (rawPath == null || rawPath.isEmpty()) {
+            rawPath = "/";
+        }
         if (urlString.contains("/..") || urlString.contains("../") || urlString.contains("..") ||
-            urlString.toLowerCase().contains("%2e%2e") || path.contains("..")) {
-            throw new SecurityException("Path traversal denied: " + path);
+            urlString.toLowerCase().contains("%2e%2e") || rawPath.contains("..")) {
+            throw new SecurityException("Path traversal denied: " + rawPath);
         }
 
-        // Native session scope and origin binding
+        String canonicalPath = rawPath;
+        try {
+            java.net.URI uri = new java.net.URI(destUrl.getProtocol(), destUrl.getUserInfo(), destUrl.getHost(), destUrl.getPort(), destUrl.getPath(), destUrl.getQuery(), null);
+            canonicalPath = uri.normalize().getPath();
+        } catch (Exception ignored) {
+        }
+        if (canonicalPath == null || canonicalPath.isEmpty()) {
+            canonicalPath = "/";
+        }
+        canonicalPath = canonicalPath.replaceAll("/{2,}", "/");
+
+        // Native session scope and origin binding for authenticated operations
         if (sessionObj != null) {
             String approvedOrigin = sessionObj.optString("apiOrigin", null);
             String approvedBaseUrl = sessionObj.optString("apiBaseUrl", null);
-            String approvedHost = sessionObj.optString("loginHost", null);
 
-            // 1. Origin match
-            if (approvedOrigin != null && !approvedOrigin.isEmpty()) {
-                URL originUrl = new URL(approvedOrigin);
-                boolean hostMatches = host.equalsIgnoreCase(originUrl.getHost());
-                boolean protoMatches = protocol.equalsIgnoreCase(originUrl.getProtocol());
-                int destEffectivePort = port != -1 ? port : destUrl.getDefaultPort();
-                int originEffectivePort = originUrl.getPort() != -1 ? originUrl.getPort() : originUrl.getDefaultPort();
-
-                if (!hostMatches || !protoMatches || destEffectivePort != originEffectivePort) {
-                    throw new SecurityException("Destination origin '" + protocol + "://" + host + ":" + destEffectivePort +
-                            "' does not match approved session origin '" + approvedOrigin + "'. Cross-origin credential injection denied.");
-                }
-            } else if (approvedHost != null && !approvedHost.isEmpty()) {
-                String cleanApprovedHost = approvedHost.replaceAll("^https?://", "").replaceAll("/.*$", "");
-                String destHostPort = port != -1 ? (host + ":" + port) : host;
-                if (!destHostPort.equalsIgnoreCase(cleanApprovedHost) && !host.equalsIgnoreCase(cleanApprovedHost)) {
-                    throw new SecurityException("Destination host '" + destHostPort + "' does not match approved session host '" + cleanApprovedHost + "'.");
-                }
+            // Defect fix: Missing metadata MUST deny authenticated dispatch; never skip binding checks
+            if (approvedOrigin == null || approvedOrigin.trim().isEmpty() ||
+                approvedBaseUrl == null || approvedBaseUrl.trim().isEmpty()) {
+                throw new SecurityException("Authenticated dispatch denied: Session record is missing required native origin or base-path scope metadata.");
             }
 
-            // 2. Base path scope match
-            if (approvedBaseUrl != null && !approvedBaseUrl.isEmpty()) {
-                URL baseUrl = new URL(approvedBaseUrl);
-                String basePath = baseUrl.getPath().replaceAll("/+$", "");
-                if (!basePath.isEmpty() && !path.startsWith(basePath)) {
-                    throw new SecurityException("Destination path '" + path + "' escapes approved API scope '" + basePath + "'. Scope escape denied.");
+            // 1. Origin match (exact scheme, host, and port)
+            URL originUrl = new URL(approvedOrigin);
+            boolean hostMatches = host.equalsIgnoreCase(originUrl.getHost());
+            boolean protoMatches = protocol.equalsIgnoreCase(originUrl.getProtocol());
+            int destEffectivePort = port != -1 ? port : destUrl.getDefaultPort();
+            int originEffectivePort = originUrl.getPort() != -1 ? originUrl.getPort() : originUrl.getDefaultPort();
+
+            if (!hostMatches || !protoMatches || destEffectivePort != originEffectivePort) {
+                throw new SecurityException("Destination origin '" + protocol + "://" + host + ":" + destEffectivePort +
+                        "' does not match approved session origin '" + approvedOrigin + "'. Cross-origin credential injection denied.");
+            }
+
+            // 2. Base path scope match with strict slash boundary
+            URL baseUrl = new URL(approvedBaseUrl);
+            String approvedBasePath = baseUrl.getPath().replaceAll("/+$", ""); // e.g. "/api/app"
+            String trimmedCanonical = canonicalPath.replaceAll("/+$", "");
+
+            if (!approvedBasePath.isEmpty()) {
+                // Must be exact base path match OR a slash-delimited child path
+                boolean isExact = trimmedCanonical.equals(approvedBasePath);
+                boolean isChild = canonicalPath.startsWith(approvedBasePath + "/");
+
+                if (!isExact && !isChild) {
+                    throw new SecurityException("Destination path '" + canonicalPath + "' escapes approved API scope '" + approvedBasePath + "'. Scope escape denied.");
                 }
             }
         }
@@ -352,6 +399,11 @@ public class NativeSecureStoragePlugin extends Plugin {
                             sessionSlot = sessionObj.optString("sessionSlot", null);
                         }
                     }
+                }
+
+                if (sessionObj == null) {
+                    call.reject("Native authenticated transport denied: No active authenticated session record in KeyStore.");
+                    return;
                 }
 
                 if (token == null || token.isEmpty() || token.equals("[native-isolated]")) {
@@ -557,9 +609,29 @@ public class NativeSecureStoragePlugin extends Plugin {
                         editor.putString("codexsun.cxmobile.auth.session_slot", encryptInternal(sessionSlot));
                     }
 
-                    // Store active host and base URL
-                    String activeHost = destUrl.getHost() + (destUrl.getPort() != -1 ? (":" + destUrl.getPort()) : "");
-                    editor.putString("codexsun.cxmobile.auth.active_host", encryptInternal(activeHost));
+                    // Compute verified origin, host, and base URL from validated login destination
+                    int portVal = destUrl.getPort();
+                    String portStr = (portVal != -1 && portVal != destUrl.getDefaultPort()) ? (":" + portVal) : "";
+                    String verifiedOrigin = destUrl.getProtocol() + "://" + destUrl.getHost() + portStr;
+                    String verifiedHost = destUrl.getHost() + portStr;
+
+                    String loginPath = destUrl.getPath();
+                    String verifiedBasePath = loginPath;
+                    if (loginPath.endsWith("/auth/login")) {
+                        verifiedBasePath = loginPath.substring(0, loginPath.length() - "/auth/login".length()).replaceAll("/+$", "");
+                    } else if (loginPath.contains("/auth/")) {
+                        verifiedBasePath = loginPath.substring(0, loginPath.indexOf("/auth/")).replaceAll("/+$", "");
+                    }
+                    String verifiedBaseUrl = verifiedOrigin + verifiedBasePath;
+
+                    editor.putString("codexsun.cxmobile.auth.active_host", encryptInternal(verifiedHost));
+                    editor.putString("codexsun.cxmobile.auth.api_base_url", encryptInternal(verifiedBaseUrl));
+
+                    // Establish immutable verified origin, base-path scope, and host on session record
+                    data.put("apiOrigin", verifiedOrigin);
+                    data.put("apiBaseUrl", verifiedBaseUrl);
+                    data.put("loginHost", verifiedHost);
+                    data.put("authenticated", true);
 
                     // Redact token in session record before storing or returning
                     data.put("token", "[native-isolated]");
@@ -692,6 +764,79 @@ public class NativeSecureStoragePlugin extends Plugin {
             call.resolve(ret);
         } catch (Exception e) {
             call.reject("Native revoke error: " + e.getMessage(), e);
+        }
+    }
+
+    @PluginMethod
+    public void updateSessionMetadata(PluginCall call) {
+        try {
+            SharedPreferences prefs = getContext().getSharedPreferences(VAULT_PREFS, Context.MODE_PRIVATE);
+            String sessionRecordEncoded = prefs.getString("codexsun.cxmobile.auth.session_record", null);
+            if (sessionRecordEncoded == null) {
+                call.reject("Cannot update session metadata: No active session record in KeyStore.");
+                return;
+            }
+
+            String jsonString = decryptInternal(sessionRecordEncoded);
+            if (jsonString == null) {
+                call.reject("Failed to decrypt session record.");
+                return;
+            }
+
+            JSONObject sessionObj = new JSONObject(jsonString);
+
+            // Mutate ONLY safe context/session metadata; verified origin, baseUrl, host, and tokens remain strictly immutable
+            if (call.hasOption("activeCompanyId")) {
+                Integer compId = call.getInt("activeCompanyId");
+                if (compId != null) {
+                    sessionObj.put("activeCompanyId", compId.intValue());
+                }
+            }
+            if (call.hasOption("activeFinancialYearId")) {
+                Integer fyId = call.getInt("activeFinancialYearId");
+                if (fyId != null) {
+                    sessionObj.put("activeFinancialYearId", fyId.intValue());
+                }
+            }
+            if (call.hasOption("name")) {
+                String name = call.getString("name");
+                if (name != null) {
+                    sessionObj.put("name", name);
+                }
+            }
+            if (call.hasOption("role")) {
+                String role = call.getString("role");
+                if (role != null) {
+                    sessionObj.put("role", role);
+                }
+            }
+            if (call.hasOption("expiresAt")) {
+                String exp = call.getString("expiresAt");
+                if (exp != null) {
+                    sessionObj.put("expiresAt", exp);
+                }
+            }
+            if (call.hasOption("context")) {
+                JSObject ctx = call.getObject("context");
+                if (ctx != null) {
+                    sessionObj.put("context", new JSONObject(ctx.toString()));
+                }
+            }
+
+            // Always enforce token redaction before storing or returning
+            sessionObj.put("token", "[native-isolated]");
+            if (sessionObj.has("accessToken")) {
+                sessionObj.put("accessToken", "[native-isolated]");
+            }
+
+            prefs.edit().putString("codexsun.cxmobile.auth.session_record", encryptInternal(sessionObj.toString())).apply();
+
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            ret.put("session", JSObject.fromJSONObject(sessionObj));
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Failed to update session metadata in KeyStore: " + e.getMessage(), e);
         }
     }
 }

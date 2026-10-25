@@ -8,11 +8,7 @@
 // ==========================================
 
 export type EcommerceRouteSection =
-  | "overview"
-  | "catalog"
-  | "storefront"
-  | "integrations"
-  | "preview";
+  "overview" | "catalog" | "storefront" | "integrations" | "preview";
 
 export type EcommerceRouteKey =
   | "ecommerce.overview"
@@ -320,9 +316,14 @@ export interface ProductAttributeSaveInput {
 export interface ProductAttributeRecord extends Required<ProductAttributeSaveInput> {
   createdAt: string;
   id: number;
+  revision: number;
   updatedAt: string;
   uuid: string;
   valueCount: number;
+}
+
+export interface ProductAttributeUpdateInput extends ProductAttributeSaveInput {
+  expectedRevision: number;
 }
 
 export interface AttributeAssignment {
@@ -335,15 +336,22 @@ export interface AttributeAssignment {
 }
 
 export interface ProductSpecificationSaveInput {
-  category?: string | undefined;
-  name: string;
+  label: string;
+  productInformationId: number;
   sortOrder?: number | undefined;
   status?: ComponentStatus | undefined;
+  value: string;
+}
+
+export interface ProductSpecificationUpdateInput extends ProductSpecificationSaveInput {
+  expectedRevision: number;
 }
 
 export interface ProductSpecificationRecord extends Required<ProductSpecificationSaveInput> {
   createdAt: string;
   id: number;
+  productTitle: string;
+  revision: number;
   updatedAt: string;
   uuid: string;
 }
@@ -364,6 +372,10 @@ export interface ProductCollectionRecord extends Required<ProductCollectionSaveI
   revision: number;
   updatedAt: string;
   uuid: string;
+}
+
+export interface ProductCollectionUpdateInput extends ProductCollectionSaveInput {
+  expectedRevision: number;
 }
 
 // ==========================================
