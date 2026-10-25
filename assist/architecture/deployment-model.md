@@ -1,5 +1,11 @@
 # Deployment Model
 
+## Supervisor Ownership
+
+The [release supervisor](../agents/release-supervisor.md) owns Git integration and versioned release checkouts.
+App chats remain in their assigned worktrees and supply implementation and verification handoffs.
+Production promotion requires separate explicit approval. Supervisor Git authority does not authorize deployment or npm installation.
+
 ## Release Promotion Policy
 
 Follow [Worktree And Version Release Workflow](../operations/worktree-release-workflow.md).

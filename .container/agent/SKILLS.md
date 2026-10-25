@@ -1,5 +1,12 @@
 # Deployment rules
 
+## Supervisor Ownership
+
+The [release supervisor](../../assist/agents/release-supervisor.md) owns commits, pushes, pulls, merges, version updates, and release checkouts.
+App chats do not invoke Git publication or release helpers. They provide scoped implementation and check handoffs.
+Supervisor Git authority does not authorize npm installation, Docker changes, or deployment.
+Writing these rules does not run deployment or synchronization commands.
+
 Follow the shared [worktree and release workflow](../../assist/operations/worktree-release-workflow.md).
 Release candidates come from reviewed `main` after app worktree integration.
 Version folders remain empty until candidate preparation is authorized.

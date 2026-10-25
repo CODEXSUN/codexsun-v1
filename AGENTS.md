@@ -15,6 +15,16 @@ Do not ask again when the user already names the app or explicitly requests all 
 Do not combine app changes, installs, or runtime resources merely because the repository is shared.
 Fresh app worktrees start as code-only checkouts. Do not install npm dependencies without authorization.
 
+## Supervisor And App Chat Roles
+
+The `CODEXSUN release supervisor` owns Git staging, commits, pushes, pulls, merges, version updates, and release checkouts.
+App chats edit and check code only in their assigned worktrees. They leave a handoff for supervisor review.
+App chats must not run Git helpers, change main, or manage release branches unless the human explicitly reassigns that role.
+Read the shared role at `D:\workspace\codexsun\assist\agents\release-supervisor.md` when available.
+Otherwise, read `assist/agents/release-supervisor.md` from the reviewed repository copy.
+This role policy overrides older app-chat integration instructions. Only the human can grant exceptions.
+No npm installation or deployment is authorized. Writing these rules does not trigger Git or release operations.
+
 ## Shared Worktree And Release Rules
 
 Use `D:\workspace\codexsun\assist\operations\worktree-release-workflow.md` as the shared policy when available.

@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.67
+Current version: 1.1.68
 
-Release tag: v-1.1.67
+Release tag: v-1.1.68
 
-Changelog label: v 1.1.67
+Changelog label: v 1.1.68
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,24 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.68
+
+### [v 1.1.68] 2026-10-25 11:30 pm - Centralize release supervision and synchronize app baselines
+
+#### Database Changes
+
+- Database update: No (manual).
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.68.
+- Assign shared Git integration, publication, versioning, and worktree synchronization to the release supervisor.
+- Keep app chats responsible for scoped implementation, focused checks, and review handoffs in their assigned worktrees.
+- Consolidate identical app entry-point edits on main. Preserve the retained coordinating worktree and existing stashes.
+- Remove deleted 1.1.69 and 1.1.73 reservations from the active workflow. Keep the empty 1.1.67 reservation.
+- Synchronize registered package versions, internal dependency ranges, lockfile metadata, Windows manifests, and the deployment sample without installation.
+- Record source checks, synchronization results, and acceptance limits in `.container/docs/RELEASE-1.1.68.md`. No tag or deployment.
 
 ## v-1.1.67
 

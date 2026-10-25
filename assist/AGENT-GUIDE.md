@@ -23,6 +23,15 @@ Do not ask again when the user already names the app or explicitly requests all 
 Do not combine app changes, installs, or runtime resources merely because the repository is shared.
 Fresh app worktrees start as code-only checkouts. Do not install npm dependencies without authorization.
 
+## Supervisor And App Chat Roles
+
+Follow the shared [Release Supervisor Role](agents/release-supervisor.md).
+App chats implement and check changes only in their assigned worktrees, then provide a scoped handoff.
+The supervisor owns staging, commits, pushes, pulls, merges, version updates, and release checkouts across app branches and main.
+App chats must not perform those operations unless the human explicitly reassigns the role.
+Read the canonical role when older worktree instructions conflict. Current restrictions prohibit npm installation and deployment.
+Documentation-only requests do not trigger Git operations or version updates.
+
 ## Shared Worktree And Release Workflow
 
 Follow [Worktree And Version Release Workflow](operations/worktree-release-workflow.md) for worktree, integration, and release operations.

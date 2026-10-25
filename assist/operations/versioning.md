@@ -1,5 +1,13 @@
 # Versioning And Releases
 
+## Supervisor Ownership
+
+Follow [Release Supervisor Role](../agents/release-supervisor.md).
+The supervisor owns version changes, release logs, Git commits and synchronization, app merges, and candidate checkout preparation.
+App chats leave implementation handoffs and do not run version, Git publication, or release helpers.
+An app test result does not authorize a new version. Identify the target version with the human first.
+Keep the current no-install and no-deployment restrictions until the human explicitly changes them.
+
 ## Worktree And Candidate Release Policy
 
 Follow [Worktree And Version Release Workflow](worktree-release-workflow.md) before preparing a candidate or integrating app branches.

@@ -16,19 +16,18 @@ Read the current policy before the next worktree, integration, or release operat
 
 Keep app and release worktrees outside the main repository.
 
-| Folder | Purpose | Branch example |
-| --- | --- | --- |
-| `D:\workspace\codexsun` | Main integration checkout | `main` |
-| `D:\workspace\codexsun-worktrees\cxmobile` | CXMobile feature worktree | `codex/cxmobile` |
-| `D:\workspace\codexsun-worktrees\marketing` | Marketing feature worktree | `codex/marketing` |
-| `D:\workspace\codexsun-worktrees\crm` | CRM feature worktree | `codex/crm-<task>` |
-| `D:\workspace\codexsun-worktrees\billing` | Billing feature worktree | `codex/billing-<task>` |
+| Folder                                           | Purpose                          | Branch example         |
+| ------------------------------------------------ | -------------------------------- | ---------------------- |
+| `D:\workspace\codexsun`                          | Main integration checkout        | `main`                 |
+| `D:\workspace\codexsun-worktrees\cxmobile`       | CXMobile feature worktree        | `codex/cxmobile`       |
+| `D:\workspace\codexsun-worktrees\marketing`      | Marketing feature worktree       | `codex/marketing`      |
+| `D:\workspace\codexsun-worktrees\crm`            | CRM feature worktree             | `codex/crm-<task>`     |
+| `D:\workspace\codexsun-worktrees\billing`        | Billing feature worktree         | `codex/billing-<task>` |
 | `D:\workspace\codexsun-worktrees\release\1-1-67` | Candidate reservation for 1.1.67 | `codex/release/1.1.67` |
-| `D:\workspace\codexsun-worktrees\release\1-1-69` | Candidate reservation for 1.1.69 | `codex/release/1.1.69` |
-| `D:\workspace\codexsun-worktrees\release\1-1-73` | Candidate reservation for 1.1.73 | `codex/release/1.1.73` |
 
 Use hyphens in version folder names. Keep numeric package versions and release branch versions dotted.
 The listed release folders are empty reservations. App folders become worktrees only after checkout authorization.
+Only `1-1-67` remains reserved. The human removed the empty `1-1-69` and `1-1-73` reservations.
 Do not populate folders, create branches, pull code, or install dependencies merely because a reservation exists.
 Do not reserve or bump intervening versions automatically.
 Retire superseded app worktrees only after integration and verified recovery snapshots. Preserve unfinished work before removal.
@@ -41,15 +40,26 @@ Honor an explicit request to prepare all four without asking again.
 New app chats must verify their assigned directory and branch before any work.
 Start fresh checkouts without npm installation unless installation is explicitly authorized.
 
+## Supervisor And App Chat Ownership
+
+Follow the shared [Release Supervisor Role](../agents/release-supervisor.md).
+App chats implement and check code only in their assigned worktrees.
+They provide an app handoff with changed files, actual checks, remaining work, and migration or shared-contract impact.
+The supervisor owns staging, commits, pushes, pulls, merges, version updates, and release checkouts in app branches and main.
+App chats do not perform those operations unless the human explicitly reassigns the role.
+Only the supervisor updates an app branch from main after preserving its unfinished work.
+Coordinate a pause in affected app edits before Git mutations. Other app work can continue independently.
+No npm installation or deployment is currently authorized. This policy update does not trigger any Git or release operation.
+
 ## App Development To Main
 
 1. Use an authorized app worktree and a task-specific branch from a reviewed main baseline.
 2. Reuse a suitable worktree before creating another copy.
 3. Keep each app's implementation within its ownership boundary.
 4. Run focused checks during daily coding.
-5. Review the complete change before integration.
-6. With integration authorization, merge completed work into `main` through a pull request and required checks.
-7. Leave unfinished work on its app branch.
+5. The app chat provides its handoff. The supervisor reviews the complete change before integration.
+6. The supervisor commits the reviewed batch and merges it into `main` through the required review and check gates.
+7. The supervisor leaves unfinished work on its app branch.
 
 Protect `main` with review and relevant status checks when repository administration is authorized.
 Do not claim those protections exist without checking them.
@@ -65,7 +75,7 @@ Separate concurrent test ports, databases, Redis queues, storage, and credential
 
 ## Main To Release Candidate
 
-1. Obtain authorization for the target version and candidate preparation.
+1. The supervisor obtains authorization for the target version and candidate preparation.
 2. Select an exact reviewed `main` commit after integration checks pass.
 3. Populate the reserved version folder as a clean Git worktree only for that candidate.
 4. Create its `codex/release/<version>` branch from the selected commit.
