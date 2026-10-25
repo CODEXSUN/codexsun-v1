@@ -38,6 +38,12 @@ def validate(path, fresh=False):
     for key in ["CODEXSUN_MARIADB_CONTAINER", "CODEXSUN_REDIS_CONTAINER", "CODEXSUN_DATA_VOLUME", "CODEXSUN_DOCKER_NETWORK"]:
         if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}", values[key]):
             raise ValueError(f"Invalid resource name: {key}")
+    media = values.get("CODEXSUN_MEDIA_DATA_VOLUME", "")
+    if media:
+        if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}", media):
+            raise ValueError("Invalid CODEXSUN_MEDIA_DATA_VOLUME")
+        if media in {values.get(key) for key in ["CODEXSUN_DATA_VOLUME", "REDIS_DATA_VOLUME", "MARIADB_DATA_VOLUME", "MARIADB_BACKUP_VOLUME"]}:
+            raise ValueError("Media storage must remain separate from application, Redis and database volumes")
     if values.get("DB_HOST") != values["CODEXSUN_MARIADB_CONTAINER"]:
         raise ValueError("DB_HOST must identify CODEXSUN_MARIADB_CONTAINER on the Docker network")
     if values.get("NODE_ENV") != "production":
@@ -63,6 +69,8 @@ def validate(path, fresh=False):
                 key = f"{prefix}_{suffix}"
                 if not values.get(key) or values[key].startswith("change_this"):
                     raise ValueError(f"Fresh installation requires {key}")
+    if values.get("CODEXSUN_REALTIME_ENABLED", "0") not in {"0", "1"}:
+        raise ValueError("CODEXSUN_REALTIME_ENABLED must be 0 or 1")
     if values.get("CODEXSUN_REALTIME_ENABLED", "0") == "1":
         if len(values.get("CODEXSUN_WORKER_CONTROL_TOKEN", "")) < 32:
             raise ValueError("Realtime Worker requires a control token of at least 32 characters")
@@ -184,7 +192,11 @@ def main():
         elif command == "adoption":
             item = json.load(sys.stdin)[0]
             mounts = item["Mounts"]
-            if len(mounts) != 1 or mounts[0].get("Name") != args[0] or mounts[0]["Destination"] != "/storage":
+            expected = {"/storage": args[0]}
+            if len(args) > 1 and args[1]:
+                expected["/storage/media"] = args[1]
+            actual = {mount["Destination"]: mount.get("Name") for mount in mounts}
+            if len(mounts) != len(expected) or actual != expected or any(mount.get("Type") != "volume" or not mount.get("RW") for mount in mounts):
                 raise ValueError("Existing application mounts differ from v1. Review storage/Media adoption before update")
         elif command == "metadata":
             metadata(*args)

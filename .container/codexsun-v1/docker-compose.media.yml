@@ -1,0 +1,9 @@
+# Opt-in only: retain an explicitly reviewed existing Media volume.
+services:
+  codexsun-api:
+    volumes:
+      - media-data:/storage/media
+volumes:
+  media-data:
+    external: true
+    name: ${CODEXSUN_MEDIA_DATA_VOLUME:?required}

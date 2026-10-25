@@ -239,6 +239,7 @@ function fixture() {
     json: () => [{ Internal: true }],
     run: (args) => {
       calls.push(args);
+      if (args.includes("mariadb")) return "mysql\ncodexsun_master_db\n";
     },
     logged: async (args) => {
       calls.push(args);

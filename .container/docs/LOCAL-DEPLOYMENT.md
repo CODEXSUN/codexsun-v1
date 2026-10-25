@@ -48,7 +48,9 @@ The script copies tracked and non-ignored build sources into a private snapshot 
 It checks source consistency during capture and validates every copied file with SHA-256 after building.
 Later working-tree edits go into the next update. They do not alter the captured build.
 It builds the snapshot with the shared `codexsun-v1/Dockerfile` and Docker cache.
-Every run creates unique local image tags, then pins their immutable image IDs.
+Changed sources create unique local image tags, then pin their immutable image IDs.
+If the checksum and running images match a successful release, update checks health and exits without rebuilding or restarting.
+Only workspaces recorded in the root lockfile enter the build. Unregistered drafts remain in the checkout and are reported.
 No clean Git checkout, release version bump, or GitHub push is required.
 The existing `setup.sh`, `update.sh`, and VPS deployment implementation keep their current behavior.
 
@@ -56,9 +58,11 @@ The existing `setup.sh`, `update.sh`, and VPS deployment implementation keep the
 
 Both commands share an atomic local operation lock under `.container/backups/local`.
 They save complete SQL, Redis RDB, app volume archives, container metadata, and bind-file copies before building.
+A retry can reuse a verified pre-build backup less than 30 minutes old when configuration and infrastructure identities still match.
 Updates then stop only app writers gracefully and take another backup before container replacement.
 SQL dumps require a completion marker. Redis snapshots require a valid header. Volume archives must pass gzip validation.
 The scripts verify every backup file against its SHA-256 checksum.
+SQL backup freezes the permanent database list and excludes the reserved `codexsun_cxtest_*` acceptance-test schemas.
 SQL backup credentials come from the local API configuration and must permit a complete server dump.
 
 The API keeps normal startup migration behavior. Reset and bootstrap-seeding flags must remain disabled.

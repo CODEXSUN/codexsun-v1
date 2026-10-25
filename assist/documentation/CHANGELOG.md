@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.65
+Current version: 1.1.66
 
-Release tag: v-1.1.65
+Release tag: v-1.1.66
 
-Changelog label: v 1.1.65
+Changelog label: v 1.1.66
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,23 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.66
+
+### [v 1.1.66] 2026-10-25 10:09 pm - Harden versioned deployment backup and realtime routing
+
+#### Database Changes
+
+- Database update: No (manual).
+
+#### App Codebase Changes
+
+- Bumped workspace manifests, internal dependency ranges, lockfile, and desktop manifests to 1.1.66.
+- Use native graceful Docker stop before VPS backups. Bound the client wait without escalating to SIGKILL.
+- Preserve API WebSocket upgrades and add optional same-origin Chatb routing to the Web and Shop proxies. Worker control remains private.
+- Retain an explicitly configured existing Media volume with strict adoption checks, a checksum-verified archive, and exclusion from cleanup deletion.
+- Include local updater snapshot reuse, unchanged-release health checks, and guarded backup reuse. Keep a fresh quiesced backup before replacement.
+- Record source-only release verification in `.container/docs/RELEASE-1.1.66.md`. No deployment was performed.
 
 ## v-1.1.65
 

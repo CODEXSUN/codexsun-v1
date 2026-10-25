@@ -33,17 +33,21 @@ guard_inventory() (
     docker inspect "${containers[@]}" >"$inventory"
   fi
   python3 -B "$DEPLOY_DIR/lib/safety.py" "$DEPLOY_ENV" "$1" <"$inventory"
-  for role in application redis; do
+  for role in application redis media; do
     volume="$DATA_VOLUME"
     [ "$role" != redis ] || volume="$(env_value REDIS_DATA_VOLUME)"
+    if [ "$role" = media ]; then volume="${MEDIA_VOLUME:-}"; fi
+    [ -n "$volume" ] || continue
     if volume_exists "$volume"; then
       docker volume inspect "$volume" | python3 -B "$DEPLOY_DIR/lib/safety.py" "$DEPLOY_ENV" "volume-$role" "$inventory"
     fi
   done
 )
 compose() {
+  local -a media_args=()
+  if [ -n "${MEDIA_VOLUME:-}" ]; then media_args=(-f "$DEPLOY_DIR/docker-compose.media.yml"); fi
   docker compose --project-name codexsun --env-file "$DEPLOY_ENV" \
-    -f "$DEPLOY_DIR/docker-compose.yml" "${PROFILE_ARGS[@]}" "$@"
+    -f "$DEPLOY_DIR/docker-compose.yml" "${media_args[@]}" "${PROFILE_ARGS[@]}" "$@"
 }
 database_compose() {
   docker compose --env-file "$DEPLOY_ENV" \
@@ -51,7 +55,7 @@ database_compose() {
 }
 
 load_config() {
-  for tool in python3 git docker sha256sum flock gzip tar mktemp df; do
+  for tool in python3 git docker sha256sum flock gzip tar mktemp df timeout; do
     command -v "$tool" >/dev/null || fail "Required command is missing: $tool"
   done
   [ "$(uname -s)" = Linux ] || fail "Deployment commands run on a Linux VPS, not a development workstation."
@@ -67,6 +71,10 @@ load_config() {
   DB_CONTAINER="$(env_value CODEXSUN_MARIADB_CONTAINER)"
   REDIS_CONTAINER="$(env_value CODEXSUN_REDIS_CONTAINER)"
   DATA_VOLUME="$(env_value CODEXSUN_DATA_VOLUME)"
+  MEDIA_VOLUME="$(env_value CODEXSUN_MEDIA_DATA_VOLUME)"
+  if [ -n "$MEDIA_VOLUME" ]; then
+    volume_exists "$MEDIA_VOLUME" || fail 'Configured Media volume must already exist; no Media storage is created automatically.'
+  fi
   NETWORK="$(env_value CODEXSUN_DOCKER_NETWORK)"
   SERVICES=(codexsun-api codexsun-web codexsun-shop)
   PROFILE_ARGS=()

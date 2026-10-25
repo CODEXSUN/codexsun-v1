@@ -3,7 +3,7 @@
 verify_backup() {
   local file expected
   [ -s "$BACKUP_DIR/SHA256SUMS" ] && [ -s "$BACKUP_DIR/databases.sql" ] && [ -s "$BACKUP_DIR/deploy.env" ] || return 1
-  for file in databases.sql deploy.env rollback.json containers.json cleanup-containers.json storage.tar.gz runtime-images.tar.gz candidate.json images.json image-identities.json source.sha256 redis.tar.gz; do
+  for file in databases.sql deploy.env rollback.json containers.json cleanup-containers.json storage.tar.gz media.tar.gz runtime-images.tar.gz candidate.json images.json image-identities.json source.sha256 redis.tar.gz; do
     if [ -f "$BACKUP_DIR/$file" ]; then
       expected="$(cd "$BACKUP_DIR" && sha256sum "$file")" || return 1
       expected="${expected%% *}"
@@ -65,8 +65,17 @@ create_backup() {
     tar -tzf "$BACKUP_DIR/storage.tar.gz.partial" >/dev/null
     mv "$BACKUP_DIR/storage.tar.gz.partial" "$BACKUP_DIR/storage.tar.gz"
   fi
+  if [ -n "${MEDIA_VOLUME:-}" ]; then
+    backup_image="$(docker inspect -f '{{.Image}}' "$DB_CONTAINER")"
+    docker run --rm --network none --entrypoint tar --user 0:0 \
+      --mount "type=volume,source=$MEDIA_VOLUME,target=/source,readonly" \
+      "$backup_image" -C /source -czf - . >"$BACKUP_DIR/media.tar.gz.partial"
+    gzip -t "$BACKUP_DIR/media.tar.gz.partial"
+    tar -tzf "$BACKUP_DIR/media.tar.gz.partial" >/dev/null
+    mv "$BACKUP_DIR/media.tar.gz.partial" "$BACKUP_DIR/media.tar.gz"
+  fi
   (cd "$BACKUP_DIR"; sha256sum databases.sql deploy.env >SHA256SUMS
-    for file in rollback.json containers.json storage.tar.gz; do
+    for file in rollback.json containers.json storage.tar.gz media.tar.gz; do
       [ ! -f "$file" ] || sha256sum "$file" >>SHA256SUMS
     done
     sha256sum --check SHA256SUMS >/dev/null)

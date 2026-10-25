@@ -123,6 +123,7 @@ FROM ${NGINX_BASE_IMAGE} AS web
 ARG CODEXSUN_VERSION
 ARG CODEXSUN_REVISION
 LABEL org.opencontainers.image.version="$CODEXSUN_VERSION" org.opencontainers.image.revision="$CODEXSUN_REVISION"
+ENV CODEXSUN_REALTIME_ENABLED=0 CODEXSUN_CHATB_PORT=17031
 COPY .container/codexsun-v1/nginx-web.conf /etc/nginx/templates/default.conf.template
 COPY --from=web-build /app/dist/apps/platform/web /usr/share/nginx/html
 EXPOSE 80
@@ -132,6 +133,7 @@ FROM ${NGINX_BASE_IMAGE} AS shop
 ARG CODEXSUN_VERSION
 ARG CODEXSUN_REVISION
 LABEL org.opencontainers.image.version="$CODEXSUN_VERSION" org.opencontainers.image.revision="$CODEXSUN_REVISION"
+ENV CODEXSUN_REALTIME_ENABLED=0 CODEXSUN_CHATB_PORT=17031
 COPY .container/codexsun-v1/nginx-shop.conf /etc/nginx/templates/default.conf.template
 COPY --from=shop-build /app/dist/apps/ecommerce/storefront /usr/share/nginx/html
 EXPOSE 80

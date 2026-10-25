@@ -42,6 +42,8 @@ services:
     container_name: codexsun-web
     environment:
       PLATFORM_API_PORT: ${PLATFORM_API_PORT:?required}
+      CODEXSUN_REALTIME_ENABLED: ${CODEXSUN_REALTIME_ENABLED:-0}
+      CODEXSUN_CHATB_PORT: ${CODEXSUN_CHATB_PORT:-17031}
     depends_on:
       codexsun-api:
         condition: service_healthy
@@ -57,6 +59,8 @@ services:
     container_name: codexsun-shop
     environment:
       PLATFORM_API_PORT: ${PLATFORM_API_PORT:?required}
+      CODEXSUN_REALTIME_ENABLED: ${CODEXSUN_REALTIME_ENABLED:-0}
+      CODEXSUN_CHATB_PORT: ${CODEXSUN_CHATB_PORT:-17031}
     depends_on:
       codexsun-api:
         condition: service_healthy

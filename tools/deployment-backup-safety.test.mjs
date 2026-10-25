@@ -92,7 +92,7 @@ test("graceful-stop deadline never escalates to SIGKILL or reaches data deletion
   );
   assert.notEqual(result.status, 0);
   const calls = readFileSync(join(directory, "commands.log"), "utf8");
-  assert.match(calls, /kill --signal SIGTERM codexsun-api/u);
+  assert.match(calls, /stop --timeout -1 codexsun-api/u);
   assert.doesNotMatch(calls, /SIGKILL|rm -f/u);
   assert.match(result.stderr, /did not stop gracefully/u);
 });

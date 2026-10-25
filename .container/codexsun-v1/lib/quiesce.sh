@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
 graceful_stop() {
-  local name="$1" elapsed stop_signal
+  local name="$1" stop_signal
   stop_signal="$(docker inspect -f '{{.Config.StopSignal}}' "$name")"
   case "${stop_signal^^}" in
     SIGKILL|KILL|9) echo 'Unsafe forced-stop signal. Refusing to interrupt writes.' >&2; return 1 ;;
   esac
-  docker kill --signal "${stop_signal:-SIGTERM}" "$name" >/dev/null
-  for ((elapsed=0; elapsed<60; elapsed++)); do
-    if [ "$(docker inspect -f '{{.State.Running}}' "$name")" = false ]; then return 0; fi
-    sleep 1
-  done
+  # A manual stop suppresses restart policies. An infinite daemon timeout
+  # prevents Docker from escalating to SIGKILL; only the CLI wait is bounded.
+  if timeout --signal=TERM 90 docker stop --timeout -1 "$name" >/dev/null; then
+    [ "$(docker inspect -f '{{.State.Running}}' "$name")" = false ] && return 0
+  fi
   echo "Service did not stop gracefully: $name. No SIGKILL or data deletion was attempted." >&2
   return 1
 }

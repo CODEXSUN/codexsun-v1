@@ -16,6 +16,35 @@ export async function backup(docker, state, directory) {
   ]);
   const environment = state.model.services["codexsun-api"].environment;
   const sql = join(directory, "databases.sql");
+  const backupEnvironment = { ...process.env, MYSQL_PWD: literal(environment.DB_PASSWORD) };
+  const databases = docker
+    .run(
+      [
+        "exec",
+        "-i",
+        "-e",
+        "MYSQL_PWD",
+        state.database.Name.slice(1),
+        "mariadb",
+        "--no-defaults",
+        `-u${literal(environment.DB_USER)}`,
+        "-N",
+        "--batch"
+      ],
+      {
+        input:
+          "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME NOT IN ('information_schema','performance_schema','sys') AND SCHEMA_NAME NOT REGEXP '^codexsun_cxtest_[0-9a-f]+$' ORDER BY SCHEMA_NAME",
+        env: backupEnvironment
+      }
+    )
+    .trim()
+    .split(/\r?\n/u)
+    .filter(Boolean);
+  assert.ok(
+    databases.length && databases.every((name) => /^[a-zA-Z0-9_]+$/u.test(name)),
+    "Review database names before backup."
+  );
+  await privateWrite(join(directory, "databases.private.json"), databases);
   await docker.output(
     [
       "exec",
@@ -25,13 +54,14 @@ export async function backup(docker, state, directory) {
       "mariadb-dump",
       "--no-defaults",
       `-u${literal(environment.DB_USER)}`,
-      "--all-databases",
       "--single-transaction",
       "--quick",
       "--routines",
       "--events",
       "--triggers",
-      "--hex-blob"
+      "--hex-blob",
+      "--databases",
+      ...databases
     ],
     sql,
     { MYSQL_PWD: literal(environment.DB_PASSWORD) }

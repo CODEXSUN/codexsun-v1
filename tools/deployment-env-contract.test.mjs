@@ -97,7 +97,7 @@ test("MariaDB mounts and differing live application storage block destructive ad
   assert.notEqual(config(["protect", "codexsun-db"], JSON.stringify(database)).status, 0);
   assert.equal(config(["protect", "codexsun-data"], JSON.stringify(database)).status, 0);
   assert.notEqual(config(["adoption", "codexsun-data"], JSON.stringify(database)).status, 0);
-  const application = [{ Mounts: [{ Name: "codexsun-data", Destination: "/storage" }] }];
+  const application = [{ Mounts: [{ Type: "volume", RW: true, Name: "codexsun-data", Destination: "/storage" }] }];
   assert.equal(config(["adoption", "codexsun-data"], JSON.stringify(application)).status, 0);
 });
 

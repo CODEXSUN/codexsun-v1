@@ -12,13 +12,42 @@ import {
 import { backup, verifyBackup } from "./backup.mjs";
 import { digest, privateDirectory, privateWrite } from "./files.mjs";
 import { createSourceSnapshot, verifySourceSnapshot } from "./source-snapshot.mjs";
+import { currentRelease } from "./current-release.mjs";
+import { recentBackup } from "./recent-backup.mjs";
 
 export async function release(docker, root, config, mode, base) {
   const stamp = `${Date.now()}-${randomBytes(3).toString("hex")}`;
   const directory = await privateDirectory(join(base, stamp));
   const initial = inspectDeployment(docker, config, mode);
-  console.log("Backing up local SQL, Redis, storage, and configuration before build.");
-  await backup(docker, initial, join(directory, "before-build"));
+  if (mode === "update") {
+    const checksum = await sourceChecksum(root);
+    const previous = await currentRelease(base, initial.model, checksum);
+    if (previous) {
+      await verifyRuntime(docker, initial.model);
+      await privateWrite(join(directory, "candidate.private.json"), initial.model);
+      await privateWrite(join(directory, "result.json"), {
+        success: true,
+        noChanges: true,
+        sourceChecksum: checksum,
+        reusedRelease: previous,
+        databasePreserved: initial.database.Id,
+        redisPreserved: initial.redis.Id
+      });
+      console.log(
+        "No new source changes. All five running app images and health checks are current. No build, backup, or restart was needed."
+      );
+      return;
+    }
+  }
+  const existingBackup = await recentBackup(base, initial);
+  if (existingBackup)
+    console.log(
+      `Reusing recent checksum-verified pre-build backup: ${existingBackup}. A fresh quiesced backup is still required before replacement.`
+    );
+  else {
+    console.log("Backing up local SQL, Redis, storage, and configuration before build.");
+    await backup(docker, initial, join(directory, "before-build"));
+  }
   console.log("Capturing and verifying a fixed snapshot of the current build sources.");
   const snapshot = await createSourceSnapshot(root, directory);
   const candidate = await buildModel(snapshot.root, initial.model, stamp);

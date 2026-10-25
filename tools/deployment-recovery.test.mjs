@@ -237,7 +237,7 @@ test("cleanup archives persistent files and images, and never stops or removes M
   const model = JSON.parse(readFileSync(join(backup, "rollback.json")));
   assert.equal(model.services["codexsun-api"]["x-codexsun-running"], true);
   const calls = vps.calls();
-  assert.ok(calls.indexOf("kill --signal SIGTERM codexsun-api") < calls.indexOf("mariadb-dump"));
+  assert.ok(calls.indexOf("stop --timeout -1 codexsun-api") < calls.indexOf("mariadb-dump"));
   assert.ok(calls.indexOf("image save") < calls.indexOf("rm -f"));
 });
 

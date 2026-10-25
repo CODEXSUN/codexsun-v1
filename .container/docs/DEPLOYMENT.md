@@ -38,7 +38,7 @@ A future v2 requires reviewed root-wrapper changes. Do not silently migrate infr
 
 ## Prerequisites
 
-Use a Linux VPS with Docker Engine, Compose v2, Git, Python 3, gzip, sha256sum, and flock.
+Use a Linux VPS with Docker Engine, Compose v2, Git, Python 3, gzip, sha256sum, flock, and GNU timeout.
 Docker Desktop and workstation deployment are rejected. Use a clean, committed GitHub checkout on the configured branch.
 Keep the existing Cloudflare Tunnel and domain routing unchanged. Published application ports bind to loopback.
 Provision `.container/deploy.env` with private permissions. Do not copy development `.env` or put secrets in command arguments.
@@ -164,3 +164,35 @@ Realtime and load-test harnesses remain under `tools/container-testing` for cont
 ## Audit evidence
 
 Read [the 2026-10-25 follow-up audit](AUDIT-2026-10-25.md) for fixes, simulated checks, and live verification limits.
+
+## Optional existing Media storage
+
+The default remains one application volume at `/storage`. To retain a reviewed existing
+named volume at `/storage/media`, set `CODEXSUN_MEDIA_DATA_VOLUME` to its exact name.
+The volume must already exist and support access by the application user (UID 1000).
+No Media server is installed, started, or provisioned by this option.
+
+The Compose helper selects `docker-compose.media.yml` only when this value is nonempty.
+Update refuses missing, additional, read-only, bind, mismatched, or undeclared application mounts.
+Inventory checks reject database storage aliases and custom or bind-backed volume drivers.
+Backups include `media.tar.gz` in `SHA256SUMS`; rollback retains captured mount identities.
+Clean retains this Media volume. It does not stop a separate Media server or delete its files.
+Coordinate other Media writers when a consistent file archive is required; the archive is
+not a transactional snapshot of another running service.
+
+## Realtime proxy routing
+
+Existing `/api/app/` and `/api/platform/` WebSocket connections retain their API upstream.
+Both Web and Shop proxies forward Upgrade and Connection headers with a 300-second read timeout.
+With `CODEXSUN_REALTIME_ENABLED=1`, `/api/chatb/realtime` forwards to Chatb's
+`/chatb/realtime` path, preserving query parameters, session cookies, Host, and Origin.
+With realtime disabled it returns 503 without resolving an absent Chatb container.
+This adds an optional route; it does not switch existing clients to Chatb.
+Worker control has no public proxy route.
+
+## Backup shutdown
+
+VPS backup uses `docker stop --timeout -1` to suppress automatic restart policy recovery.
+GNU timeout bounds the Docker CLI wait to 90 seconds. It does not impose a daemon kill timeout.
+Failure stops the release before replacement or deletion and invokes existing recovery handling.
+An independent external restart still fails the final quiescence guard.
