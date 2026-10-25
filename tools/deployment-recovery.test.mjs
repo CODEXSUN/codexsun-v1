@@ -95,6 +95,7 @@ function approveNext(vps, realtime = false) {
   const next = parts.join(".");
   const snapshot = vps.readState();
   snapshot.targetVersion = next;
+  vps.env.CODEXSUN_EXPECTED_REVISION = "b".repeat(40);
   snapshot.realtime = realtime;
   writeFileSync(join(vps.directory, "state.json"), JSON.stringify(snapshot));
   writeFileSync(
@@ -186,6 +187,32 @@ test("retained data-volume setup requires reuse approval and never seeds retaine
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(vps.readState().migrations, ["migrations:preflight", "migrations:run"]);
   assert.deepEqual(vps.readState().records, initial.records);
+});
+
+test("updater rejects an absent or malformed reviewed SHA before any Docker call", () => {
+  for (const expected of ["", "main", "a".repeat(39)]) {
+    const vps = createVpsFixture(state());
+    vps.env.CODEXSUN_EXPECTED_REVISION = expected;
+    const result = vps.run("update.sh");
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Supply the full reviewed SHA/u);
+    assert.equal(vps.readState().builds, undefined);
+    assert.equal(existsSync(join(vps.directory, ".container/backups")), false);
+    assert.equal(existsSync(join(vps.directory, "commands.log")), false);
+  }
+});
+
+test("a fetched SHA mismatch stops before source merge, build, quiescence, or migration", () => {
+  const vps = createVpsFixture(state());
+  approveNext(vps);
+  vps.env.CODEXSUN_EXPECTED_REVISION = "c".repeat(40);
+  const result = vps.run("update.sh");
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Fetched source differs from the reviewed SHA/u);
+  assert.equal(vps.readState().commit, "a".repeat(40));
+  assert.equal(vps.readState().builds, undefined);
+  assert.equal(vps.readState().migrations, undefined);
+  assert.doesNotMatch(vps.calls(), /merge --ff-only|^stop /mu);
 });
 
 for (const [name, flags] of [

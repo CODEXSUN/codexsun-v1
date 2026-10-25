@@ -37,6 +37,8 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Consolidate identical app and deploy entry-point edits on main, and synchronize available registered worktrees after publication.
 - Record checks, preservation evidence, and the unavailable retained Platform checkout in `.container/docs/RELEASE-1.1.69.md`.
 - Update lockstep package versions, internal ranges, lockfile metadata, Windows manifests, and deployment sample without installation. No tag or deployment.
+- Candidate preparation, 26-10-2026: require the exact reviewed SHA for VPS updates and add read-only source, image, isolation, and evidence checks.
+- Add staging-only input templates and synthetic deployment tests. Candidate images, staging acceptance, recovery, migration review, and production promotion remain unexecuted.
 
 ## v-1.1.68
 

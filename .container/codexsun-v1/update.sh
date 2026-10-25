@@ -7,18 +7,23 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 ASSUME_YES=false
 CHECK_ONLY=false
+EXPECTED_REVISION="${CODEXSUN_EXPECTED_REVISION:-}"
 for option in "$@"; do
   case "$option" in
     --yes) ASSUME_YES=true ;;
     --check) CHECK_ONLY=true ;;
+    --expected-revision=*) EXPECTED_REVISION="${option#*=}" ;;
     --help|-h)
-      echo 'Usage: bash update.sh [--check | --yes]'
+      echo 'Usage: bash update.sh [--check | --yes --expected-revision=<full-reviewed-SHA>]'
       echo 'Linux VPS only. Back up, fast-forward GitHub source, build, migrate, verify, and roll back failed application replacement.'
       echo '--check validates local source and deployment without fetching or changing anything.'
       exit 0 ;;
     *) fail "Unknown update option: $option" ;;
   esac
 done
+if [ "$CHECK_ONLY" = false ] || [ -n "$EXPECTED_REVISION" ]; then
+  [[ "$EXPECTED_REVISION" =~ ^[a-f0-9]{40}$ ]] || fail 'Supply the full reviewed SHA with --expected-revision=<SHA> or CODEXSUN_EXPECTED_REVISION. No update started.'
+fi
 load_config
 validate_source inspect
 check_ownership
@@ -44,6 +49,7 @@ create_backup
 trap on_release_exit EXIT
 git -C "$PROJECT_ROOT" fetch --prune origin "$branch"
 target="$(git -C "$PROJECT_ROOT" rev-parse FETCH_HEAD)"
+[ "$target" = "$EXPECTED_REVISION" ] || fail 'Fetched source differs from the reviewed SHA. No merge, build, migration, or replacement allowed.'
 git -C "$PROJECT_ROOT" merge-base --is-ancestor HEAD "$target" || fail 'GitHub update is not a fast-forward.'
 if [ "$target" = "$CODEXSUN_REVISION" ]; then
   validate_source

@@ -1,0 +1,25 @@
+{
+  "source": {
+    "version": "1.1.69",
+    "revision": "65a3a382dd43e7d7972170960c719aedba1385c6"
+  },
+  "publishedBaseline": "65a3a382dd43e7d7972170960c719aedba1385c6",
+  "proposedFixCommit": null,
+  "services": {
+    "api": { "image": null, "inspection": null },
+    "web": { "image": null, "inspection": null },
+    "shop": { "image": null, "inspection": null }
+  },
+  "excludedServices": {
+    "worker": "Not enabled on the inspected VPS; staging must verify exclusion compatibility",
+    "chatb": "Not enabled on the inspected VPS; staging must verify existing API WebSocket routes"
+  },
+  "evidence": {
+    "isolation": null,
+    "migration-review": null,
+    "recovery-rehearsal": null,
+    "mount-adoption": null
+  },
+  "productionApproval": null,
+  "productionVerifiedBackup": null
+}
