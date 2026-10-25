@@ -1,0 +1,35 @@
+# Chatb
+
+Chatb is an additive WebSocket gateway. It proxies authenticated realtime connections to the existing Chat owner gateway and does not persist messages or authorize tenants itself.
+
+## Runtime contract
+
+`CODEXSUN_CHATB_UPSTREAM_URL` selects the trusted Platform WebSocket origin.
+The default listener is port 17031. The upstream URL must use `ws` or `wss` without embedded credentials.
+
+- `GET /health` checks the process.
+- `GET /ready` checks Platform readiness and returns 503 if it fails.
+- `/chatb/realtime` forwards browser session cookies, the original Host and Origin, and the selected session slot.
+
+The gateway preserves text and binary frames and waits for the upstream before processing client messages.
+It confirms owner readiness with the existing `chat.ping`/`pong` protocol before releasing those messages.
+It limits frames to 256 KiB, handles failed upgrades and abrupt closure, and drains connections on shutdown.
+URL tokens are rejected. Native clients can forward an Authorization header.
+Platform checks the encrypted browser cookie or Bearer token and its live session.
+
+Only `sessionSlot` and `companyId` query parameters reach Chat. Platform validates company selection in the authenticated tenant.
+Caller-supplied tenant IDs, database names, and company headers cannot establish context through this gateway.
+Chat retains message persistence, membership, permissions, and fan-out. Chatb has no business migrations or CRUD modules.
+
+## Local verification
+
+```powershell
+npm run typecheck -w @codexsun/chatb-api
+npm run lint -w @codexsun/chatb-api
+node --import tsx --test apps/chatb/api/src/app.test.ts
+node tools/container-testing/verify-realtime.mjs --restart
+```
+
+The local web proxy sends existing `/api/app/chat/realtime` and `/api/platform/chat/realtime` upgrades through Chatb.
+The integration audit uses real Platform sessions and MariaDB-backed Chat messages. It creates and removes a dedicated local audit channel.
+Transport unit tests do not replace these live integration checks.

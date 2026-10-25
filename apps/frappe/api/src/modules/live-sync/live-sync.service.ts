@@ -5,6 +5,27 @@ import type { LiveSyncSettings } from "./live-sync.types.js";
 const kinds: ExportKind[] = ["contacts", "enquiries", "activities", "call-logs"];
 export class FrappeLiveSyncService {
   constructor(private readonly database: Kysely<FrappeDatabase>) {}
+  async access() {
+    const connection = await this.database
+      .selectFrom("frappe_connection_settings")
+      .select(["enabled", "verification_status"])
+      .where("id", "=", 1)
+      .executeTakeFirst();
+    if (!connection?.enabled) return { enabled: false, outbound: false };
+    const settings = await this.database
+      .selectFrom("frappe_live_sync_settings")
+      .select(["enabled", "paused", "direction"])
+      .where("id", "=", 1)
+      .executeTakeFirst();
+    if (!settings?.enabled) return { enabled: false, outbound: false };
+    return {
+      enabled: true,
+      outbound:
+        !settings.paused &&
+        settings.direction === "bidirectional" &&
+        connection.verification_status === "verified"
+    };
+  }
   async settings(): Promise<LiveSyncSettings> {
     const row = await this.database
       .selectFrom("frappe_live_sync_settings")

@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.62
+Current version: 1.1.64
 
-Release tag: v-1.1.62
+Release tag: v-1.1.64
 
-Changelog label: v 1.1.62
+Changelog label: v 1.1.64
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,18 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.64
+
+### [v 1.1.64] 2026-10-25 3:00 pm - working on new work
+
+#### Database Changes
+
+- Database update: Yes (auto-check).
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.64.
 
 ## v-1.1.62
 
@@ -39,6 +51,30 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Permit user transfer when only the landing-app preference differs after strict source/target, company, year and singleton verification. Keep all other identity conflicts blocked.
 - Record queue jobs, approved corrections, source fingerprints, repeat-import proof and dashboard SQL comparisons in the Data Bridge cloud log.
 - Verify focused branding/user-context tests, Data Bridge API build and lockstep version checks. Keep unrelated CRM, deployment, ecommerce and Codeit work outside this commit.
+
+## v-1.1.61
+
+### [v 1.1.61] 2026-10-25 8:34 am - Gate CRM Frappe sync by tenant switch
+
+#### Database Changes
+
+- Database update: Yes. Frappe migration `frappe.connection.availability-v11` adds tenant server hours and persisted connection availability. Business records and source links are preserved.
+
+#### App Codebase Changes
+
+- Bump lockstep workspace, lockfile, Windows, deployment sample, and CRM mobile metadata to 1.1.61. CRM mobile build number is 161. No APK was built.
+- Require the tenant's enabled CRM/Frappe apps, saved enabled connection, and Live sync switch before showing CRM Frappe controls or allowing transfers.
+- Hide sync columns, detail tabs, errors, and verification controls across contacts, enquiries, call logs, SOPs, duties, reporting, and the local-only Task notice when sync is off.
+- Gate immediate dispatch, scheduled relays, manual transfer requests, and queued worker execution. Preserve direction, module settings, and record permissions.
+- Preserve local records, source links, checkpoints, and pending events while sync is off. Refresh deferred delivery generations without changing stable record or comment identities.
+- Scope capability caching by tenant and database. Hide sync controls when settings are missing or capability reads fail.
+- Move the stale Codeit npm cache from nested workspace dist into root dist. Restore three missing root npm workspace links with an offline install.
+- Verify tenant switch states, safe queue resume, record scope, contact persistence, duty retries, table rendering, owner boundaries, builds, dependency layout, and version alignment locally.
+- Leave cloud deployment, remote Frappe verification, Git commit/push, and mobile builds outside this update.
+
+- Add Frappe Server availability settings with daily 08:00-21:00 defaults, timezone validation, and a live read-only connection probe.
+- Hold Frappe jobs outside server hours or during outages without consuming queue retries. Reuse the same delayed BullMQ delivery and successful import checkpoint.
+- Verify local-clone migration replay, browser persistence, waiting status, and real Redis hold/recovery. Keep external integrations isolated and the VPS unchanged.
 
 ## v-1.1.60
 

@@ -11,6 +11,7 @@ import {
   WorkspaceFormPanel,
   WorkspaceUpsertPage
 } from "@codexsun/ui/workspace/upsert";
+import { fieldErrors } from "../../shared/form-errors";
 import { useFrappeItemOptions } from "./product-information.hooks";
 import { getFrappeItem } from "./product-information.services";
 import { ProductInformationPreview } from "./product-information.preview";
@@ -69,7 +70,7 @@ export function ProductInformationForm({
   record: ProductInformationRecord | null;
 }) {
   const [value, setValue] = useState<ProductInformationPayload>(record ? toPayload(record) : empty);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [frappeSearch, setFrappeSearch] = useState("");
   const [frappeItemCode, setFrappeItemCode] = useState("");
   const [frappeMessage, setFrappeMessage] = useState("");
@@ -90,15 +91,22 @@ export function ProductInformationForm({
   const update = <K extends keyof ProductInformationPayload>(
     key: K,
     next: ProductInformationPayload[K]
-  ) => setValue((current) => ({ ...current, [key]: next }));
+  ) => {
+    setValue((current) => ({ ...current, [key]: next }));
+    setErrors((current) => {
+      const nextErrors = { ...current };
+      delete nextErrors[String(key)];
+      return nextErrors;
+    });
+  };
   const number = (raw: string) => (raw === "" ? null : Number(raw));
   const submit = () => {
     const parsed = productInformationSchema.safeParse(value);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Check the product details.");
+      setErrors(fieldErrors(parsed.error.issues));
       return;
     }
-    setError("");
+    setErrors({});
     onSubmit(parsed.data);
   };
   const selectFrappeItem = async (itemCode: string) => {
@@ -201,6 +209,7 @@ export function ProductInformationForm({
                 <DetailsTab
                   brands={brands}
                   coreProducts={coreProducts}
+                  errors={errors}
                   frappeItem={selectedFrappeItem}
                   value={value}
                   update={update}
@@ -213,6 +222,7 @@ export function ProductInformationForm({
               content: (
                 <FulfilmentTab
                   brands={brands}
+                  errors={errors}
                   frappeItem={selectedFrappeItem}
                   value={value}
                   update={update}
@@ -226,6 +236,7 @@ export function ProductInformationForm({
               content: (
                 <ContentTab
                   brands={brands}
+                  errors={errors}
                   frappeItem={selectedFrappeItem}
                   value={value}
                   update={update}
@@ -234,7 +245,7 @@ export function ProductInformationForm({
             }
           ]}
         />
-        {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
+        {errors.form ? <p className="mt-3 text-sm text-destructive">{errors.form}</p> : null}
         <div className="mt-5 flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel}>
             Cancel
@@ -256,12 +267,14 @@ type UpdateProductInformation = <K extends keyof ProductInformationPayload>(
 function DetailsTab({
   brands,
   coreProducts,
+  errors,
   frappeItem,
   update,
   value
 }: {
   brands: CoreBrandOption[];
   coreProducts: CoreProductOption[];
+  errors: Record<string, string>;
   frappeItem: FrappeItemOption | null;
   update: UpdateProductInformation;
   value: ProductInformationPayload;
@@ -269,7 +282,7 @@ function DetailsTab({
   return (
     <div className="space-y-10">
       <div className="grid gap-x-6 gap-y-5 md:grid-cols-2">
-        <Field label="Core product">
+        <Field error={errors.coreProductId} label="Core product">
           <Select
             value={value.coreProductId}
             onChange={(raw) => update("coreProductId", Number(raw))}
@@ -306,6 +319,7 @@ function DetailsTab({
           </Select>
         </Field>
         <TextField
+          error={errors.storefrontTitle}
           label="Storefront title"
           value={value.storefrontTitle}
           onChange={(raw) => update("storefrontTitle", raw)}
@@ -315,7 +329,12 @@ function DetailsTab({
           value={value.subtitle}
           onChange={(raw) => update("subtitle", raw)}
         />
-        <TextField label="Slug" value={value.slug} onChange={(raw) => update("slug", raw)} />
+        <TextField
+          error={errors.slug}
+          label="Slug"
+          value={value.slug}
+          onChange={(raw) => update("slug", raw)}
+        />
         <TextField
           label="Manufacturer"
           value={value.manufacturer}
@@ -331,7 +350,7 @@ function DetailsTab({
           value={value.countryOfOrigin}
           onChange={(raw) => update("countryOfOrigin", raw)}
         />
-        <Field label="Short description">
+        <Field error={errors.shortDescription} label="Short description">
           <Textarea
             className="min-h-28"
             value={value.shortDescription}
@@ -346,12 +365,14 @@ function DetailsTab({
 
 function FulfilmentTab({
   brands,
+  errors,
   frappeItem,
   number,
   update,
   value
 }: {
   brands: CoreBrandOption[];
+  errors: Record<string, string>;
   frappeItem: FrappeItemOption | null;
   number: (value: string) => number | null;
   update: UpdateProductInformation;
@@ -366,7 +387,7 @@ function FulfilmentTab({
           onChange={(raw) => update("shippingClass", raw)}
         />
         {(["weight", "length", "width", "height"] as const).map((key) => (
-          <Field key={key} label={`${key[0]?.toUpperCase()}${key.slice(1)}`}>
+          <Field error={errors[key]} key={key} label={`${key[0]?.toUpperCase()}${key.slice(1)}`}>
             <Input
               min="0"
               step="0.001"
@@ -376,7 +397,7 @@ function FulfilmentTab({
             />
           </Field>
         ))}
-        <Field label="Minimum order quantity">
+        <Field error={errors.minimumOrderQuantity} label="Minimum order quantity">
           <Input
             min="1"
             type="number"
@@ -384,7 +405,7 @@ function FulfilmentTab({
             onChange={(event) => update("minimumOrderQuantity", Number(event.target.value))}
           />
         </Field>
-        <Field label="Maximum order quantity">
+        <Field error={errors.maximumOrderQuantity} label="Maximum order quantity">
           <Input
             min="1"
             type="number"
@@ -392,14 +413,14 @@ function FulfilmentTab({
             onChange={(event) => update("maximumOrderQuantity", number(event.target.value))}
           />
         </Field>
-        <Field label="Warranty">
+        <Field error={errors.warranty} label="Warranty">
           <Textarea
             className="min-h-28"
             value={value.warranty}
             onChange={(event) => update("warranty", event.target.value)}
           />
         </Field>
-        <Field label="Return policy">
+        <Field error={errors.returnPolicy} label="Return policy">
           <Textarea
             className="min-h-28"
             value={value.returnPolicy}
@@ -414,11 +435,13 @@ function FulfilmentTab({
 
 function ContentTab({
   brands,
+  errors,
   frappeItem,
   update,
   value
 }: {
   brands: CoreBrandOption[];
+  errors: Record<string, string>;
   frappeItem: FrappeItemOption | null;
   update: UpdateProductInformation;
   value: ProductInformationPayload;
@@ -426,14 +449,14 @@ function ContentTab({
   return (
     <div className="space-y-10">
       <div className="grid gap-x-6 gap-y-5 md:grid-cols-2">
-        <Field label="Full description">
+        <Field error={errors.description} label="Full description">
           <Textarea
             className="min-h-52"
             value={value.description}
             onChange={(event) => update("description", event.target.value)}
           />
         </Field>
-        <Field label="Selling points (one per line)">
+        <Field error={errors.bulletPoints} label="Selling points (one per line)">
           <Textarea
             className="min-h-52"
             value={value.bulletPoints.join("\n")}
@@ -441,11 +464,12 @@ function ContentTab({
           />
         </Field>
         <TextField
+          error={errors.seoTitle}
           label="SEO title"
           value={value.seoTitle}
           onChange={(raw) => update("seoTitle", raw)}
         />
-        <Field label="SEO description">
+        <Field error={errors.seoDescription} label="SEO description">
           <Textarea
             className="min-h-28"
             value={value.seoDescription}
@@ -466,11 +490,20 @@ function ContentTab({
   );
 }
 
-function Field({ children, label }: { children: ReactNode; label: string }) {
+function Field({
+  children,
+  error,
+  label
+}: {
+  children: ReactNode;
+  error?: string | undefined;
+  label: string;
+}) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
       {children}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }
@@ -494,16 +527,18 @@ function Select({
   );
 }
 function TextField({
+  error,
   label,
   onChange,
   value
 }: {
+  error?: string | undefined;
   label: string;
   onChange: (value: string) => void;
   value: string;
 }) {
   return (
-    <Field label={label}>
+    <Field error={error} label={label}>
       <Input value={value} onChange={(event) => onChange(event.target.value)} />
     </Field>
   );

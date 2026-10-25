@@ -343,8 +343,8 @@ export function SalesWorkspace({ initialRecordId }: { initialRecordId?: string |
         onShowAllColumns={listTools.onShowAllColumns}
         toolbarAction={
           <>
-            {listTools.toolbarAction}{" "}
             <BillingDocumentListControls
+              columnSearchAction={listTools.toolbarAction}
               dateFrom={dateFrom}
               dateTo={dateTo}
               onDateFromChange={(value) => {

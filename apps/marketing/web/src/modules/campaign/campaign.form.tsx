@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { Button } from "@codexsun/ui/components/button";
 import { Input } from "@codexsun/ui/components/input";
+import { Textarea } from "@codexsun/ui/components/textarea";
 import {
   Select,
   SelectContent,
@@ -8,17 +9,36 @@ import {
   SelectTrigger,
   SelectValue
 } from "@codexsun/ui/components/select";
-import { WorkspaceLookup } from "@codexsun/ui/workspace/lookup";
 import {
+  WorkspaceFormActions,
   WorkspaceFormBanner,
+  WorkspaceFormBody,
   WorkspaceFormField,
-  WorkspaceFormFooter,
   WorkspaceFormGrid,
-  WorkspaceFormPanel
+  WorkspaceFormSurface,
+  WorkspaceUpsertPage
 } from "@codexsun/ui/workspace/upsert";
-import { useMarketingTransport } from "../../transport";
+import { WorkspaceSwitchCard } from "@codexsun/ui/workspace/status";
 import { campaignSchema } from "./campaign.schema";
+import { useCampaignBrandOptions } from "./campaign.hooks";
 import type { CampaignInput, CampaignRecord } from "./campaign.types";
+
+const channelOptions = [
+  { value: "website", label: "Website" },
+  { value: "email", label: "Email" },
+  { value: "facebook", label: "Facebook" },
+  { value: "instagram", label: "Instagram" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "google-ads", label: "Google Ads" },
+  { value: "google-business", label: "Google Business" },
+  { value: "youtube", label: "YouTube" },
+  { value: "threads", label: "Threads" },
+  { value: "pinterest", label: "Pinterest" },
+  { value: "x", label: "X" },
+  { value: "telegram", label: "Telegram" }
+];
+
 export function CampaignForm({
   record,
   onCancel,
@@ -32,7 +52,7 @@ export function CampaignForm({
   pending: boolean;
   error: string;
 }) {
-  const api = useMarketingTransport();
+  const brands = useCampaignBrandOptions();
   const [value, setValue] = useState<CampaignInput>({
     brandUuid: record?.brandUuid ?? "",
     name: record?.name ?? "",
@@ -41,149 +61,178 @@ export function CampaignForm({
     landingUrl: record?.landingUrl ?? "",
     status: record?.status ?? "active"
   });
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const [issues, setIssues] = useState<Record<string, string>>({});
-  const brands = useQuery({
-    queryKey: ["marketing", api.scopeKey, "brand-options"],
-    queryFn: () => api.get<{ uuid: string; name: string }[]>("/marketing/brands?limit=100")
-  });
 
-  const close = () => {
-    if (pending) return;
-    if (
-      JSON.stringify(value) !==
-        JSON.stringify({
-          brandUuid: record?.brandUuid ?? "",
-          name: record?.name ?? "",
-          objective: record?.objective ?? "",
-          channel: record?.channel ?? "website",
-          landingUrl: record?.landingUrl ?? "",
-          status: record?.status ?? "active"
-        }) &&
-      !window.confirm("Discard unsaved changes?")
-    )
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    setHasSubmitted(true);
+    const result = campaignSchema.safeParse(value);
+    if (!result.success) {
+      const nextIssues: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const field = String(issue.path[0]);
+        if (!nextIssues[field]) {
+          nextIssues[field] = issue.message;
+        }
+      }
+      setIssues(nextIssues);
       return;
-    onCancel();
+    }
+    setIssues({});
+    onSubmit(result.data);
   };
+
+  const hasErrors = hasSubmitted && (Boolean(error) || Object.keys(issues).length > 0);
+
   return (
-    <WorkspaceFormPanel title="" description="Marketing details for the current company.">
-      <form
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          const result = campaignSchema.safeParse(value);
-          if (!result.success) {
-            setIssues(
-              Object.fromEntries(
-                result.error.issues.map((issue) => [String(issue.path[0]), issue.message])
-              )
-            );
-            return;
-          }
-          setIssues({});
-          onSubmit(result.data);
-        }}
-      >
-        {error || Object.keys(issues).length ? (
-          <WorkspaceFormBanner title="Unable to save" tone="error">
-            {error || "Check the required fields."}
-          </WorkspaceFormBanner>
-        ) : null}
-        <WorkspaceFormGrid>
-          <WorkspaceFormField label="Brand" required>
-            <WorkspaceLookup
-              ariaLabel="Brand"
-              allowTextValue={false}
-              invalid={Boolean(issues.brandUuid)}
-              value={value.brandUuid}
-              options={(brands.data ?? []).map((row) => ({ value: row.uuid, label: row.name }))}
-              onValueChange={(next) => setValue({ ...value, brandUuid: next })}
-            />
-            {issues.brandUuid ? (
-              <p className="text-xs text-destructive">{issues.brandUuid}</p>
+    <WorkspaceUpsertPage
+      title={record ? "Edit Campaign" : "New Campaign"}
+      description="Configure campaign goals, acquisition channel, and tracking parameters."
+      onBack={onCancel}
+    >
+      <form noValidate onSubmit={handleSubmit}>
+        <WorkspaceFormSurface>
+          <WorkspaceFormBody>
+            {hasErrors ? (
+              <WorkspaceFormBanner title="Unable to save" tone="error">
+                {error || "Check the required fields below and try again."}
+              </WorkspaceFormBanner>
             ) : null}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Name" required={true}>
-            <Input
-              aria-label="Name"
-              value={value.name}
-              aria-invalid={Boolean(issues.name)}
-              className={issues.name ? "border-destructive" : ""}
-              onChange={(event) => setValue({ ...value, name: event.target.value })}
-            />
-            {issues.name ? <p className="text-xs text-destructive">{issues.name}</p> : null}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Objective" required={true}>
-            <Input
-              aria-label="Objective"
-              value={value.objective}
-              aria-invalid={Boolean(issues.objective)}
-              className={issues.objective ? "border-destructive" : ""}
-              onChange={(event) => setValue({ ...value, objective: event.target.value })}
-            />
-            {issues.objective ? (
-              <p className="text-xs text-destructive">{issues.objective}</p>
-            ) : null}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Channel" required>
-            <Select
-              value={value.channel}
-              onValueChange={(next) => setValue({ ...value, channel: next })}
-            >
-              <SelectTrigger aria-label="Channel">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="website">website</SelectItem>
-                <SelectItem value="facebook">facebook</SelectItem>
-                <SelectItem value="instagram">instagram</SelectItem>
-                <SelectItem value="whatsapp">whatsapp</SelectItem>
-                <SelectItem value="linkedin">linkedin</SelectItem>
-                <SelectItem value="google-ads">google-ads</SelectItem>
-                <SelectItem value="google-business">google-business</SelectItem>
-                <SelectItem value="youtube">youtube</SelectItem>
-                <SelectItem value="threads">threads</SelectItem>
-                <SelectItem value="pinterest">pinterest</SelectItem>
-                <SelectItem value="x">x</SelectItem>
-                <SelectItem value="telegram">telegram</SelectItem>
-                <SelectItem value="email">email</SelectItem>
-              </SelectContent>
-            </Select>
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Landing Url" required={false}>
-            <Input
-              aria-label="Landing Url"
-              value={value.landingUrl}
-              aria-invalid={Boolean(issues.landingUrl)}
-              className={issues.landingUrl ? "border-destructive" : ""}
-              onChange={(event) => setValue({ ...value, landingUrl: event.target.value })}
-            />
-            {issues.landingUrl ? (
-              <p className="text-xs text-destructive">{issues.landingUrl}</p>
-            ) : null}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Status">
-            <Select
-              value={value.status}
-              onValueChange={(next) =>
-                setValue({ ...value, status: next === "active" ? "active" : "inactive" })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </WorkspaceFormField>
-        </WorkspaceFormGrid>
-        <WorkspaceFormFooter
-          onCancel={close}
-          primaryLabel={record ? "Update" : "Save"}
-          primaryLoading={pending}
-        />
+
+            <WorkspaceFormGrid columns={2}>
+              <WorkspaceFormField label="Brand" required>
+                <Select
+                  value={value.brandUuid}
+                  onValueChange={(val) => {
+                    setValue((prev) => ({ ...prev, brandUuid: val }));
+                    if (issues.brandUuid) setIssues((prev) => ({ ...prev, brandUuid: "" }));
+                  }}
+                >
+                  <SelectTrigger
+                    aria-label="Brand"
+                    aria-invalid={Boolean(issues.brandUuid)}
+                    className={issues.brandUuid ? "border-destructive" : ""}
+                  >
+                    <SelectValue placeholder="Select Brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(brands.data ?? []).map((b) => (
+                      <SelectItem key={b.uuid} value={b.uuid}>
+                        {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {issues.brandUuid ? (
+                  <p className="text-xs text-destructive">{issues.brandUuid}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Campaign name" required>
+                <Input
+                  aria-label="Campaign name"
+                  value={value.name}
+                  aria-invalid={Boolean(issues.name)}
+                  className={issues.name ? "border-destructive" : ""}
+                  placeholder="e.g. Summer Outreach 2026"
+                  onChange={(event) => {
+                    setValue((prev) => ({ ...prev, name: event.target.value }));
+                    if (issues.name) setIssues((prev) => ({ ...prev, name: "" }));
+                  }}
+                />
+                {issues.name ? <p className="text-xs text-destructive">{issues.name}</p> : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Channel" required>
+                <Select
+                  value={value.channel}
+                  onValueChange={(val) => {
+                    setValue((prev) => ({ ...prev, channel: val }));
+                    if (issues.channel) setIssues((prev) => ({ ...prev, channel: "" }));
+                  }}
+                >
+                  <SelectTrigger
+                    aria-label="Channel"
+                    aria-invalid={Boolean(issues.channel)}
+                    className={issues.channel ? "border-destructive" : ""}
+                  >
+                    <SelectValue placeholder="Select channel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {channelOptions.map((ch) => (
+                      <SelectItem key={ch.value} value={ch.value}>
+                        {ch.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {issues.channel ? (
+                  <p className="text-xs text-destructive">{issues.channel}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Landing URL">
+                <Input
+                  aria-label="Landing URL"
+                  value={value.landingUrl}
+                  aria-invalid={Boolean(issues.landingUrl)}
+                  className={issues.landingUrl ? "border-destructive" : ""}
+                  placeholder="https://example.com/promo"
+                  onChange={(event) => {
+                    setValue((prev) => ({ ...prev, landingUrl: event.target.value }));
+                    if (issues.landingUrl) setIssues((prev) => ({ ...prev, landingUrl: "" }));
+                  }}
+                />
+                {issues.landingUrl ? (
+                  <p className="text-xs text-destructive">{issues.landingUrl}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <div className="md:col-span-2">
+                <WorkspaceFormField label="Objective" required>
+                  <Textarea
+                    aria-label="Objective"
+                    value={value.objective}
+                    aria-invalid={Boolean(issues.objective)}
+                    className={issues.objective ? "border-destructive" : ""}
+                    placeholder="Describe the campaign goal, target audience, and primary call to action..."
+                    rows={3}
+                    onChange={(event) => {
+                      setValue((prev) => ({ ...prev, objective: event.target.value }));
+                      if (issues.objective) setIssues((prev) => ({ ...prev, objective: "" }));
+                    }}
+                  />
+                  {issues.objective ? (
+                    <p className="text-xs text-destructive">{issues.objective}</p>
+                  ) : null}
+                </WorkspaceFormField>
+              </div>
+
+              <div className="md:col-span-2">
+                <WorkspaceFormField label="Status">
+                  <WorkspaceSwitchCard
+                    fieldLabel="Status"
+                    checked={value.status === "active"}
+                    onCheckedChange={(checked) =>
+                      setValue((prev) => ({ ...prev, status: checked ? "active" : "inactive" }))
+                    }
+                  />
+                </WorkspaceFormField>
+              </div>
+            </WorkspaceFormGrid>
+          </WorkspaceFormBody>
+
+          <WorkspaceFormActions>
+            <Button type="submit" disabled={pending}>
+              {pending ? "Saving..." : record ? "Update" : "Save"}
+            </Button>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
+              Cancel
+            </Button>
+          </WorkspaceFormActions>
+        </WorkspaceFormSurface>
       </form>
-    </WorkspaceFormPanel>
+    </WorkspaceUpsertPage>
   );
 }

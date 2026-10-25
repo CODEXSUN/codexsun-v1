@@ -14,6 +14,15 @@ export type EnquiryDeliveryState = {
 export class EnquirySyncRepository {
   constructor(private readonly database: Kysely<EnquiryDatabase>) {}
 
+  async deferDelivery(eventId: number) {
+    await this.database
+      .updateTable("crm_enquiry_sync_events")
+      .set({ correlation_id: randomUUID() })
+      .where("id", "=", eventId)
+      .where("status", "in", ["pending", "retry"])
+      .execute();
+  }
+
   async enqueueUpsert(
     input: { actorEmail: string; correlationId: string; enquiryId: number },
     transaction?: Transaction<EnquiryDatabase>

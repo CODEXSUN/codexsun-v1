@@ -1,4 +1,5 @@
 import { AppError } from "@codexsun/framework/errors";
+import { CatalogActivityService } from "../catalog-activity/index.js";
 import { ProductInformationRepository } from "./product-information.repository.js";
 import type {
   ProductInformationFilters,
@@ -9,7 +10,10 @@ import type {
 const MAX_PAGE_SIZE = 100;
 
 export class ProductInformationService {
-  constructor(private readonly repository = new ProductInformationRepository()) {}
+  constructor(
+    private readonly repository = new ProductInformationRepository(),
+    private readonly activity = new CatalogActivityService()
+  ) {}
   list(filters: ProductInformationFilters = {}) {
     return this.repository.list({
       ...filters,
@@ -20,6 +24,11 @@ export class ProductInformationService {
   find(id: number) {
     return this.repository.find(id);
   }
+  async activityFor(id: number) {
+    if (!(await this.repository.find(id)))
+      throw AppError.notFound("Product information was not found.");
+    return this.activity.list("product-information", id);
+  }
   coreProductOptions() {
     return this.repository.coreProductOptions();
   }
@@ -27,12 +36,19 @@ export class ProductInformationService {
     return this.repository.coreBrandOptions();
   }
 
-  async create(input: ProductInformationSaveInput) {
+  async create(input: ProductInformationSaveInput, actorEmail = "") {
     const value = normalize(input);
     await this.validate(value);
-    return this.repository.create(value);
+    const created = await this.repository.create(value);
+    await this.audit(
+      created?.id ?? 0,
+      "created",
+      actorEmail,
+      `Created item ${value.storefrontTitle}.`
+    );
+    return created;
   }
-  async update(id: number, input: ProductInformationUpdateInput) {
+  async update(id: number, input: ProductInformationUpdateInput, actorEmail = "") {
     const { expectedRevision, ...saveInput } = input;
     if (!(await this.repository.find(id)))
       throw AppError.notFound("Product information was not found.");
@@ -42,12 +58,26 @@ export class ProductInformationService {
     if (!updated) {
       throw AppError.conflict("This product was changed by someone else. Reload it and try again.");
     }
+    await this.audit(id, "updated", actorEmail, `Updated item ${value.storefrontTitle}.`);
     return updated;
   }
-  async archive(id: number) {
-    if (!(await this.repository.find(id)))
-      throw AppError.notFound("Product information was not found.");
-    return this.repository.archive(id);
+  async archive(id: number, actorEmail = "") {
+    const record = await this.repository.find(id);
+    if (!record) throw AppError.notFound("Product information was not found.");
+    const archived = await this.repository.archive(id);
+    await this.audit(id, "archived", actorEmail, `Archived item ${record.storefrontTitle}.`);
+    return archived;
+  }
+
+  private async audit(recordId: number, action: string, actorEmail: string, summary: string) {
+    if (!actorEmail || !recordId) return;
+    await this.activity.record({
+      action,
+      actorEmail,
+      recordId,
+      resourceType: "product-information",
+      summary
+    });
   }
 
   private async validate(input: ProductInformationSaveInput, exceptId?: number) {

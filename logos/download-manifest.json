@@ -1,0 +1,78 @@
+{
+  "downloadedAt": "2026-10-25T03:10:59.688Z",
+  "sourceContainer": "cxapp-api",
+  "files": [
+    {
+      "tenant": "altex",
+      "file": "altex/public/logo/logo-dark.svg",
+      "bytes": 2366,
+      "sha256": "4a1d1635f865346f47bb7e2e2f5c1daa2cb44634c778e61947d3aca2f3374f73"
+    },
+    {
+      "tenant": "altex",
+      "file": "altex/public/logo/logo.svg",
+      "bytes": 2366,
+      "sha256": "4a1d1635f865346f47bb7e2e2f5c1daa2cb44634c778e61947d3aca2f3374f73"
+    },
+    {
+      "tenant": "smsupvc",
+      "file": "smsupvc/public/companies/1/logo/logo-dark.svg",
+      "bytes": 28807,
+      "sha256": "eb79efa286a315b87eef8ba320b0954b3e02cf3f8a7da194a13ee6dea0dd7c0f"
+    },
+    {
+      "tenant": "smsupvc",
+      "file": "smsupvc/public/companies/1/logo/logo.svg",
+      "bytes": 28665,
+      "sha256": "9219c7b66f6699c1d2d9e0be63729b7d981d4cdd509990acc956db6aa57aa971"
+    },
+    {
+      "tenant": "sukraa",
+      "file": "sukraa/public/companies/1/logo/logo-dark.svg",
+      "bytes": 2333,
+      "sha256": "20283161790e39b225964ba43da075f3384fca18cbc7b24b4bf75187c1eaba59"
+    },
+    {
+      "tenant": "sukraa",
+      "file": "sukraa/public/companies/1/logo/logo.svg",
+      "bytes": 2333,
+      "sha256": "20283161790e39b225964ba43da075f3384fca18cbc7b24b4bf75187c1eaba59"
+    },
+    {
+      "tenant": "sukraa",
+      "file": "sukraa/public/logo/logo-dark.svg",
+      "bytes": 1849,
+      "sha256": "82fda8597e11d4ec821f021911103845dd436615fc5f32ccccdfeead5f4acecd"
+    },
+    {
+      "tenant": "sukraa",
+      "file": "sukraa/public/logo/logo.svg",
+      "bytes": 1887,
+      "sha256": "6dcd9ab3db12794b824781904dbbb955b49f681ddcbd319b6360e3db9017076c"
+    },
+    {
+      "tenant": "cottonknit",
+      "file": "cottonknit/public/companies/1/logo/logo-dark.svg",
+      "bytes": 18688,
+      "sha256": "9d60d903bc35af936c545cc0ebc348fcd6b5af5822e9354e93e82646980f6645"
+    },
+    {
+      "tenant": "cottonknit",
+      "file": "cottonknit/public/companies/1/logo/logo.svg",
+      "bytes": 18688,
+      "sha256": "9d60d903bc35af936c545cc0ebc348fcd6b5af5822e9354e93e82646980f6645"
+    },
+    {
+      "tenant": "codexsun",
+      "file": "codexsun/public/logo/logo-dark.svg",
+      "bytes": 1849,
+      "sha256": "82fda8597e11d4ec821f021911103845dd436615fc5f32ccccdfeead5f4acecd"
+    },
+    {
+      "tenant": "codexsun",
+      "file": "codexsun/public/logo/logo.svg",
+      "bytes": 1887,
+      "sha256": "6dcd9ab3db12794b824781904dbbb955b49f681ddcbd319b6360e3db9017076c"
+    }
+  ]
+}

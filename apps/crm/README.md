@@ -1,5 +1,24 @@
 # CRM
 
+## Tenant Frappe switch
+
+CRM works without Frappe. The tenant's enabled Frappe app, enabled saved connection,
+and Live sync switch control integration visibility. `GET /crm/frappe-sync/capabilities`
+returns only `{ enabled }` through authenticated tenant context. It exposes no connection secrets.
+Web queries scope this flag by tenant ID and database. They refresh it every five seconds.
+Disabled or unknown flags hide sync columns, column choices, detail tabs, errors, and verification controls.
+This applies to contacts, enquiries, call logs, SOPs, duties, reporting, and the local Task notice.
+Tasks remain local even when sync is enabled.
+
+The switch gates immediate dispatch, scheduled dispatch, manual transfers, and queued workers.
+Outbound work also requires bidirectional mode, an unpaused schedule, and a verified connection.
+Automatic per-module switches and record permissions still apply.
+Local records, source links, and durable change events remain stored while sync is off.
+Re-enabling sync allows eligible pending events to resume. Deferred deliveries receive a fresh
+queue generation without changing their stable record or comment identity.
+Connection setup and verification remain available while live sync is off.
+This change adds no migration and does not modify Frappe records.
+
 Frappe sync errors remain visible on contacts, enquiries, duties, and duty reports while retries
 are pending. Web views refresh these states every second. Tasks remain local and show
 **Not configured**. Supported contact-mobile and enquiry exports dispatch after the local save;

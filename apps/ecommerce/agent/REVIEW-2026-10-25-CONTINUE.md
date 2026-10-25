@@ -1,0 +1,60 @@
+# Ecommerce review and continuation — 2026-10-25
+
+Scope: current source, focused regression tests, provider proposals and task evidence.
+This review does not rerun database E2E, browser tests, migrations, production builds or live providers.
+
+## Current findings disposition
+
+| Finding | Current review result                                                                                                                     | Remaining verification                                                                                                    |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| N01     | Source now uses one local projection without provenance partition. Mixed-source and zero-remote tests pass.                               | Disposable A12 and full published-feed consistency must be independently reproduced on the integrated revision.           |
+| N02     | Sorted JSON option pairs and SHA-256 identity replace slot-dependent delimiters. Reordering, delimiter and conflict tests pass.           | Existing-schema migration, duplicate preflight, interruption/retry and concurrent database writes.                        |
+| N03     | Signature is bounded to 64 hex characters. Maximum Unicode payload tests pass.                                                            | Existing-schema upgrade and route-to-database maximum payload acceptance on the current revision.                         |
+| N04     | Shared WorkspacePagination, totals <=100 hidden, 20/50/100 options, page reset/clamp and backend filters/counts exist. Helper tests pass. | Independent A13 and browser reruns. Complete Show/App Header/activity/validation plus 768/320 acceptance remains.         |
+| N05     | Provider proposals now use tenant-local integer IDs, CHAR(8) UUIDs and VARCHAR status domains.                                            | Owner acceptance, implementation and provider/consumer regressions. Proposals do not create portal or finance capability. |
+| N06     | TASK and EXECUTION have current repair sections and explicit pending review.                                                              | Refresh the date, actual revision and exact evidence. Preserve historical entries and avoid blanket acceptance.           |
+
+Fresh checks: all discovered Ecommerce API `*.test.ts` files passed, 41/41, exit 0.
+API typecheck, web typecheck and Ecommerce module boundaries passed, exit 0.
+Producer logs record A11–A13 and fixture/browser checks, but those are historical evidence rather than new reviewer runs.
+No new N01–N04 regression was identified in these checks. Full Ecommerce readiness is not established.
+
+## Remaining work
+
+- Independent integrated review and precise EC-R/N01–N06 acceptance, including fresh/existing-schema compatibility evidence.
+- EC-T03: attributes, specifications, collections and complete staff acceptance.
+- EC-T04: gallery, asset picker, optimization, upload/security/deletion behavior and storage migration acceptance.
+- EC-T05: complete shared List/Show/Upsert, App Header actions, activity, validation, responsive and accessibility checks.
+- EC-T06: all backend-driven homepage sections, discovery, legal/navigation and raw-HTML SEO.
+- Restricted customer/vendor identity and portal contracts, including tenant/company/customer/vendor denial tests.
+- Pricing/tax/Billing idempotency and finance reversal contracts, without duplicate accounting behavior.
+- Ecommerce stock allocation, durable cart, checkout, orders, payments/reconciliation, fulfillment and transport tracking.
+- Cancellation, rejection, returns, exchanges, refunds, vendor suborders/settlements and approved industry features.
+- Durable queue/outbox/inbox, authorized CRM/Mail/Chat integration, reports and full local recovery/E2E acceptance.
+- Frappe expansion remains deferred until local acceptance. Technical owner-contract work should proceed while genuine business decisions remain explicit.
+
+## Supervisor continuation prompt
+
+```text
+Continue as the single Ecommerce supervisor in D:\workspace\codexsun, using native subagents and independent review.
+Read apps/ecommerce/agent/REVIEW-2026-10-25-CONTINUE.md, current TASK.md, EXECUTION.md, E2E-PLAN.md, REPAIR-EVIDENCE-2026-10-24.md, contracts/ and task packets.
+Read AGENTS.md and the current Fast Work Default in assist/AGENT-GUIDE.md and assist/governance/rules.md. The latest human AGENTS instructions replace older checklists.
+For focused fixes inspect source/direct callers/public contracts and run a relevant targeted check. Full component reading and broader gates apply to this audit and to new modules, contracts, data, permissions, tenancy and cross-owner changes.
+
+N01–N04 now have source fixes and passing regression tests. A fresh independent source/test review passed 41 Ecommerce API unit tests, API/web typechecks and boundaries. Do not redo repaired implementation blindly.
+N05 is a reconciled proposal, not an implemented integration. N06 current sections exist, but independent integrated acceptance remains pending.
+Recheck the current revision and working tree. Assign separate reviewers to verify the repairs and run disposable A11/A12/A13, existing-schema migration cases and required staff/public browser acceptance. Repair any actual failures, then record precise acceptance and unrun limits.
+
+Continue remaining EC-T03 through EC-T16 rather than stopping at review or another plan. Finish catalog attributes/specifications/collections, media/gallery/asset picker, shared staff List/Show/Upsert and all home sections/SEO. Complete portal/provider contracts, stock allocation, checkout/orders, payments/Billing reconciliation, shipment tracking, returns/refunds, vendor workflows and service integration in dependency order.
+Keep one supervisor, disjoint worker path leases, independent non-producer review and serialized integration. Reserve manifests/lockfile, exports, routing/styles, migration registration and status ledgers for the supervisor. Preserve unrelated active work.
+Use a continuous implement-test-review-repair-integrate loop until every dependency-ready local task is accepted. A worker summary or green build alone is insufficient. Do not weaken tests, authorization or safety guards.
+
+Reuse Core product/contact identity, Billing financial ownership, Platform/Framework infrastructure, UI primitives and CRM/Mail/Chat public contracts. No duplicate masters, accounting, authentication, messaging or queue services. Apply concrete module-owned patterns and the code-style skill.
+Document existing behavior and impact before compatible cross-owner corrections. Resolve technical choices autonomously within authorized scope. Escalate only real business/security decisions with concrete options, and continue independent work.
+Use root npm, one dependency tree/lockfile and root dist. Verify actual tool/model identities without invented workers. Protect tenant/company/customer/vendor scope across lists/counts/files/exports/jobs/caches/subscriptions.
+Use disposable databases/storage, meaningful regression tests, exact money/quantity/concurrency/idempotency checks, fresh and existing-schema migrations, and live browser acceptance at 1440/768/390/320. Check raw HTML SEO and real fixture page identity. Keep optional provider and production evidence separate.
+Run appropriate formatting, lint, typechecks, boundaries, builds, dependencies and documentation checks for each change's scope. Update evidence only when the task changes a contract/architecture/ownership/operations/documentation or audit evidence.
+
+No deployment, Git push, destructive live-data changes, real payments or external customer messages. Keep Frappe expansion deferred until local E2E acceptance. Never expose secrets.
+Finish with completed task IDs, exact tests/exits, review results, migrations and specific remaining blockers. Start with independent repair acceptance and parallel prerequisite-ready EC-T03/04/05 work.
+```

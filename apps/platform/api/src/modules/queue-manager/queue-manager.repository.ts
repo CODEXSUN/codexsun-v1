@@ -156,6 +156,25 @@ export class QueueManagerRepository {
     return row ? toQueueJob(row) : null;
   }
 
+  async hold(id: number, retryAt: string, reason: string | null, refundAttempt = false) {
+    await getPlatformDatabase()
+      .updateTable("queue_jobs")
+      .set({
+        status: "pending",
+        available_at: new Date(retryAt),
+        started_at: null,
+        completed_at: null,
+        error_message: null,
+        updated_at: new Date(),
+        ...(refundAttempt ? { attempts: sql<number>`GREATEST(0, attempts - 1)` } : {}),
+        result_json: JSON.stringify({ held: true, holdReason: reason, resumeAt: retryAt })
+      })
+      .where("id", "=", id)
+      .where("status", "in", refundAttempt ? ["running"] : ["pending", "failed"])
+      .execute();
+    return this.find(id);
+  }
+
   async markRunning(id: number) {
     const claim = await getPlatformDatabase()
       .updateTable("queue_jobs")

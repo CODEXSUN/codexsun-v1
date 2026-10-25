@@ -6,7 +6,7 @@ set -euo pipefail
 # This file is both a first-initialization hook and a setup-time reconciliation.
 apply_grants() {
   if declare -F docker_process_sql >/dev/null 2>&1; then
-    docker_process_sql
+    docker_process_sql --database=mysql
   else
     mariadb --protocol=socket -uroot -p"${MARIADB_ROOT_PASSWORD}"
   fi

@@ -38,6 +38,10 @@ export function normalizeVariantOptionPart(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function unicodeLength(value: string): number {
+  return Array.from(value).length;
+}
+
 export function canonicalOptionPairs(input: ProductVariantOptionColumns): CanonicalOptionPair[] {
   const pairs: [string, string][] = [];
   const names = new Set<string>();
@@ -48,12 +52,12 @@ export function canonicalOptionPairs(input: ProductVariantOptionColumns): Canoni
     if (!name || !value) {
       throw AppError.validation("Each product option needs both a name and a value.");
     }
-    if (name.length > PRODUCT_VARIANT_OPTION_NAME_MAX_LENGTH) {
+    if (unicodeLength(name) > PRODUCT_VARIANT_OPTION_NAME_MAX_LENGTH) {
       throw AppError.validation(
         `Option names must be at most ${PRODUCT_VARIANT_OPTION_NAME_MAX_LENGTH} characters.`
       );
     }
-    if (value.length > PRODUCT_VARIANT_OPTION_VALUE_MAX_LENGTH) {
+    if (unicodeLength(value) > PRODUCT_VARIANT_OPTION_VALUE_MAX_LENGTH) {
       throw AppError.validation(
         `Option values must be at most ${PRODUCT_VARIANT_OPTION_VALUE_MAX_LENGTH} characters.`
       );

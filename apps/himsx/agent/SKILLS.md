@@ -1,5 +1,30 @@
 # HIMSX working skills
 
+## Front Office handoff rules
+
+The active assignment is the supplied Front Office document, analyzed in [REQUIREMENTS-ANALYSIS](REQUIREMENTS-ANALYSIS.md).
+Use [SUPERVISOR-PROMPT](SUPERVISOR-PROMPT.md) and [WORKER-TASKS](WORKER-TASKS.md) for supervisor/subagent execution.
+The planning task does not establish runtime completion or an independent audit.
+Read the active Front Office section of PLAN before the retained foundation guidance.
+
+- Reuse shared owner records through public contracts. Hospital-only fields belong in linked `himsx_<module>` extension tables.
+- Core keeps generic contact identity, locations, and companies. Never add patient fields to Core tables by default.
+- Platform keeps users, sessions, roles, grant authority, role copy, and shared access reports.
+- HRMS keeps existing departments/designations. Missing public exports need owner-side tasks, not duplicate masters.
+- Billing keeps all financial authority. Freeze the transaction-aware integration before registration payment code.
+- CRM keeps IP enquiry workflow data. Extend its record through `himsx_enquiries` without a second entry workflow.
+- Clinical treatment, beds, diagnostics, pharmacy, payroll, and native-mobile work remain outside this Front Office assignment.
+- Match current CRM Enquiry list/Show/upsert through `@codexsun/ui` and managed theme tokens.
+- Enforce sensitive patient access on generic owner paths, reports, exports, print, and lookups.
+- Keep hospital history and sensitive audit tenant-local. Use explicit UTC instants and hospital-local calendar rules.
+- Use domain transitions for registrations/admissions. Never apply generic force-delete behavior to posted hospital transactions.
+- Do not interpret hospital Super User as Platform super-admin.
+- Resolve hospital-specific MHC and policy decisions explicitly. Do not invent definitions or legal requirements.
+- ABHA needs an approved integration contract and real provider acceptance. Redirects and mocks are insufficient.
+- Use exact worker leases, independent review, tracked repairs, and current evidence before acceptance.
+- Keep unavailable inputs open while continuing independent work. No fabricated readiness, records, or worker identities.
+- This handoff permits local work only. Production operations, real patient exchange, provider enrollment, commits, and deployment need separate authorization.
+
 ## Apply this guidance
 
 Use this file when planning, implementing, debugging, or reviewing HIMSX.

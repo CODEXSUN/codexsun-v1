@@ -1,3 +1,4 @@
+import { useCrmFrappeSyncEnabled } from "../frappe-sync/frappe-sync.hooks";
 import { useDeferredValue, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
@@ -14,6 +15,7 @@ import type { CallLogFilters } from "./call-log.types";
 import { getFrappeRecordStatuses } from "../frappe-sync/frappe-sync.indicator";
 
 export function CallLogWorkspace() {
+  const frappeSyncEnabled = useCrmFrappeSyncEnabled();
   const client = useQueryClient();
   const [filters, setFilters] = useState<CallLogFilters>({
     page: 1,
@@ -29,7 +31,7 @@ export function CallLogWorkspace() {
   const syncStatuses = useQuery({
     queryKey: ["crm", "frappe-sync", "call-logs", callLogIds],
     queryFn: () => getFrappeRecordStatuses("call-logs", callLogIds),
-    enabled: callLogIds.length > 0 && visibleColumns.frappeSync !== false,
+    enabled: frappeSyncEnabled && callLogIds.length > 0 && visibleColumns.frappeSync !== false,
     staleTime: 15_000
   });
   const options = useCallLogOptions();
@@ -56,12 +58,14 @@ export function CallLogWorkspace() {
           { id: "all", label: "All call types" },
           ...(options.data?.types ?? []).map((type) => ({ id: type, label: type }))
         ]}
-        columnOptions={callLogColumns.map((column) => ({
-          ...column,
-          checked: visibleColumns[column.id] !== false,
-          onCheckedChange: (checked: boolean) =>
-            setVisibleColumns((current) => ({ ...current, [column.id]: checked }))
-        }))}
+        columnOptions={callLogColumns
+          .filter((column) => column.id !== "frappeSync" || frappeSyncEnabled)
+          .map((column) => ({
+            ...column,
+            checked: visibleColumns[column.id] !== false,
+            onCheckedChange: (checked: boolean) =>
+              setVisibleColumns((current) => ({ ...current, [column.id]: checked }))
+          }))}
         onShowAllColumns={() => setVisibleColumns({})}
         toolbarAction={
           <div className="flex items-center gap-2">
@@ -98,7 +102,10 @@ export function CallLogWorkspace() {
       <CallLogList
         records={query.data?.items ?? []}
         loading={query.isLoading}
-        visibleColumns={visibleColumns}
+        visibleColumns={{
+          ...visibleColumns,
+          frappeSync: frappeSyncEnabled && visibleColumns.frappeSync !== false
+        }}
         frappeSyncStatuses={syncStatuses.data ?? {}}
       />
       <div className="flex items-center justify-end gap-3 text-sm">

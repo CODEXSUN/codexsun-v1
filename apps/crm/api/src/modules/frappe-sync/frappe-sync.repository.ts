@@ -3,6 +3,14 @@ import type { CrmFrappeSyncDatabase } from "./frappe-sync.migration.js";
 import type { CrmFrappeSyncType } from "./frappe-sync.types.js";
 export class CrmFrappeSyncRepository {
   constructor(private readonly db: Kysely<CrmFrappeSyncDatabase>) {}
+  async deferDispatch(id: number) {
+    await this.db
+      .updateTable("crm_frappe_sync_queue")
+      .set({ dispatch_revision: sql`dispatch_revision + 1` })
+      .where("id", "=", id)
+      .where("status", "=", "pending")
+      .execute();
+  }
   async recordDispatchError(id: number, message: string) {
     await this.db
       .updateTable("crm_frappe_sync_queue")

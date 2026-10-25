@@ -85,13 +85,24 @@ export function QueueManagementList({
                     <td className="px-4 py-3">
                       <div className="font-medium">{job.jobName}</div>
                       <div className="text-muted-foreground">{job.sourceModule}</div>
+                      {job.status === "pending" && job.result.held === true ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Waiting: {String(job.result.holdReason ?? "Frappe is unavailable")}
+                          <br />
+                          Next check: {formatDateTime(job.availableAt)}
+                        </p>
+                      ) : null}
                       {job.errorMessage ? (
                         <div className="mt-1 text-xs text-destructive">{job.errorMessage}</div>
                       ) : null}
                     </td>
                     <td className="px-4 py-3">{job.queueName}</td>
                     <td className="px-4 py-3">
-                      <StatusBadge tone={statusTone(job.status)}>{job.status}</StatusBadge>
+                      <StatusBadge tone={statusTone(job.status)}>
+                        {job.status === "pending" && job.result.held === true
+                          ? "waiting"
+                          : job.status}
+                      </StatusBadge>
                     </td>
                     <td className="px-4 py-3">
                       {job.attempts}/{job.maxAttempts}

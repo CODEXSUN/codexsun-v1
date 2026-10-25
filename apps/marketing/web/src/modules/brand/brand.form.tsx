@@ -1,21 +1,19 @@
 import { useState } from "react";
+import { Button } from "@codexsun/ui/components/button";
 import { Input } from "@codexsun/ui/components/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@codexsun/ui/components/select";
-import {
+  WorkspaceFormActions,
   WorkspaceFormBanner,
+  WorkspaceFormBody,
   WorkspaceFormField,
-  WorkspaceFormFooter,
   WorkspaceFormGrid,
-  WorkspaceFormPanel
+  WorkspaceFormSurface,
+  WorkspaceUpsertPage
 } from "@codexsun/ui/workspace/upsert";
+import { WorkspaceSwitchCard } from "@codexsun/ui/workspace/status";
 import { brandSchema } from "./brand.schema";
 import type { BrandInput, BrandRecord } from "./brand.types";
+
 export function BrandForm({
   record,
   onCancel,
@@ -35,101 +33,117 @@ export function BrandForm({
     website: record?.website ?? "",
     status: record?.status ?? "active"
   });
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const [issues, setIssues] = useState<Record<string, string>>({});
 
-  const close = () => {
-    if (pending) return;
-    if (
-      JSON.stringify(value) !==
-        JSON.stringify({
-          name: record?.name ?? "",
-          timezone: record?.timezone ?? "Asia/Kolkata",
-          website: record?.website ?? "",
-          status: record?.status ?? "active"
-        }) &&
-      !window.confirm("Discard unsaved changes?")
-    )
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    setHasSubmitted(true);
+    const result = brandSchema.safeParse(value);
+    if (!result.success) {
+      const nextIssues: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const field = String(issue.path[0]);
+        if (!nextIssues[field]) {
+          nextIssues[field] = issue.message;
+        }
+      }
+      setIssues(nextIssues);
       return;
-    onCancel();
+    }
+    setIssues({});
+    onSubmit(result.data);
   };
+
+  const hasErrors = hasSubmitted && (Boolean(error) || Object.keys(issues).length > 0);
+
   return (
-    <WorkspaceFormPanel title="" description="Marketing details for the current company.">
-      <form
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          const result = brandSchema.safeParse(value);
-          if (!result.success) {
-            setIssues(
-              Object.fromEntries(
-                result.error.issues.map((issue) => [String(issue.path[0]), issue.message])
-              )
-            );
-            return;
-          }
-          setIssues({});
-          onSubmit(result.data);
-        }}
-      >
-        {error || Object.keys(issues).length ? (
-          <WorkspaceFormBanner title="Unable to save" tone="error">
-            {error || "Check the required fields."}
-          </WorkspaceFormBanner>
-        ) : null}
-        <WorkspaceFormGrid>
-          <WorkspaceFormField label="Name" required={true}>
-            <Input
-              aria-label="Name"
-              value={value.name}
-              aria-invalid={Boolean(issues.name)}
-              className={issues.name ? "border-destructive" : ""}
-              onChange={(event) => setValue({ ...value, name: event.target.value })}
-            />
-            {issues.name ? <p className="text-xs text-destructive">{issues.name}</p> : null}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Timezone" required={true}>
-            <Input
-              aria-label="Timezone"
-              value={value.timezone}
-              aria-invalid={Boolean(issues.timezone)}
-              className={issues.timezone ? "border-destructive" : ""}
-              onChange={(event) => setValue({ ...value, timezone: event.target.value })}
-            />
-            {issues.timezone ? <p className="text-xs text-destructive">{issues.timezone}</p> : null}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Website" required={false}>
-            <Input
-              aria-label="Website"
-              value={value.website}
-              aria-invalid={Boolean(issues.website)}
-              className={issues.website ? "border-destructive" : ""}
-              onChange={(event) => setValue({ ...value, website: event.target.value })}
-            />
-            {issues.website ? <p className="text-xs text-destructive">{issues.website}</p> : null}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Status">
-            <Select
-              value={value.status}
-              onValueChange={(next) =>
-                setValue({ ...value, status: next === "active" ? "active" : "inactive" })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </WorkspaceFormField>
-        </WorkspaceFormGrid>
-        <WorkspaceFormFooter
-          onCancel={close}
-          primaryLabel={record ? "Update" : "Save"}
-          primaryLoading={pending}
-        />
+    <WorkspaceUpsertPage
+      title={record ? "Edit Brand" : "New Brand"}
+      description="Manage brand details, timezone, and online presence."
+      onBack={onCancel}
+    >
+      <form noValidate onSubmit={handleSubmit}>
+        <WorkspaceFormSurface>
+          <WorkspaceFormBody>
+            {hasErrors ? (
+              <WorkspaceFormBanner title="Unable to save" tone="error">
+                {error || "Check the required fields below and try again."}
+              </WorkspaceFormBanner>
+            ) : null}
+
+            <WorkspaceFormGrid columns={2}>
+              <WorkspaceFormField label="Brand name" required>
+                <Input
+                  aria-label="Brand name"
+                  value={value.name}
+                  aria-invalid={Boolean(issues.name)}
+                  className={issues.name ? "border-destructive" : ""}
+                  placeholder="e.g. Acme Corp"
+                  onChange={(event) => {
+                    setValue((prev) => ({ ...prev, name: event.target.value }));
+                    if (issues.name) setIssues((prev) => ({ ...prev, name: "" }));
+                  }}
+                />
+                {issues.name ? <p className="text-xs text-destructive">{issues.name}</p> : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Timezone" required>
+                <Input
+                  aria-label="Timezone"
+                  value={value.timezone}
+                  aria-invalid={Boolean(issues.timezone)}
+                  className={issues.timezone ? "border-destructive" : ""}
+                  placeholder="e.g. Asia/Kolkata or UTC"
+                  onChange={(event) => {
+                    setValue((prev) => ({ ...prev, timezone: event.target.value }));
+                    if (issues.timezone) setIssues((prev) => ({ ...prev, timezone: "" }));
+                  }}
+                />
+                {issues.timezone ? (
+                  <p className="text-xs text-destructive">{issues.timezone}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Website URL">
+                <Input
+                  aria-label="Website URL"
+                  value={value.website}
+                  aria-invalid={Boolean(issues.website)}
+                  className={issues.website ? "border-destructive" : ""}
+                  placeholder="https://example.com"
+                  onChange={(event) => {
+                    setValue((prev) => ({ ...prev, website: event.target.value }));
+                    if (issues.website) setIssues((prev) => ({ ...prev, website: "" }));
+                  }}
+                />
+                {issues.website ? (
+                  <p className="text-xs text-destructive">{issues.website}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Status">
+                <WorkspaceSwitchCard
+                  fieldLabel="Status"
+                  checked={value.status === "active"}
+                  onCheckedChange={(checked) =>
+                    setValue((prev) => ({ ...prev, status: checked ? "active" : "inactive" }))
+                  }
+                />
+              </WorkspaceFormField>
+            </WorkspaceFormGrid>
+          </WorkspaceFormBody>
+
+          <WorkspaceFormActions>
+            <Button type="submit" disabled={pending}>
+              {pending ? "Saving..." : record ? "Update" : "Save"}
+            </Button>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
+              Cancel
+            </Button>
+          </WorkspaceFormActions>
+        </WorkspaceFormSurface>
       </form>
-    </WorkspaceFormPanel>
+    </WorkspaceUpsertPage>
   );
 }

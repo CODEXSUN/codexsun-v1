@@ -10,7 +10,13 @@ const settingsSchema = z.object({
   direction: z.enum(["inbound", "bidirectional"]),
   inboundBaseUrl: z.string().nullable(),
   inboundCheckpointAt: z.string().nullable(),
-  scheduleMinutes: z.union([z.literal(1), z.literal(5), z.literal(15), z.literal(30), z.literal(60)]),
+  scheduleMinutes: z.union([
+    z.literal(1),
+    z.literal(5),
+    z.literal(15),
+    z.literal(30),
+    z.literal(60)
+  ]),
   modules: z
     .object({
       contacts: z.boolean(),

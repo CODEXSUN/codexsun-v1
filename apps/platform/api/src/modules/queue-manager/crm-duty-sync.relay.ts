@@ -1,3 +1,4 @@
+import { canDispatchCrmFrappeSync } from "../../crm-frappe-sync-access.js";
 import { sql, type Kysely } from "kysely";
 import {
   crmDutySyncIdempotencyKey,
@@ -40,6 +41,7 @@ export function startCrmDutySyncRelay(queue: QueueManagerService) {
             .where("id", "=", 1)
             .executeTakeFirst();
           if (!connection?.enabled || connection.verification_status !== "verified") continue;
+          if (!(await canDispatchCrmFrappeSync(getTenantDatabase(tenant)))) continue;
           const live = await new FrappeLiveSyncService(database).settings();
           const contactsEnabled =
             live.enabled &&

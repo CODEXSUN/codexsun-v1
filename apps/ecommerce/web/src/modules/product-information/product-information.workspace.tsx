@@ -12,6 +12,7 @@ import { WorkspacePagination, buildShowingLabel } from "@codexsun/ui/workspace";
 import { WorkspaceFilters } from "@codexsun/ui/workspace/filters";
 import { WorkspacePage } from "@codexsun/ui/workspace/page";
 import { ProductInformationForm } from "./product-information.form";
+import { ProductInformationShow } from "./product-information.show";
 import {
   useCoreBrandOptions,
   useCoreProductOptions,
@@ -63,6 +64,10 @@ export function ProductInformationWorkspace({ onOpenAi }: { onOpenAi: (draft: st
     query.data?.items ?? [],
     (record) => String(record.id)
   );
+  const [viewingId, setViewingId] = useWorkspaceQueryValue("view", "");
+  const viewing = viewingId
+    ? (query.data?.items ?? []).find((record) => String(record.id) === viewingId)
+    : undefined;
 
   useEffect(() => {
     if (query.data?.page !== undefined && query.data.page !== page) {
@@ -108,6 +113,20 @@ export function ProductInformationWorkspace({ onOpenAi }: { onOpenAi: (draft: st
         onSubmit={(payload) => save.mutate(payload)}
       />
     );
+  if (viewing)
+    return (
+      <ProductInformationShow
+        loading={archive.isPending}
+        record={viewing}
+        onArchive={(record) => archive.mutate(record)}
+        onBack={() => setViewingId("")}
+        onEdit={(record) => {
+          setViewingId("");
+          setEditing(record);
+        }}
+      />
+    );
+  if (viewingId) return <MissingRecord title="Item" onBack={() => setViewingId("")} />;
   return (
     <WorkspacePage
       variant="list"
@@ -154,6 +173,7 @@ export function ProductInformationWorkspace({ onOpenAi }: { onOpenAi: (draft: st
         records={records}
         onEdit={setEditing}
         onArchive={(record) => archive.mutate(record)}
+        onView={(record) => setViewingId(String(record.id))}
       />
       {total > 100 ? (
         <WorkspacePagination
@@ -173,6 +193,20 @@ export function ProductInformationWorkspace({ onOpenAi }: { onOpenAi: (draft: st
           }}
         />
       ) : null}
+    </WorkspacePage>
+  );
+}
+
+function MissingRecord({ onBack, title }: { onBack: () => void; title: string }) {
+  return (
+    <WorkspacePage
+      title={title}
+      description="This record is not available in the current list."
+      onBack={onBack}
+    >
+      <p className="text-sm text-muted-foreground">
+        Clear filters or reload the list, then try again.
+      </p>
     </WorkspacePage>
   );
 }

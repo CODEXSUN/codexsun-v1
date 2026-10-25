@@ -1,0 +1,109 @@
+name: codexsun
+
+x-build: &build
+  context: ../..
+  dockerfile: .container/codexsun-v1/Dockerfile
+  args:
+    NODE_RUNTIME_VERSION: ${NODE_RUNTIME_VERSION:?required}
+    NPM_RUNTIME_VERSION: ${NPM_RUNTIME_VERSION:?required}
+    NGINX_BASE_IMAGE: ${NGINX_BASE_IMAGE:?required}
+    PLATFORM_API_PORT: ${PLATFORM_API_PORT:?required}
+    CODEXSUN_VERSION: ${CODEXSUN_VERSION:?required}
+    CODEXSUN_REVISION: ${CODEXSUN_REVISION:-unknown}
+
+x-runtime: &runtime
+  restart: unless-stopped
+  networks: [runtime]
+
+services:
+  codexsun-api:
+    <<: *runtime
+    build:
+      <<: *build
+      target: api
+    image: ${CODEXSUN_IMAGE_REGISTRY:-codexsun}/api:${CODEXSUN_VERSION:?required}
+    container_name: codexsun-api
+    env_file: ../deploy.env
+    environment:
+      CODEXSUN_DB_FRESH_ON_START: "0"
+      CODEXSUN_ALLOW_PRODUCTION_DB_RESET: "0"
+      CODEXSUN_ALLOW_LIVE_RESTORE: "0"
+      ENABLE_DEFAULT_TENANT_SEED: "0"
+    volumes: [application-data:/storage]
+    ports:
+      - "127.0.0.1:${PLATFORM_API_PORT}:${PLATFORM_API_PORT}"
+
+  codexsun-web:
+    <<: *runtime
+    build:
+      <<: *build
+      target: web
+    image: ${CODEXSUN_IMAGE_REGISTRY:-codexsun}/web:${CODEXSUN_VERSION:?required}
+    container_name: codexsun-web
+    environment:
+      PLATFORM_API_PORT: ${PLATFORM_API_PORT:?required}
+    depends_on:
+      codexsun-api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${PLATFORM_WEB_PORT:?required}:80"
+
+  codexsun-shop:
+    <<: *runtime
+    build:
+      <<: *build
+      target: shop
+    image: ${CODEXSUN_IMAGE_REGISTRY:-codexsun}/shop:${CODEXSUN_VERSION:?required}
+    container_name: codexsun-shop
+    environment:
+      PLATFORM_API_PORT: ${PLATFORM_API_PORT:?required}
+    depends_on:
+      codexsun-api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${CODEXSUN_SHOP_PORT:?required}:80"
+
+  codexsun-worker:
+    <<: *runtime
+    profiles: [realtime]
+    build:
+      <<: *build
+      target: worker
+    image: ${CODEXSUN_IMAGE_REGISTRY:-codexsun}/worker:${CODEXSUN_VERSION:?required}
+    container_name: codexsun-worker
+    environment:
+      NODE_ENV: production
+      CODEXSUN_REDIS_URL: ${CODEXSUN_REDIS_URL:-}
+      CODEXSUN_WORKER_CONTROL_TOKEN: ${CODEXSUN_WORKER_CONTROL_TOKEN:-}
+      CODEXSUN_WORKER_QUEUE_PREFIX: ${CODEXSUN_WORKER_QUEUE_PREFIX:-codexsun-worker}
+      CODEXSUN_WORKER_PORT: ${CODEXSUN_WORKER_PORT:-17040}
+    ports:
+      - "127.0.0.1:${CODEXSUN_WORKER_PORT:-17040}:${CODEXSUN_WORKER_PORT:-17040}"
+
+  codexsun-chatb:
+    <<: *runtime
+    profiles: [realtime]
+    build:
+      <<: *build
+      target: chatb
+    image: ${CODEXSUN_IMAGE_REGISTRY:-codexsun}/chatb:${CODEXSUN_VERSION:?required}
+    container_name: codexsun-chatb
+    environment:
+      NODE_ENV: production
+      CODEXSUN_CHATB_PORT: ${CODEXSUN_CHATB_PORT:-17031}
+      CODEXSUN_CHATB_UPSTREAM_URL: ${CODEXSUN_CHATB_UPSTREAM_URL:-ws://codexsun-api:${PLATFORM_API_PORT}}
+    depends_on:
+      codexsun-api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${CODEXSUN_CHATB_PORT:-17031}:${CODEXSUN_CHATB_PORT:-17031}"
+
+volumes:
+  application-data:
+    external: true
+    name: ${CODEXSUN_DATA_VOLUME:?required}
+
+networks:
+  runtime:
+    external: true
+    name: ${CODEXSUN_DOCKER_NETWORK:?required}

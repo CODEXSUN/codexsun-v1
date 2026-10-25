@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/billing-web",
-  "version": "1.1.62",
+  "version": "1.1.64",
   "private": true,
   "type": "module",
   "exports": {
@@ -14,6 +14,7 @@
     "./modules/reports": "./src/modules/reports/index.ts",
     "./modules/receipt": "./src/modules/receipt/index.ts",
     "./modules/sales": "./src/modules/sales/index.ts",
+    "./modules/opening-balance": "./src/modules/opening-balance/index.ts",
     "./modules/settings/services": "./src/modules/settings/settings.services.ts"
   },
   "scripts": {
@@ -22,9 +23,9 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/core-web": "^1.1.62",
-    "@codexsun/mail-web": "^1.1.62",
-    "@codexsun/ui": "^1.1.62",
+    "@codexsun/core-web": "^1.1.64",
+    "@codexsun/mail-web": "^1.1.64",
+    "@codexsun/ui": "^1.1.64",
     "@tanstack/react-query": "^5.104.1",
     "@tanstack/react-router": "^1.170.41",
     "lucide-react": "^1.52.0",

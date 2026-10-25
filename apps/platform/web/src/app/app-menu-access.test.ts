@@ -60,6 +60,7 @@ test("Frappe navigation groups import, export, and connection pages", () => {
     [
       "Live sync",
       "Live sync queue",
+      "Server availability",
       "Frappe connection",
       "Frappe users",
       "User mapping",
@@ -72,7 +73,7 @@ test("Frappe navigation groups import, export, and connection pages", () => {
   );
   menu[2]?.items?.[1]?.onSelect?.();
   menu[3]?.items?.[1]?.onSelect?.();
-  menu[3]?.items?.[2]?.onSelect?.();
+  menu[3]?.items?.[3]?.onSelect?.();
   assert.deepEqual(selected, [
     "frappe.export.enquiries",
     "frappe.live-sync-queue",

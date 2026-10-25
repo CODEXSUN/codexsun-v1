@@ -6,6 +6,7 @@ export type ConnectionInput = {
   externalAccountId: string;
   status: "active" | "inactive";
 };
+
 export type ConnectionRecord = ConnectionInput & {
   revision: number;
   uuid: string;
@@ -14,4 +15,13 @@ export type ConnectionRecord = ConnectionInput & {
   updatedBy: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type ConnectionColumnFilters = {
+  name?: string | undefined;
+  brandUuid?: string | undefined;
+  provider?: string | undefined;
+  externalAccountId?: string | undefined;
+  updatedBy?: string | undefined;
+  status?: string | undefined;
 };

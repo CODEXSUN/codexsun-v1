@@ -1,0 +1,5 @@
+*
+!Dockerfile
+!supervisord.conf
+!init_frappe.py
+!healthcheck.py

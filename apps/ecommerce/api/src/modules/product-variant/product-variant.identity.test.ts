@@ -78,12 +78,12 @@ test("delimiter-bearing values encoded with JSON do not collide", () => {
 
 test("canonical signatures are bounded for Unicode maximum payloads", () => {
   const signature = canonicalOptionSignatureFor({
-    option1Name: "Ş".repeat(80),
-    option1Value: "色".repeat(120),
-    option2Name: `${"名".repeat(79)}1`,
-    option2Value: `${"値".repeat(119)}1`,
-    option3Name: `${"名".repeat(79)}2`,
-    option3Value: `${"値".repeat(119)}2`
+    option1Name: "😀".repeat(80),
+    option1Value: "🦄".repeat(120),
+    option2Name: "😁".repeat(80),
+    option2Value: "🐍".repeat(120),
+    option3Name: "😂".repeat(80),
+    option3Value: "🦊".repeat(120)
   });
 
   assert.equal(signature.length, 64);

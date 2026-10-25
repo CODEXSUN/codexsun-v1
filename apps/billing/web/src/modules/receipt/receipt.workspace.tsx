@@ -263,8 +263,8 @@ export function ReceiptWorkspace({ initialRecordId }: { initialRecordId?: string
         searchValue={search}
         toolbarAction={
           <>
-            {listTools.toolbarAction}{" "}
             <BillingDocumentListControls
+              columnSearchAction={listTools.toolbarAction}
               dateFrom={dateFrom}
               dateTo={dateTo}
               onDateFromChange={(value) => {

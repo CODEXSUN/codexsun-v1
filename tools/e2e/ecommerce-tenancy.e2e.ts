@@ -26,11 +26,12 @@
  */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { lstat, mkdir, rm, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve, sep } from "node:path";
+import { createPool } from "mysql2";
 import { createConnection, type Connection, type RowDataPacket } from "mysql2/promise";
+import { Kysely, MysqlDialect, sql } from "kysely";
 import type { EcommerceDatabase } from "../../apps/ecommerce/api/src/database/ecommerce-database.js";
-import type { Kysely } from "kysely";
 
 const runId = Date.now();
 const masterDatabaseName = `codexsun_ecommerce_tenancy_e2e_${runId}`;
@@ -94,6 +95,15 @@ const {
 } = await import("../../apps/ecommerce/api/src/database/ecommerce-database.js");
 const { ecommerceModuleKeys } =
   await import("../../apps/ecommerce/api/src/modules/ecommerce-composition/index.js");
+const { upgradeProductVariantCanonicalOptions } =
+  await import("../../apps/ecommerce/api/src/modules/product-variant/product-variant.migration.js");
+const { migrateEcommerceTenantDatabase } =
+  await import("../../apps/ecommerce/api/src/modules/ecommerce-composition/ecommerce-composition.migration.js");
+const { ecommerceTenantMigrationVersions, ecommerceTenantMigrations } =
+  await import("../../apps/ecommerce/api/src/modules/ecommerce-composition/ecommerce-composition.migration.js");
+const { runMigrationBatch } = await import("@codexsun/framework/db");
+const { PRODUCT_VARIANT_OPTION_SIGNATURE_LENGTH } =
+  await import("../../apps/ecommerce/api/src/modules/product-variant/product-variant.identity.js");
 const { tenantPublicStorageRoot } =
   await import("../../apps/platform/api/src/modules/storage-manager/storage-manager.paths.js");
 
@@ -1251,12 +1261,12 @@ try {
         headers: sessionA.headers,
         method: "POST",
         payload: {
-          option1Name: "n".repeat(80),
-          option1Value: "v".repeat(120),
-          option2Name: `${"m".repeat(79)}1`,
-          option2Value: `${"w".repeat(119)}1`,
-          option3Name: `${"m".repeat(79)}2`,
-          option3Value: `${"w".repeat(119)}2`,
+          option1Name: "😀".repeat(80),
+          option1Value: "🦄".repeat(120),
+          option2Name: "😁".repeat(80),
+          option2Value: "🐍".repeat(120),
+          option3Name: "😂".repeat(80),
+          option3Value: "🦊".repeat(120),
           productInformationId: productId,
           sku: `E2E-SKU-MAX-${suffix}`
         },
@@ -1692,6 +1702,626 @@ try {
         `page=1&pageSize=20&productTitle=${encodeURIComponent(`${searchTerm} 001`)}`
       );
       assert.equal(variantProduct.total, 105);
+    }
+  );
+
+  // ----- A14: legacy variant schema upgrades without truncation or false collisions -----
+  await assertion(
+    "A14",
+    "legacy variant rows upgrade with maximum Unicode options and delimiter-bearing values",
+    async () => {
+      const databaseName = `${masterDatabaseName}_legacy`;
+      let database: Kysely<EcommerceDatabase> | undefined;
+      try {
+        await admin.query(
+          `CREATE DATABASE \`${databaseName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+        );
+        database = new Kysely<EcommerceDatabase>({
+          dialect: new MysqlDialect({
+            pool: createPool({
+              charset: "utf8mb4",
+              database: databaseName,
+              host: env.DB_HOST,
+              password: env.DB_PASSWORD,
+              port: env.DB_PORT,
+              timezone: "Z",
+              user: env.DB_USER
+            })
+          })
+        });
+        await sql
+          .raw(
+            `CREATE TABLE ecommerce_product_information (
+              id INT NOT NULL AUTO_INCREMENT PRIMARY KEY
+            ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+          )
+          .execute(database);
+        await sql
+          .raw(
+            `CREATE TABLE ecommerce_product_variants (
+              created_by VARCHAR(191) NOT NULL DEFAULT 'system:migration',
+              id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+              uuid CHAR(8) NOT NULL UNIQUE,
+              product_information_id INT NOT NULL,
+              sku VARCHAR(120) NOT NULL,
+              title VARCHAR(191) NOT NULL,
+              barcode VARCHAR(120) NOT NULL DEFAULT '',
+              option_1_name VARCHAR(80) NOT NULL DEFAULT '',
+              option_1_value VARCHAR(120) NOT NULL DEFAULT '',
+              option_2_name VARCHAR(80) NOT NULL DEFAULT '',
+              option_2_value VARCHAR(120) NOT NULL DEFAULT '',
+              option_3_name VARCHAR(80) NOT NULL DEFAULT '',
+              option_3_value VARCHAR(120) NOT NULL DEFAULT '',
+              price_adjustment DECIMAL(14,2) NOT NULL DEFAULT 0,
+              compare_at_adjustment DECIMAL(14,2) NOT NULL DEFAULT 0,
+              cost_adjustment DECIMAL(14,2) NOT NULL DEFAULT 0,
+              option_signature VARCHAR(191) NOT NULL DEFAULT 'default',
+              revision INT NOT NULL DEFAULT 1,
+              weight DECIMAL(12,3) NOT NULL DEFAULT 0,
+              sort_order INT NOT NULL DEFAULT 1000,
+              status VARCHAR(24) NOT NULL DEFAULT 'active',
+              created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              UNIQUE KEY ecommerce_product_variants_sku_unique (sku),
+              UNIQUE KEY ecommerce_product_variants_option_unique (product_information_id,option_signature),
+              INDEX ecommerce_product_variants_product (product_information_id,status,sort_order),
+              CONSTRAINT ecommerce_product_variants_product_fk FOREIGN KEY (product_information_id)
+                REFERENCES ecommerce_product_information(id) ON DELETE RESTRICT
+            ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+          )
+          .execute(database);
+        await sql`INSERT INTO ecommerce_product_information (id) VALUES (1)`.execute(database);
+
+        const maximumName = "N".repeat(80);
+        const maximumValue = "😀".repeat(120);
+        await sql`INSERT INTO ecommerce_product_variants
+          (uuid, product_information_id, sku, title, option_signature, option_1_name, option_1_value,
+           option_2_name, option_2_value, option_3_name, option_3_value)
+          VALUES ('l0000001', 1, 'LEGACY-MAX-1', 'Legacy maximum options', 'legacy-max-signature',
+            ${maximumName}, ${maximumValue}, ${maximumName}, ${maximumValue},
+            ${maximumName}, ${maximumValue})`.execute(database);
+        await sql`INSERT INTO ecommerce_product_variants
+          (uuid, product_information_id, sku, title, option_signature, option_1_name, option_1_value)
+          VALUES ('l0000002', 1, 'LEGACY-DELIMITER-1', 'Legacy delimiter option',
+            'legacy-delimiter-1', 'a', 'b|c=d')`.execute(database);
+        await sql`INSERT INTO ecommerce_product_variants
+          (uuid, product_information_id, sku, title, option_signature, option_1_name, option_1_value,
+           option_2_name, option_2_value)
+          VALUES ('l0000003', 1, 'LEGACY-DELIMITER-2', 'Legacy split option',
+            'legacy-delimiter-2', 'a', 'b', 'c', 'd')`.execute(database);
+        await sql`INSERT INTO ecommerce_product_variants
+          (uuid, product_information_id, sku, title, option_signature, option_1_name, option_1_value)
+          VALUES ('l0000004', 1, 'LEGACY-DUP-1', 'Legacy duplicate one',
+            'legacy-duplicate-1', 'Color', 'Red')`.execute(database);
+        await sql`INSERT INTO ecommerce_product_variants
+          (uuid, product_information_id, sku, title, option_signature, option_1_name, option_1_value)
+          VALUES ('l0000005', 1, 'LEGACY-DUP-2', 'Legacy duplicate two',
+            'legacy-duplicate-2', ' color ', 'RED')`.execute(database);
+
+        // Exact existing-schema path: the options step is already recorded as applied, the legacy
+        // VARCHAR(191) signature and its unique index exist, and canonical identity must refuse the
+        // duplicate before touching either rows or the index.
+        await assert.rejects(
+          () => upgradeProductVariantCanonicalOptions(database!),
+          /canonical product option duplicate/iu
+        );
+        const untouched = await sql<{ total: number | string }>`
+          SELECT COUNT(*) AS total FROM ecommerce_product_variants
+          WHERE option_signature LIKE 'legacy-%'`.execute(database);
+        assert.equal(Number(untouched.rows[0]?.total ?? 0), 5);
+        await sql`DELETE FROM ecommerce_product_variants WHERE sku='LEGACY-DUP-2'`.execute(
+          database
+        );
+
+        await upgradeProductVariantCanonicalOptions(database);
+
+        const column = await sql<{ character_maximum_length: number | string | null }>`
+          SELECT CHARACTER_MAXIMUM_LENGTH AS character_maximum_length
+          FROM information_schema.COLUMNS
+          WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ecommerce_product_variants'
+            AND COLUMN_NAME='option_signature' LIMIT 1`.execute(database);
+        assert.equal(
+          Number(column.rows[0]?.character_maximum_length ?? 0),
+          PRODUCT_VARIANT_OPTION_SIGNATURE_LENGTH
+        );
+        const index = await sql<{ total: number | string }>`
+          SELECT COUNT(DISTINCT INDEX_NAME) AS total FROM information_schema.STATISTICS
+          WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ecommerce_product_variants'
+            AND INDEX_NAME='ecommerce_product_variants_option_unique'`.execute(database);
+        assert.equal(Number(index.rows[0]?.total ?? 0), 1);
+
+        const rows = await sql<{
+          id: number | string;
+          option_1_name: string;
+          option_1_value: string;
+          option_signature: string;
+          sku: string;
+        }>`SELECT id, sku, option_1_name, option_1_value, option_signature
+          FROM ecommerce_product_variants ORDER BY id`.execute(database);
+        assert.equal(rows.rows.length, 4);
+        for (const row of rows.rows) {
+          assert.match(row.option_signature, /^[0-9a-f]{64}$/u);
+        }
+        const maximum = rows.rows.find((row) => row.sku === "LEGACY-MAX-1");
+        assert.equal(maximum?.option_1_name, maximumName);
+        assert.equal([...(maximum?.option_1_value ?? "")].length, 120);
+        const delimiterOne = rows.rows.find((row) => row.sku === "LEGACY-DELIMITER-1");
+        const delimiterTwo = rows.rows.find((row) => row.sku === "LEGACY-DELIMITER-2");
+        assert.notEqual(delimiterOne?.option_signature, delimiterTwo?.option_signature);
+        assert.equal(new Set(rows.rows.map((row) => row.option_signature)).size, 4);
+
+        // Existing-tenant deployment path: a database recorded the committed 1-34 ledger, so only
+        // the appended EC-T03 steps may apply without a version/checksum mismatch and be repeatable.
+        await runMigrationBatch(database, {
+          batch: 1,
+          scope: "ecommerce.test.bootstrap",
+          version: "1",
+          steps: [
+            {
+              name: "ecommerce.test.bootstrap",
+              description: "Create the shared migration ledger for the compatibility test.",
+              checksum: "ecommerce.test.bootstrap:v1",
+              version: 1,
+              up: async () => undefined
+            }
+          ]
+        });
+        const legacySteps = ecommerceTenantMigrations.filter(
+          ({ name }) => (ecommerceTenantMigrationVersions[name] ?? Number.POSITIVE_INFINITY) <= 34
+        );
+        assert.equal(legacySteps.length, 34);
+        for (const step of legacySteps) {
+          const version = ecommerceTenantMigrationVersions[step.name]!;
+          const checksum = createHash("sha256")
+            .update(
+              JSON.stringify({
+                batch: 1,
+                checksum: `${step.name}:v1`,
+                name: step.name,
+                scope: "ecommerce.modules",
+                version
+              })
+            )
+            .digest("hex");
+          await sql`INSERT INTO migration_schema
+            (uuid,scope,batch,version,name,checksum,description,status,created_by,applied_at)
+            VALUES (${createHash("sha256").update(step.name).digest("hex").slice(0, 8)},
+              'ecommerce.modules',1,${version},${step.name},${checksum},${step.description},'applied',
+              'system:migration',CURRENT_TIMESTAMP(3))`.execute(database);
+        }
+        const upgrade = await migrateEcommerceTenantDatabase(database);
+        assert.deepEqual(upgrade.applied, [
+          "ecommerce.modules.product-attribute",
+          "ecommerce.modules.product-attribute-revision",
+          "ecommerce.modules.product-specification",
+          "ecommerce.modules.product-specification-revision",
+          "ecommerce.modules.product-collection",
+          "ecommerce.modules.catalog-activity"
+        ]);
+        const repeat = await migrateEcommerceTenantDatabase(database);
+        assert.equal(repeat.applied.length, 0);
+        assert.equal(
+          repeat.skipped.includes("ecommerce.modules.product-information-revision"),
+          true
+        );
+        assert.equal(
+          repeat.skipped.includes("ecommerce.modules.product-variant-canonical-options"),
+          true
+        );
+        assert.equal(repeat.skipped.includes("ecommerce.modules.product-collection"), true);
+      } finally {
+        await database?.destroy().catch(() => undefined);
+        await admin.query(`DROP DATABASE IF EXISTS \`${databaseName}\``).catch((error: unknown) => {
+          dropWarnings.push(
+            `${databaseName}: ${error instanceof Error ? error.message : String(error)}`
+          );
+        });
+      }
+    }
+  );
+
+  // ----- A15: EC-T03 attributes, specifications and collections -----
+  await assertion(
+    "A15",
+    "attributes, specifications and collections validate tenants, duplicates, publication and optimistic edits",
+    async () => {
+      const suffix = String(runId);
+      const core = await executeInsert(
+        tenantAConnection!,
+        "INSERT INTO core_products (uuid, name, product_type_id, product_category_id, hsn_code_id, unit_id, gst_tax_id, opening_price, status, created_by) VALUES (?, ?, (SELECT id FROM core_product_types WHERE status='active' ORDER BY id LIMIT 1), (SELECT id FROM core_product_categories WHERE status='active' ORDER BY id LIMIT 1), (SELECT id FROM core_hsn_codes WHERE status='active' ORDER BY id LIMIT 1), (SELECT id FROM core_units WHERE status='active' ORDER BY id LIMIT 1), (SELECT id FROM core_taxes WHERE status='active' ORDER BY id LIMIT 1), 100, 'active', 'e2e:catalog')",
+        [fixtureUuid(`catalog-a15-core:${suffix}`), `E2E A15 Core ${suffix}`]
+      );
+      const productResponse = await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: {
+          coreProductId: Number(core.insertId),
+          publicationStatus: "published",
+          slug: `e2e-a15-product-${suffix}`,
+          storefrontTitle: `E2E A15 Product ${suffix}`
+        },
+        url: "/ecommerce/catalog/product-information"
+      });
+      assert.equal(productResponse.statusCode, 200, productResponse.body);
+      const productId = Number(
+        (productResponse.json() as { data: Record<string, unknown> }).data.id
+      );
+      const productActivity = await app!.inject({
+        headers: sessionA.headers,
+        method: "GET",
+        url: `/ecommerce/catalog/product-information/${productId}/activity`
+      });
+      assert.equal(productActivity.statusCode, 200, productActivity.body);
+      const productEvents = (productActivity.json() as { data: Array<Record<string, unknown>> })
+        .data;
+      assert.equal(productEvents[0]?.action, "created");
+      assert.equal(String(productEvents[0]?.actorEmail ?? "").length > 0, true);
+
+      const attributeResponse = await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: { code: `  Colour ${suffix} `, dataType: "color", name: "Colour" },
+        url: "/ecommerce/catalog/attributes"
+      });
+      assert.equal(attributeResponse.statusCode, 200, attributeResponse.body);
+      const attribute = (attributeResponse.json() as { data: Record<string, unknown> }).data;
+      const attributeId = Number(attribute.id);
+      assert.equal(attribute.code, `colour-${suffix}`);
+      const attributeActivity = await app!.inject({
+        headers: sessionA.headers,
+        method: "GET",
+        url: `/ecommerce/catalog/attributes/${attributeId}/activity`
+      });
+      assert.equal(attributeActivity.statusCode, 200, attributeActivity.body);
+      const attributeEvents = (attributeActivity.json() as { data: Array<Record<string, unknown>> })
+        .data;
+      assert.equal(attributeEvents.length >= 1, true, "Attribute activity was not recorded.");
+      assert.equal(attributeEvents[0]?.action, "created");
+      assert.equal(String(attributeEvents[0]?.actorEmail ?? "").length > 0, true);
+
+      const duplicateAttribute = await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: { code: `colour ${suffix}`, dataType: "text", name: "Duplicate" },
+        url: "/ecommerce/catalog/attributes"
+      });
+      assert.equal(duplicateAttribute.statusCode, 409, duplicateAttribute.body);
+
+      const assignmentResponse = await app!.inject({
+        headers: sessionA.headers,
+        method: "PUT",
+        payload: {
+          values: [{ attributeId, values: [" #ff0000 ", "#FF0000", "#00ff00"] }]
+        },
+        url: `/ecommerce/catalog/attributes/assignments/${productId}`
+      });
+      assert.equal(assignmentResponse.statusCode, 200, assignmentResponse.body);
+      const assignment = (assignmentResponse.json() as { data: Array<Record<string, unknown>> })
+        .data;
+      assert.deepEqual(assignment[0]?.values, ["#ff0000", "#00ff00"]);
+      const assignmentActivity = await app!.inject({
+        headers: sessionA.headers,
+        method: "GET",
+        url: `/ecommerce/catalog/attributes/${attributeId}/activity`
+      });
+      assert.equal(assignmentActivity.statusCode, 200, assignmentActivity.body);
+      assert.equal(
+        (assignmentActivity.json() as { data: Array<Record<string, unknown>> }).data.some(
+          (event) => event.action === "assignment.updated"
+        ),
+        true,
+        "Attribute assignment activity was not recorded."
+      );
+
+      const invalidColour = await app!.inject({
+        headers: sessionA.headers,
+        method: "PUT",
+        payload: { values: [{ attributeId, values: ["red"] }] },
+        url: `/ecommerce/catalog/attributes/assignments/${productId}`
+      });
+      assert.equal(invalidColour.statusCode, 400, invalidColour.body);
+
+      const usedAttributeDelete = await app!.inject({
+        headers: sessionA.headers,
+        method: "DELETE",
+        url: `/ecommerce/catalog/attributes/${attributeId}`
+      });
+      assert.equal(usedAttributeDelete.statusCode, 409, usedAttributeDelete.body);
+
+      const inactiveAttributeResponse = await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: { code: `size-${suffix}`, dataType: "text", name: "Size" },
+        url: "/ecommerce/catalog/attributes"
+      });
+      const inactiveAttributeId = Number(
+        (inactiveAttributeResponse.json() as { data: Record<string, unknown> }).data.id
+      );
+      await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: {},
+        url: `/ecommerce/catalog/attributes/${inactiveAttributeId}/deactivate`
+      });
+      const inactiveAssignment = await app!.inject({
+        headers: sessionA.headers,
+        method: "PUT",
+        payload: {
+          values: [
+            { attributeId, values: ["#ff0000"] },
+            { attributeId: inactiveAttributeId, values: ["M"] }
+          ]
+        },
+        url: `/ecommerce/catalog/attributes/assignments/${productId}`
+      });
+      assert.equal(inactiveAssignment.statusCode, 400, inactiveAssignment.body);
+
+      const specificationResponse = await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: { label: " Material ", productInformationId: productId, value: " Cotton " },
+        url: "/ecommerce/catalog/specifications"
+      });
+      assert.equal(specificationResponse.statusCode, 200, specificationResponse.body);
+      const specificationId = Number(
+        (specificationResponse.json() as { data: Record<string, unknown> }).data.id
+      );
+      const specificationActivity = await app!.inject({
+        headers: sessionA.headers,
+        method: "GET",
+        url: `/ecommerce/catalog/specifications/${specificationId}/activity`
+      });
+      assert.equal(specificationActivity.statusCode, 200, specificationActivity.body);
+      assert.equal(
+        (specificationActivity.json() as { data: Array<Record<string, unknown>> }).data[0]?.action,
+        "created"
+      );
+      const duplicateSpecification = await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: { label: "material", productInformationId: productId, value: "Linen" },
+        url: "/ecommerce/catalog/specifications"
+      });
+      assert.equal(duplicateSpecification.statusCode, 409, duplicateSpecification.body);
+
+      const collectionResponse = await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: {
+          description: "A15 collection",
+          productInformationIds: [productId],
+          slug: `  A15 Featured ${suffix} `,
+          title: "A15 featured"
+        },
+        url: "/ecommerce/catalog/collections"
+      });
+      assert.equal(collectionResponse.statusCode, 200, collectionResponse.body);
+      const collection = (collectionResponse.json() as { data: Record<string, unknown> }).data;
+      const collectionId = Number(collection.id);
+      assert.equal(collection.slug, `a15-featured-${suffix}`);
+      assert.equal(collection.itemCount, 1, "Collection create must save its items atomically.");
+
+      const duplicateCollection = await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: { slug: `a15 featured ${suffix}`, title: "Duplicate collection" },
+        url: "/ecommerce/catalog/collections"
+      });
+      assert.equal(duplicateCollection.statusCode, 409, duplicateCollection.body);
+
+      const collectionItems = await app!.inject({
+        headers: sessionA.headers,
+        method: "PUT",
+        payload: { productInformationIds: [productId, productId] },
+        url: `/ecommerce/catalog/collections/${collectionId}/items`
+      });
+      assert.equal(collectionItems.statusCode, 200, collectionItems.body);
+      assert.equal(
+        (collectionItems.json() as { data: Array<Record<string, unknown>> }).data.length,
+        1
+      );
+
+      const missingCollectionProduct = await app!.inject({
+        headers: sessionA.headers,
+        method: "PUT",
+        payload: { productInformationIds: [productId, 99999999] },
+        url: `/ecommerce/catalog/collections/${collectionId}/items`
+      });
+      assert.equal(missingCollectionProduct.statusCode, 400, missingCollectionProduct.body);
+
+      const draftCollectionPublic = await app!.inject({
+        headers: { host: tenantADomain },
+        method: "GET",
+        url: `/ecommerce/storefront/collections/${String(collection.slug)}`
+      });
+      assert.equal(draftCollectionPublic.statusCode, 404, "A draft collection leaked publicly.");
+
+      const publishCollection = await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: {},
+        url: `/ecommerce/catalog/collections/${collectionId}/publish`
+      });
+      assert.equal(publishCollection.statusCode, 200, publishCollection.body);
+      const publishedCollection = (publishCollection.json() as { data: Record<string, unknown> })
+        .data;
+      const updateCollectionWithItems = await app!.inject({
+        headers: sessionA.headers,
+        method: "PUT",
+        payload: {
+          expectedRevision: Number(publishedCollection.revision),
+          productInformationIds: [productId],
+          publicationStatus: "published",
+          slug: String(collection.slug),
+          title: "A15 featured"
+        },
+        url: `/ecommerce/catalog/collections/${collectionId}`
+      });
+      assert.equal(updateCollectionWithItems.statusCode, 200, updateCollectionWithItems.body);
+      assert.equal(
+        (updateCollectionWithItems.json() as { data: Record<string, unknown> }).data.itemCount,
+        1,
+        "Collection update must save its items atomically."
+      );
+      const collectionActivity = await app!.inject({
+        headers: sessionA.headers,
+        method: "GET",
+        url: `/ecommerce/catalog/collections/${collectionId}/activity`
+      });
+      assert.equal(collectionActivity.statusCode, 200, collectionActivity.body);
+      assert.equal(
+        (collectionActivity.json() as { data: Array<Record<string, unknown>> }).data.some(
+          (event) => event.action === "published"
+        ),
+        true,
+        "Collection publication activity was not recorded."
+      );
+
+      const publicCollection = await app!.inject({
+        headers: { host: tenantADomain },
+        method: "GET",
+        url: `/ecommerce/storefront/collections/${String(collection.slug)}`
+      });
+      assert.equal(publicCollection.statusCode, 200, publicCollection.body);
+      const publicItems = (
+        publicCollection.json() as { data: { items: Array<Record<string, unknown>> } }
+      ).data.items;
+      assert.equal(publicItems.length, 1);
+      assert.equal(Number(publicItems[0]?.productInformationId), productId);
+
+      const staleCollection = await app!.inject({
+        headers: sessionA.headers,
+        method: "PUT",
+        payload: {
+          expectedRevision: 99,
+          slug: String(collection.slug),
+          title: "Stale collection",
+          publicationStatus: "published"
+        },
+        url: `/ecommerce/catalog/collections/${collectionId}`
+      });
+      assert.equal(staleCollection.statusCode, 409, staleCollection.body);
+
+      const staleAttribute = await app!.inject({
+        headers: sessionA.headers,
+        method: "PUT",
+        payload: {
+          code: `colour-${suffix}`,
+          dataType: "color",
+          expectedRevision: 99,
+          name: "Stale colour"
+        },
+        url: `/ecommerce/catalog/attributes/${attributeId}`
+      });
+      assert.equal(staleAttribute.statusCode, 409, staleAttribute.body);
+
+      const staleSpecification = await app!.inject({
+        headers: sessionA.headers,
+        method: "PUT",
+        payload: {
+          expectedRevision: 99,
+          label: "Material",
+          productInformationId: productId,
+          value: "Stale cotton"
+        },
+        url: `/ecommerce/catalog/specifications/${specificationId}`
+      });
+      assert.equal(staleSpecification.statusCode, 409, staleSpecification.body);
+
+      type PagedCatalogList = {
+        items: Array<Record<string, unknown>>;
+        page: number;
+        pageSize: number;
+        statusCounts: Record<string, number>;
+        total: number;
+      };
+      const readPagedCatalog = async (path: string, label: string) => {
+        const response = await app!.inject({
+          headers: sessionA.headers,
+          method: "GET",
+          url: `${path}?page=1&pageSize=20`
+        });
+        assert.equal(response.statusCode, 200, response.body);
+        const page = (response.json() as { data: PagedCatalogList }).data;
+        assert.equal(Array.isArray(page.items), true, `${label} page must contain items.`);
+        assert.equal(page.page, 1);
+        assert.equal(page.pageSize, 100, `${label} must show all rows up to the threshold.`);
+        assert.equal(page.total >= 1, true, `${label} total must include its fixture.`);
+        assert.equal(page.statusCounts.all >= 1, true, `${label} status counts must be present.`);
+        const legacy = await app!.inject({
+          headers: sessionA.headers,
+          method: "GET",
+          url: path
+        });
+        assert.equal(legacy.statusCode, 200, legacy.body);
+        assert.equal(
+          Array.isArray((legacy.json() as { data: unknown }).data),
+          true,
+          `${label} unpaged reads must stay a bare array for cxmobile.`
+        );
+      };
+      await readPagedCatalog("/ecommerce/catalog/attributes", "Attributes");
+      await readPagedCatalog("/ecommerce/catalog/specifications", "Specifications");
+      await readPagedCatalog("/ecommerce/catalog/collections", "Collections");
+
+      const tenantBCollections = await app!.inject({
+        headers: sessionB.headers,
+        method: "GET",
+        url: "/ecommerce/catalog/collections"
+      });
+      assert.equal(
+        tenantBCollections.statusCode,
+        403,
+        "Tenant B must not see tenant A collections."
+      );
+      const tenantBAttribute = await app!.inject({
+        headers: sessionB.headers,
+        method: "GET",
+        url: `/ecommerce/catalog/attributes/${attributeId}`
+      });
+      assert.equal(tenantBAttribute.statusCode, 403, tenantBAttribute.body);
+      const tenantBPublicCollection = await app!.inject({
+        headers: { host: tenantBDomain },
+        method: "GET",
+        url: `/ecommerce/storefront/collections/${String(collection.slug)}`
+      });
+      assert.equal(tenantBPublicCollection.statusCode, 404, tenantBPublicCollection.body);
+
+      const archiveProduct = await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: {},
+        url: `/ecommerce/catalog/product-information/${productId}/archive`
+      });
+      assert.equal(archiveProduct.statusCode, 200, archiveProduct.body);
+      const archivedPublicCollection = await app!.inject({
+        headers: { host: tenantADomain },
+        method: "GET",
+        url: `/ecommerce/storefront/collections/${String(collection.slug)}`
+      });
+      assert.equal(
+        archivedPublicCollection.statusCode,
+        404,
+        "Archiving the only product must hide the public collection."
+      );
+
+      const browserCore = await executeInsert(
+        tenantAConnection!,
+        "INSERT INTO core_products (uuid, name, product_type_id, product_category_id, hsn_code_id, unit_id, gst_tax_id, opening_price, status, created_by) VALUES (?, ?, (SELECT id FROM core_product_types WHERE status='active' ORDER BY id LIMIT 1), (SELECT id FROM core_product_categories WHERE status='active' ORDER BY id LIMIT 1), (SELECT id FROM core_hsn_codes WHERE status='active' ORDER BY id LIMIT 1), (SELECT id FROM core_units WHERE status='active' ORDER BY id LIMIT 1), (SELECT id FROM core_taxes WHERE status='active' ORDER BY id LIMIT 1), 100, 'active', 'e2e:catalog')",
+        [fixtureUuid(`catalog-a15-browser-core:${suffix}`), `E2E A15 Browser Core ${suffix}`]
+      );
+      const browserProduct = await app!.inject({
+        headers: sessionA.headers,
+        method: "POST",
+        payload: {
+          coreProductId: Number(browserCore.insertId),
+          publicationStatus: "published",
+          slug: `e2e-a15-browser-item-${suffix}`,
+          storefrontTitle: `E2E A15 Browser Item ${suffix}`
+        },
+        url: "/ecommerce/catalog/product-information"
+      });
+      assert.equal(browserProduct.statusCode, 200, browserProduct.body);
     }
   );
 
@@ -2340,6 +2970,22 @@ async function verifyFixtureBrowser(
     });
     await platformServer.listen();
     await platformServer.warmupRequest("/src/main.tsx").catch(() => undefined);
+    await platformServer.transformRequest("/src/main.tsx").catch(() => undefined);
+    let platformOptimized = false;
+    for (let attempt = 0; attempt < 600; attempt += 1) {
+      try {
+        if (
+          (await readdir(resolve("dist/.cache/vite/platform-web/deps"))).includes("_metadata.json")
+        ) {
+          platformOptimized = true;
+          break;
+        }
+      } catch {
+        // The optimizer creates its cache directory after the first transform.
+      }
+      await new Promise((done) => setTimeout(done, 200));
+    }
+    assert.ok(platformOptimized, "Platform Vite dependency optimization did not finish.");
     await new Promise((done) => setTimeout(done, 500));
     const platformAddress = platformServer.httpServer.address();
     assert.ok(platformAddress && typeof platformAddress !== "string");
@@ -2355,7 +3001,13 @@ async function verifyFixtureBrowser(
     });
     await page.waitFor(
       `document.querySelector('input[type="password"]')!==null&&!document.body.innerText.includes('Checking this workspace')`,
-      "staff login form"
+      "staff login form",
+      450
+    );
+    await page.waitFor(
+      `(()=>{if(location.pathname.startsWith('/app/'))return true;const button=document.querySelector('button[type="submit"]');return button!==null&&!button.disabled&&button.textContent.trim()==='Sign in';})()`,
+      "idle staff login form",
+      450
     );
     await page.fill({
       corporateId: tenantACode,
@@ -2365,8 +3017,157 @@ async function verifyFixtureBrowser(
     await page.evaluate(`document.querySelector('button[type="submit"]').click()`);
     await page.waitFor(
       `location.pathname.startsWith('/app/')&&!document.body.innerText.includes('Preparing your workspace')`,
-      "staff authenticated workspace"
+      "staff authenticated workspace",
+      450
     );
+    const catalogShows = [
+      {
+        marker: "Item details",
+        path: "product-information",
+        query: `?q=${encodeURIComponent(`E2E A15 Browser Item ${runId}`)}`,
+        term: `E2E A15 Browser Item ${runId}`,
+        name: "product"
+      },
+      {
+        marker: "Attribute details",
+        path: "product-attributes",
+        term: "Colour",
+        name: "attribute"
+      },
+      {
+        marker: "Specification details",
+        path: "product-specifications",
+        term: "Material",
+        name: "specification"
+      },
+      {
+        marker: "Collection details",
+        path: "product-collections",
+        term: "A15 featured",
+        name: "collection"
+      }
+    ] as const;
+    const loadStaffRoute = async (url: string, ready: string, label: string) => {
+      let lastError: unknown;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          await page.send("Page.navigate", { url });
+          await page.waitFor(ready, label, 120);
+          return;
+        } catch (error) {
+          lastError = error;
+          await new Promise((done) => setTimeout(done, 1000));
+        }
+      }
+      throw lastError;
+    };
+    for (const show of catalogShows) {
+      for (const width of [1440, 768, 390, 320]) {
+        await page.send("Emulation.setDeviceMetricsOverride", {
+          deviceScaleFactor: 1,
+          height: width === 1440 ? 900 : 844,
+          mobile: width !== 1440,
+          width
+        });
+        await loadStaffRoute(
+          `${platformOrigin}/app/ecommerce/${show.path}${"query" in show ? show.query : ""}`,
+          `document.readyState==='complete'&&document.body.innerText.includes(${JSON.stringify(show.term)})`,
+          `${show.name} list at ${width}px`
+        );
+        if (show.name === "product") {
+          await page.evaluate(
+            `[...document.querySelectorAll('button')].find((button)=>button.textContent.trim()==='New item')?.click()`
+          );
+          await page.waitFor(
+            `document.body.innerText.includes('Item content')`,
+            `product form at ${width}px`
+          );
+          await page.evaluate(
+            `[...document.querySelectorAll('button')].find((button)=>button.textContent.trim()==='Save')?.click()`
+          );
+          await page.waitFor(
+            `document.body.innerText.includes('Select a Core product.')&&document.body.innerText.includes('Storefront title is required.')&&document.body.innerText.includes('Slug is required.')`,
+            `product field errors at ${width}px`
+          );
+          const productFormOverflow = await page.evaluate(
+            "document.documentElement.scrollWidth>document.documentElement.clientWidth+1"
+          );
+          assert.equal(productFormOverflow, false, `Product form overflowed at ${width}px.`);
+          await page.screenshot(resolve(browserRoot, `staff-product-form-errors-${width}.png`));
+          await page.evaluate(
+            `[...document.querySelectorAll('button')].find((button)=>button.textContent.trim()==='Cancel')?.click()`
+          );
+          await page.waitFor(
+            `document.body.innerText.includes(${JSON.stringify(show.term)})`,
+            `product list after validation at ${width}px`
+          );
+        }
+        if (show.name === "attribute") {
+          await page.evaluate(
+            `[...document.querySelectorAll('button')].find((button)=>button.textContent.trim()==='New attribute')?.click()`
+          );
+          await page.waitFor(
+            `document.body.innerText.includes('Attributes are reusable, filterable product characteristics.')`,
+            `attribute form at ${width}px`
+          );
+          await page.evaluate(
+            `[...document.querySelectorAll('button')].find((button)=>button.textContent.trim()==='Save')?.click()`
+          );
+          await page.waitFor(
+            `document.body.innerText.includes('Attribute code is required.')&&document.body.innerText.includes('Attribute name is required.')`,
+            `attribute field errors at ${width}px`
+          );
+          const formOverflow = await page.evaluate(
+            "document.documentElement.scrollWidth>document.documentElement.clientWidth+1"
+          );
+          assert.equal(formOverflow, false, `Attribute form overflowed at ${width}px.`);
+          await page.screenshot(resolve(browserRoot, `staff-attribute-form-errors-${width}.png`));
+          await page.evaluate(
+            `[...document.querySelectorAll('button')].find((button)=>button.textContent.trim()==='Cancel')?.click()`
+          );
+          await page.waitFor(
+            `document.body.innerText.includes(${JSON.stringify(show.term)})`,
+            `attribute list after validation at ${width}px`
+          );
+        }
+        const opened = await page.evaluate(`(() => {
+          const row = [...document.querySelectorAll('tbody tr')].find((candidate) =>
+            candidate.innerText.includes(${JSON.stringify(show.term)})
+          );
+          const view = row
+            ? [...row.querySelectorAll('button')].find(
+                (button) => button.textContent.trim() === 'View'
+              )
+            : undefined;
+          view?.click();
+          return Boolean(view);
+        })()`);
+        assert.equal(opened, true, `${show.name} View action was missing at ${width}px.`);
+        await page.waitFor(
+          `location.search.includes('view=')&&document.body.innerText.includes(${JSON.stringify(show.marker)})&&document.body.innerText.includes('Activity')&&document.body.innerText.includes('created')`,
+          `${show.name} show with activity at ${width}px`,
+          450
+        );
+        const showState = JSON.parse(
+          (await page.evaluate(`JSON.stringify((() => ({
+            activity: document.body.innerText.includes('Recent changes by staff users.'),
+            overflow: document.documentElement.scrollWidth>document.documentElement.clientWidth+1,
+            showAction: document.body.innerText.includes(${JSON.stringify(
+              show.name === "product"
+                ? "Archive"
+                : show.name === "collection"
+                  ? "Unpublish"
+                  : "Deactivate"
+            )})
+          }))())`)) as string
+        ) as { activity: boolean; overflow: boolean; showAction: boolean };
+        assert.equal(showState.activity, true, `${show.name} activity was missing at ${width}px.`);
+        assert.equal(showState.showAction, true, `${show.name} action was missing at ${width}px.`);
+        assert.equal(showState.overflow, false, `${show.name} show overflowed at ${width}px.`);
+        await page.screenshot(resolve(browserRoot, `staff-${show.name}-show-${width}.png`));
+      }
+    }
+
     const productQuery = `q=${encodeURIComponent(`E2E Pagination ${runId}`)}&page=2&pageSize=20`;
     for (const width of [1440, 1024, 390]) {
       await page.send("Emulation.setDeviceMetricsOverride", {
@@ -2375,10 +3176,8 @@ async function verifyFixtureBrowser(
         mobile: width === 390,
         width
       });
-      await page.send("Page.navigate", {
-        url: `${platformOrigin}/app/ecommerce/product-information?${productQuery}`
-      });
-      await page.waitFor(
+      await loadStaffRoute(
+        `${platformOrigin}/app/ecommerce/product-information?${productQuery}`,
         `document.readyState==='complete'&&document.body.innerText.includes('Total product: 130')&&document.body.innerText.includes('Showing 21 to 40 of 130')`,
         `staff product pagination at ${width}px`
       );
@@ -2399,10 +3198,8 @@ async function verifyFixtureBrowser(
       mobile: false,
       width: 1440
     });
-    await page.send("Page.navigate", {
-      url: `${platformOrigin}/app/ecommerce/product-information?${productQuery}`
-    });
-    await page.waitFor(
+    await loadStaffRoute(
+      `${platformOrigin}/app/ecommerce/product-information?${productQuery}`,
       `document.readyState==='complete'&&document.body.innerText.includes('Showing 21 to 40 of 130')`,
       "staff product page-size selector"
     );
@@ -2428,10 +3225,8 @@ async function verifyFixtureBrowser(
         mobile: width === 390,
         width
       });
-      await page.send("Page.navigate", {
-        url: `${platformOrigin}/app/ecommerce/product-variants?${variantQuery}`
-      });
-      await page.waitFor(
+      await loadStaffRoute(
+        `${platformOrigin}/app/ecommerce/product-variants?${variantQuery}`,
         `document.readyState==='complete'&&document.body.innerText.includes('Total variant: 105')&&document.body.innerText.includes('Showing 21 to 40 of 105')`,
         `staff variant pagination at ${width}px`
       );
@@ -2452,10 +3247,8 @@ async function verifyFixtureBrowser(
       mobile: false,
       width: 1440
     });
-    await page.send("Page.navigate", {
-      url: `${platformOrigin}/app/ecommerce/product-information?q=${encodeURIComponent(`E2E Pagination ${runId} 007`)}&page=9&pageSize=20`
-    });
-    await page.waitFor(
+    await loadStaffRoute(
+      `${platformOrigin}/app/ecommerce/product-information?q=${encodeURIComponent(`E2E Pagination ${runId} 007`)}&page=9&pageSize=20`,
       `document.readyState==='complete'&&document.body.innerText.includes(${JSON.stringify(`E2E Pagination ${runId} 007`)})&&!document.body.innerText.includes('Rows per page')`,
       "staff single-row product page"
     );

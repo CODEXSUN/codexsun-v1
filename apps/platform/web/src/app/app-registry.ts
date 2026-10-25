@@ -95,6 +95,11 @@ export type PlatformAppRootPage =
   | "marketing.campaigns"
   | "marketing.captures"
   | "marketing.connections"
+  | "marketing.leads"
+  | "marketing.qualifications"
+  | "marketing.conversions"
+  | "marketing.outcomes"
+  | "marketing.followups"
   | "crm.overview"
   | "crm.sops"
   | "crm.leads"
@@ -487,6 +492,9 @@ function ecommerceMenuItems(activePage: string, onSelect: (page: string) => void
   });
   const catalog = [
     leaf("Items", "ecommerce.product-information"),
+    leaf("Attributes", "ecommerce.product-attributes"),
+    leaf("Specifications", "ecommerce.product-specifications"),
+    leaf("Collections", "ecommerce.product-collections"),
     leaf("Categories", "ecommerce.categories"),
     leaf("Products", "ecommerce.products"),
     leaf("Variants", "ecommerce.product-variants"),
@@ -1334,7 +1342,7 @@ export function appMenuItemsFor(
   crmTaskCount = 0
 ): SidemenuItem[] {
   if (appId === "marketing")
-    return ["brands", "campaigns", "captures", "submissions", "connections", "consents"].map(
+    return ["brands", "campaigns", "captures", "submissions", "leads", "qualifications", "conversions", "outcomes", "followups", "connections", "consents"].map(
       (key) => ({
         icon: Globe2Icon,
         title: key[0]!.toUpperCase() + key.slice(1),
@@ -1650,6 +1658,7 @@ export function appMenuItemsFor(
       {
         icon: Settings2Icon,
         isActive: [
+          "frappe.availability",
           "frappe.live-sync",
           "frappe.live-sync-queue",
           "frappe.connection",
@@ -1670,6 +1679,12 @@ export function appMenuItemsFor(
             isActive: activePage === "frappe.live-sync-queue",
             onSelect: () => onSelect("frappe.live-sync-queue"),
             title: "Live sync queue"
+          },
+          {
+            icon: Settings2Icon,
+            isActive: activePage === "frappe.availability",
+            onSelect: () => onSelect("frappe.availability"),
+            title: "Server availability"
           },
           {
             icon: Settings2Icon,

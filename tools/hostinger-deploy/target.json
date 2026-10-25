@@ -5,5 +5,5 @@
   "port": 22,
   "user": "root",
   "virtualMachineId": 914719,
-  "demoRoot": "/home/codexsun-demo"
+  "deploymentRoot": "/home/codexsun"
 }

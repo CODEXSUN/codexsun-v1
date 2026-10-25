@@ -233,3 +233,11 @@ No cloud deployment ran.
 - [x] Rebuild target projections after business, mapped, and common queue imports.
 - [x] Test all company/year contexts and propagate projection failures for queue retry.
 - [x] Record deployed assets, live HTTP dashboard totals, queue completion, and source fingerprint proof in the Data Bridge cloud log.
+
+## Readiness review, 25 October 2026
+
+Reviewed Billing and its direct Core, Platform/Queue, Accounts, Data Bridge and Mail dependencies.
+The current open findings and delivery order are recorded in [the readiness review](PLAN.md#billing-readiness-review-25-october-2026).
+Reproduced mixed-currency list totals, post-save failure and duplicate manual-number replacement without real financial writes.
+Passed 20 unit tests, all three disposable database stages, API/web type checks and lint, and Billing boundaries.
+No runtime fixes or production activation are included in this review.

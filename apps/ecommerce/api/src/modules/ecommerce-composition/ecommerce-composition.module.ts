@@ -5,6 +5,10 @@ import {
 } from "../storefront-organisation/index.js";
 import type { FrappeSettings } from "@codexsun/frappe-api";
 import { productInformationModule } from "../product-information/product-information.module.js";
+import { productAttributeModule } from "../product-attribute/product-attribute.module.js";
+import { productSpecificationModule } from "../product-specification/product-specification.module.js";
+import { productCollectionModule } from "../product-collection/product-collection.module.js";
+import { registerProductCollectionPublicRoutes } from "../product-collection/product-collection.routes.js";
 import { productVariantModule } from "../product-variant/product-variant.module.js";
 import { productImageModule } from "../product-image/product-image.module.js";
 import { registerProductImagePublicRoutes } from "../product-image/product-image.routes.js";
@@ -26,6 +30,9 @@ import { registerStorefrontRoutes } from "../storefront/storefront.routes.js";
 
 export const ecommerceModuleKeys = [
   productInformationModule.key,
+  productAttributeModule.key,
+  productSpecificationModule.key,
+  productCollectionModule.key,
   productVariantModule.key,
   productImageModule.key,
   storefrontSliderModule.key,
@@ -46,7 +53,10 @@ export async function registerEcommerceStaffModules(
   frappeSettings: FrappeSettings,
   resolveActorEmail: (request: FastifyRequest) => string
 ) {
-  await productInformationModule.register(app);
+  await productInformationModule.register(app, resolveActorEmail);
+  await productAttributeModule.register(app, resolveActorEmail);
+  await productSpecificationModule.register(app, resolveActorEmail);
+  await productCollectionModule.register(app, resolveActorEmail);
   await productVariantModule.register(app);
   await productImageModule.register(app);
   await storefrontSliderModule.register(app);
@@ -81,4 +91,5 @@ export async function registerEcommercePublicModules(
   await registerStorefrontProfilePublicRoutes(app);
   await registerProductImagePublicRoutes(app);
   await registerStorefrontSliderImageRoutes(app);
+  await registerProductCollectionPublicRoutes(app);
 }

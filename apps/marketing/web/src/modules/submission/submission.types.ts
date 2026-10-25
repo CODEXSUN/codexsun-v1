@@ -6,10 +6,11 @@ export type SubmissionInput = {
   phone: string;
   message: string;
   privacyConsent: true;
-  sourceReference?: string;
-  sourceConsentAt?: string;
-  sourceNoticeVersion?: string;
+  sourceReference?: string | undefined;
+  sourceConsentAt?: string | undefined;
+  sourceNoticeVersion?: string | undefined;
 };
+
 export type SubmissionRecord = SubmissionInput & {
   sourceReference: string;
   sourceConsentAt: string;
@@ -25,4 +26,13 @@ export type SubmissionRecord = SubmissionInput & {
   createdBy: string;
   status: "pending" | "delivered";
   leadUuid: string | null;
+};
+
+export type SubmissionColumnFilters = {
+  name?: string | undefined;
+  campaignLabel?: string | undefined;
+  email?: string | undefined;
+  phone?: string | undefined;
+  status?: string | undefined;
+  leadUuid?: string | undefined;
 };

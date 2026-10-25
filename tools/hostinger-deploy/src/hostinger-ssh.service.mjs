@@ -1,4 +1,4 @@
-import { execFile, spawn } from "node:child_process";
+import { execFile } from "node:child_process";
 import { access } from "node:fs/promises";
 import { promisify } from "node:util";
 
@@ -21,7 +21,7 @@ export class HostingerSshService {
         "-o",
         "StrictHostKeyChecking=yes",
         alias,
-        probeCommand(this.target.demoRoot)
+        probeCommand(this.target.deploymentRoot)
       ],
       { timeout: 25_000, windowsHide: true }
     );
@@ -43,56 +43,9 @@ export class HostingerSshService {
       virtualMachineId: this.target.virtualMachineId,
       docker: remote.docker,
       compose: remote.compose,
-      demoRoot: this.target.demoRoot,
-      demoRootPresent: remote.demoRoot === "present"
+      deploymentRoot: this.target.deploymentRoot,
+      deploymentRootPresent: remote.deploymentRoot === "present"
     };
-  }
-
-  async runOnVerifiedHost(script, timeoutMs = 120_000) {
-    if (typeof script !== "string" || !script.trim() || script.includes("\0")) {
-      throw new Error("A non-empty remote script is required.");
-    }
-    const { alias } = await this.status();
-    return executeRemoteScript(alias, script, timeoutMs);
-  }
-
-  async prepareCheckout() {
-    const root = validatedDemoRoot(this.target.demoRoot);
-    const script = [
-      "set -euo pipefail",
-      `root='${root}'`,
-      'if [ ! -e "$root" ]; then git clone --branch main https://github.com/CODEXSUN/codexsun.git "$root"; fi',
-      'test -d "$root/.git"',
-      'test "$(git -C "$root" remote get-url origin)" = "https://github.com/CODEXSUN/codexsun.git"',
-      'test "$(git -C "$root" branch --show-current)" = "main"',
-      'test -z "$(git -C "$root" status --porcelain)"',
-      'printf "commit=%s\\n" "$(git -C "$root" rev-parse HEAD)"'
-    ].join("\n");
-    const { stdout } = await this.runOnVerifiedHost(script, 180_000);
-    return { root, commit: parseLines(stdout).commit };
-  }
-
-  async syncCheckout(ref) {
-    if (!/^[0-9a-f]{40}$/u.test(ref)) {
-      throw new Error("A full Git commit SHA is required for Hostinger sync.");
-    }
-    const root = validatedDemoRoot(this.target.demoRoot);
-    const script = [
-      "set -euo pipefail",
-      `root='${root}'`,
-      `ref='${ref}'`,
-      'test -d "$root/.git"',
-      'test "$(git -C "$root" remote get-url origin)" = "https://github.com/CODEXSUN/codexsun.git"',
-      'test "$(git -C "$root" branch --show-current)" = "main"',
-      'test -z "$(git -C "$root" status --porcelain)"',
-      'git -C "$root" fetch origin main',
-      'git -C "$root" merge-base --is-ancestor "$ref" origin/main',
-      'git -C "$root" merge-base --is-ancestor HEAD "$ref"',
-      'git -C "$root" merge --ff-only "$ref"',
-      'printf "commit=%s\\n" "$(git -C "$root" rev-parse HEAD)"'
-    ].join("\n");
-    const { stdout } = await this.runOnVerifiedHost(script, 180_000);
-    return { root, commit: parseLines(stdout).commit };
   }
 
   async checkLocalConfig() {
@@ -121,56 +74,20 @@ export class HostingerSshService {
   }
 }
 
-function executeRemoteScript(alias, script, timeoutMs) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(
-      "ssh",
-      [
-        "-o",
-        "BatchMode=yes",
-        "-o",
-        "ConnectTimeout=12",
-        "-o",
-        "StrictHostKeyChecking=yes",
-        alias,
-        "bash -se"
-      ],
-      { timeout: timeoutMs, windowsHide: true, stdio: ["pipe", "pipe", "pipe"] }
-    );
-    let stdout = "";
-    let stderr = "";
-    child.stdout.setEncoding("utf8");
-    child.stderr.setEncoding("utf8");
-    child.stdout.on("data", (chunk) => {
-      stdout += chunk;
-    });
-    child.stderr.on("data", (chunk) => {
-      stderr += chunk;
-    });
-    child.on("error", reject);
-    child.on("close", (code) => {
-      if (code === 0) resolve({ stdout, stderr });
-      else
-        reject(new Error(`The Hostinger command failed with exit code ${code}. ${stderr.trim()}`));
-    });
-    child.stdin.end(script.endsWith("\n") ? script : `${script}\n`);
-  });
-}
-
-function probeCommand(demoRoot) {
-  const root = validatedDemoRoot(demoRoot);
+function probeCommand(deploymentRoot) {
+  const root = validatedDeploymentRoot(deploymentRoot);
   return [
     "printf 'host=%s\\n' \"$(hostname)\"",
     "printf 'user=%s\\n' \"$(id -un)\"",
     "printf 'docker=%s\\n' \"$(docker --version)\"",
     "printf 'compose=%s\\n' \"$(docker compose version)\"",
-    `test -d '${root}' && printf 'demoRoot=present\\n' || printf 'demoRoot=missing\\n'`
+    `test -d '${root}' && printf 'deploymentRoot=present\\n' || printf 'deploymentRoot=missing\\n'`
   ].join("; ");
 }
 
-function validatedDemoRoot(value) {
+function validatedDeploymentRoot(value) {
   if (!/^\/home\/[a-z0-9-]+$/u.test(value)) {
-    throw new Error("The demo checkout must be a simple path under /home.");
+    throw new Error("The deployment checkout must be a simple path under /home.");
   }
   return value;
 }

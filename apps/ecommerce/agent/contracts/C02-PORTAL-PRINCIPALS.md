@@ -130,12 +130,16 @@ Permissions are membership-scoped, not global: `ecommerce.portal.customer.orders
 
 - IDs: `INT NOT NULL AUTO_INCREMENT` for primary keys and Core references, matching
   `core_contacts.id`, `core_companies.id`, and `app_users.id`. There is no `BIGINT`.
-- Public identifiers: `CHAR(8)` lowercase hex, matching `tenants.uuid`, `app_users.uuid`,
-  `core_contacts.uuid`, `core_companies.uuid`, and Ecommerce record UUIDs.
+- Public identifiers: proposed `CHAR(8)` lowercase hex, matching the eight-hex values in
+  `tenants.uuid`, `app_users.uuid`, `core_contacts.uuid`, `core_companies.uuid`, and Ecommerce record
+  UUIDs. Platform creates `tenants.uuid` and `app_users.uuid` as `VARCHAR(8)` and the framework
+  normalizes them in place to `CHAR(8)`; the proposed tenant-local portal columns use `CHAR(8)` from
+  the start and store the same eight-lowercase-hex values.
 - Lifecycle: `VARCHAR(24)` values validated by the service; no MySQL `ENUM`.
 - Tenancy: the tenant database is the boundary, so these tenant-local tables add no `tenant_id`. The
-  master registry key remains `tenants.id INT AUTO_INCREMENT` with `tenants.uuid CHAR(8)`.
-- Session exception: the existing `tenantId` claim stores the tenant `CHAR(8)` UUID, and
+  master registry key remains `tenants.id INT AUTO_INCREMENT`; its `tenants.uuid` is created
+  `VARCHAR(8)` and normalized to `CHAR(8)`.
+- Session exception: the existing `tenantId` claim stores the tenant eight-hex UUID, and
   `auth_sessions.tenant_id` is `VARCHAR(64)`. That is existing Platform behavior, not the pattern for
   new foreign keys.
 

@@ -80,12 +80,12 @@ export function WorkspaceTable<T extends RowData>({
             isLoading ? (
               <WorkspaceTableLoadingState />
             ) : (
-              <WorkspaceTableEmptyState>{emptyState ?? "No records found."}</WorkspaceTableEmptyState>
+              <WorkspaceTableEmptyState>
+                {emptyState ?? "No records found."}
+              </WorkspaceTableEmptyState>
             )
           ) : (
-            table.getRowModel().rows.map((row) => (
-              <div key={row.id}>{mobileRow(row.original)}</div>
-            ))
+            table.getRowModel().rows.map((row) => <div key={row.id}>{mobileRow(row.original)}</div>)
           )}
         </div>
       ) : null}
@@ -120,7 +120,7 @@ export function WorkspaceTable<T extends RowData>({
           </thead>
           <tbody>
             {filterRow ? (
-              <tr className={workspaceTableRowClass}>
+              <tr className={cn(workspaceTableRowClass, "bg-white hover:bg-white")}>
                 {table.getVisibleLeafColumns().map((column) => (
                   <td key={column.id} className={workspaceTableCellClass}>
                     {filterRow(column.id)}

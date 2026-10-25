@@ -1,15 +1,24 @@
 import { z } from "zod";
+
+const codePointLimit = (maximum: number, label: string) =>
+  z
+    .string()
+    .trim()
+    .refine((value) => Array.from(value).length <= maximum, {
+      message: `${label} must be at most ${maximum} characters.`
+    });
+
 export const productVariantSchema = z.object({
   productInformationId: z.number().int().positive("Select a product."),
-  sku: z.string().trim().min(1, "SKU is required.").max(100),
-  title: z.string().trim().min(1, "Title is required.").max(255),
-  barcode: z.string().trim().max(100),
-  option1Name: z.string().trim().max(100),
-  option1Value: z.string().trim().max(191),
-  option2Name: z.string().trim().max(100),
-  option2Value: z.string().trim().max(191),
-  option3Name: z.string().trim().max(100),
-  option3Value: z.string().trim().max(191),
+  sku: z.string().trim().min(1, "SKU is required.").max(120),
+  title: z.string().trim().max(191),
+  barcode: z.string().trim().max(120),
+  option1Name: codePointLimit(80, "Option name"),
+  option1Value: codePointLimit(120, "Option value"),
+  option2Name: codePointLimit(80, "Option name"),
+  option2Value: codePointLimit(120, "Option value"),
+  option3Name: codePointLimit(80, "Option name"),
+  option3Value: codePointLimit(120, "Option value"),
   priceAdjustment: z.number(),
   compareAtAdjustment: z.number(),
   costAdjustment: z.number(),

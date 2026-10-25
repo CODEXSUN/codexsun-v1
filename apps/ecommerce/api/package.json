@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/ecommerce-api",
-  "version": "1.1.62",
+  "version": "1.1.64",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,9 +12,9 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/core-api": "^1.1.62",
-    "@codexsun/framework": "^1.1.62",
-    "@codexsun/frappe-api": "^1.1.62",
+    "@codexsun/core-api": "^1.1.64",
+    "@codexsun/framework": "^1.1.64",
+    "@codexsun/frappe-api": "^1.1.64",
     "fastify": "^5.12.5",
     "kysely": "^0.29.6",
     "sharp": "^0.35.5",

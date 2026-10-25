@@ -1,278 +1,331 @@
-import { ConnectionAuthorizationCallback } from "./connection.authorization";
-
-import { WorkspaceUpsertPage } from "@codexsun/ui/workspace/upsert";
-import { useQuery } from "@tanstack/react-query";
-
-import {
-  useWorkspaceNavigation,
-  useWorkspaceQueryState,
-  useWorkspaceQueryValue,
-  useWorkspaceRecordSelection
-} from "@codexsun/ui/workspace/navigation";
-
-import { WorkspacePagination } from "@codexsun/ui/workspace/pagination";
-
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
+import { useDeferredValue, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
-
 import { Button } from "@codexsun/ui/components/button";
-
 import { WorkspacePage } from "@codexsun/ui/workspace/page";
-
 import { WorkspaceFilters } from "@codexsun/ui/workspace/filters";
-
-import { useMarketingTransport } from "../../transport";
-
-import { useConnections } from "./connection.hooks";
-
+import { WorkspacePagination } from "@codexsun/ui/workspace/pagination";
+import { WorkspaceDateRangePicker } from "@codexsun/ui/workspace/date-range-picker";
+import { buildShowingLabel } from "@codexsun/ui/workspace/utils";
 import {
-  createConnection,
-  updateConnection,
-  countConnections,
-  getConnection
-} from "./connection.services";
-
+  useWorkspaceQueryState,
+  useWorkspaceQueryValue
+} from "@codexsun/ui/workspace/navigation";
+import { useMarketingTransport } from "../../transport";
+import { useConnections, useConnectionDetail } from "./connection.hooks";
+import { createConnection, updateConnection, countConnections } from "./connection.services";
 import { ConnectionList } from "./connection.list";
-
 import { ConnectionForm } from "./connection.form";
-
 import { ConnectionShow } from "./connection.show";
+import { ConnectionAuthorizationCallback } from "./connection.authorization";
+import type { ConnectionColumnFilters, ConnectionInput, ConnectionRecord } from "./connection.types";
 
-import type { ConnectionInput, ConnectionRecord } from "./connection.types";
+const columnOptions = [
+  { id: "name", label: "Name" },
+  { id: "brandUuid", label: "Brand" },
+  { id: "provider", label: "Provider" },
+  { id: "externalAccountId", label: "Account ID" },
+  { id: "updatedAt", label: "Updated at" },
+  { id: "status", label: "Status" }
+];
 
 export function ConnectionWorkspace() {
-  const navigation = useWorkspaceNavigation();
+  const api = useMarketingTransport();
+  const client = useQueryClient();
+
+  const [queryParams, setQueryParams] = useWorkspaceQueryState({
+    search: "",
+    status: "all",
+    page: 1,
+    pageSize: 50,
+    fromDate: "",
+    toDate: ""
+  });
+
+  const { search, status, page, pageSize, fromDate, toDate } = queryParams;
+
+  const [showKey, setShowKey] = useWorkspaceQueryValue("show", "");
+  const [formMode, setFormMode] = useWorkspaceQueryValue("form", "");
+  const [recordKey, setRecordKey] = useWorkspaceQueryValue("record", "");
   const [hiddenColumnKeys, setHiddenColumnKeys] = useWorkspaceQueryValue("hiddenColumns", "");
-  const hiddenColumns = hiddenColumnKeys.split(",").filter(Boolean);
-  const setHiddenColumns = (next: string[] | ((previous: string[]) => string[])) =>
-    setHiddenColumnKeys((typeof next === "function" ? next(hiddenColumns) : next).join(","));
-  const columnOptions = [
-    { id: "name", label: "Name" },
-    { id: "updatedBy", label: "Updated by" },
-    { id: "status", label: "Status" }
-  ].map((column) => ({
-    ...column,
-    checked: !hiddenColumns.includes(column.id),
-    onCheckedChange: (checked: boolean) =>
-      setHiddenColumns((previous) =>
-        checked ? previous.filter((id) => id !== column.id) : [...previous, column.id]
-      )
-  }));
-  const api = useMarketingTransport(),
-    client = useQueryClient();
 
-  const [filters, setFilters] = useWorkspaceQueryState({ search: "", page: 0, status: "all" });
+  const hiddenColumns = useMemo(
+    () => hiddenColumnKeys.split(",").filter(Boolean),
+    [hiddenColumnKeys]
+  );
+  const visibleColumns = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    for (const opt of columnOptions) {
+      map[opt.id] = !hiddenColumns.includes(opt.id);
+    }
+    return map;
+  }, [hiddenColumns]);
 
-  const { search, status } = filters;
-  const page = Math.max(0, Math.min(100000, Math.trunc(filters.page)));
+  const [showInlineFilters, setShowInlineFilters] = useState(false);
+  const [columnFilters, setColumnFilters] = useState<ConnectionColumnFilters>({});
+  const deferredSearch = useDeferredValue(search);
+  const deferredColumnFilters = useDeferredValue(columnFilters);
 
-  const setPage = (page: number) => setFilters((previous) => ({ ...previous, page }));
-
-  const query = useConnections(search, page, status);
-
+  const query = useConnections(deferredSearch.trim(), page, status, pageSize);
   const count = useQuery({
-    queryKey: ["marketing", api.scopeKey, "connection-count", search, status],
-    queryFn: () => countConnections(api, search, status)
+    queryKey: ["marketing", api.scopeKey, "connection-count", deferredSearch.trim(), status],
+    queryFn: () => countConnections(api, deferredSearch.trim(), status)
   });
 
-  const [viewKey, setViewKey] = useWorkspaceQueryValue("show", "");
+  const detail = useConnectionDetail(showKey || recordKey || null);
 
-  const [editKey] = useWorkspaceQueryValue("record", "");
+  const [editingLocal, setEditingLocal] = useState<ConnectionRecord | null | undefined>(undefined);
+  const [showingLocal, setShowingLocal] = useState<string | null>(null);
 
-  const detail = useQuery({
-    queryKey: ["marketing", api.scopeKey, "connection-detail", viewKey || editKey],
-    queryFn: () => getConnection(api, viewKey || editKey),
-    enabled: Boolean(viewKey || editKey)
-  });
+  const editing: ConnectionRecord | null | undefined =
+    formMode === "new"
+      ? null
+      : formMode === "edit"
+        ? (editingLocal ?? detail.data ?? null)
+        : editingLocal;
 
-  const records = [...(query.data ?? []), ...(detail.data ? [detail.data] : [])];
-
-  const [editing, setEditing] = useWorkspaceRecordSelection(records, (row) => row.uuid);
-
-  const viewing = viewKey ? (detail.data ?? null) : null;
-
-  const setViewing = (record: ConnectionRecord | null) => setViewKey(record?.uuid ?? "");
+  const showing: string | null = showKey || showingLocal;
 
   const save = useMutation({
     mutationFn: (input: ConnectionInput) =>
       editing
         ? updateConnection(api, editing.uuid, { ...input, expectedRevision: editing.revision })
         : createConnection(api, input),
-
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ["marketing", api.scopeKey] });
-
-      setEditing(undefined);
-
-      toast.success("Connection saved.");
-    }
+      setEditingLocal(undefined);
+      setFormMode("");
+      setRecordKey("");
+      toast.success(editing ? "Connection updated successfully." : "Connection created successfully.");
+    },
+    onError: (error) => toast.error("Unable to save connection", { description: error.message })
   });
 
   const toggle = useMutation({
     mutationFn: (record: ConnectionRecord) =>
       updateConnection(api, record.uuid, {
         expectedRevision: record.revision,
-
         brandUuid: record.brandUuid,
-
         name: record.name,
-
         provider: record.provider,
-
         externalAccountId: record.externalAccountId,
-
         status: record.status === "active" ? "inactive" : "active"
       }),
-
-    onSuccess: () => client.invalidateQueries({ queryKey: ["marketing", api.scopeKey] }),
-
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: ["marketing", api.scopeKey] });
+      toast.success("Connection status updated.");
+    },
     onError: (error) => toast.error(error.message)
   });
 
-  if (
-    navigation?.search.form === "new" ||
-    navigation?.search.form === "edit" ||
-    editing !== undefined
-  ) {
+  const activeColumnFilters = Object.values(columnFilters).filter((value) => value?.trim()).length;
+
+  const filteredRecords = useMemo(() => {
+    let items = query.data ?? [];
+    if (fromDate || toDate) {
+      items = items.filter((item) => {
+        const itemDate = item.updatedAt.slice(0, 10);
+        if (fromDate && itemDate < fromDate) return false;
+        if (toDate && itemDate > toDate) return false;
+        return true;
+      });
+    }
+    if (activeColumnFilters > 0) {
+      items = items.filter((item) => {
+        if (deferredColumnFilters.name && !item.name.toLowerCase().includes(deferredColumnFilters.name.toLowerCase())) {
+          return false;
+        }
+        if (deferredColumnFilters.brandUuid && !item.brandUuid.toLowerCase().includes(deferredColumnFilters.brandUuid.toLowerCase())) {
+          return false;
+        }
+        if (deferredColumnFilters.provider && !item.provider.toLowerCase().includes(deferredColumnFilters.provider.toLowerCase())) {
+          return false;
+        }
+        if (deferredColumnFilters.externalAccountId && !item.externalAccountId.toLowerCase().includes(deferredColumnFilters.externalAccountId.toLowerCase())) {
+          return false;
+        }
+        if (deferredColumnFilters.status && !item.status.toLowerCase().includes(deferredColumnFilters.status.toLowerCase())) {
+          return false;
+        }
+        return true;
+      });
+    }
+    return items;
+  }, [query.data, fromDate, toDate, activeColumnFilters, deferredColumnFilters]);
+
+  const total = count.data?.total ?? filteredRecords.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(page, totalPages);
+
+  if (window.location.search.includes("code=") && window.location.search.includes("state=")) {
+    return <ConnectionAuthorizationCallback />;
+  }
+
+  if (editing !== undefined) {
     return (
-      <WorkspaceUpsertPage
-        title={navigation?.search.form === "edit" || editing ? "Edit Connection" : "New Connection"}
-      >
-        {detail.error ? <p role="alert">{detail.error.message}</p> : null}
-        {editing !== undefined ? (
-          <ConnectionForm
-            key={editing?.uuid ?? "new"}
-            record={editing}
-            pending={save.isPending}
-            error={save.error?.message ?? ""}
-            onCancel={() => setEditing(undefined)}
-            onSubmit={(value) => save.mutate(value)}
-          />
-        ) : (
-          <>
-            <p role="status">Loading record…</p>
-            <Button variant="outline" onClick={() => setEditing(undefined)}>
-              Back to list
-            </Button>
-          </>
-        )}
-      </WorkspaceUpsertPage>
+      <ConnectionForm
+        key={editing?.uuid ?? "new"}
+        record={editing}
+        pending={save.isPending}
+        error={save.error?.message ?? ""}
+        onCancel={() => {
+          save.reset();
+          setEditingLocal(undefined);
+          setFormMode("");
+          setRecordKey("");
+        }}
+        onSubmit={(value) => save.mutate(value)}
+      />
+    );
+  }
+
+  if (showing !== null) {
+    return (
+      <ConnectionShow
+        uuid={showing}
+        initialRecord={detail.data}
+        onBack={() => {
+          setShowingLocal(null);
+          setShowKey("");
+        }}
+        onEdit={(record) => {
+          setShowingLocal(null);
+          setShowKey("");
+          setEditingLocal(record);
+          setFormMode("edit");
+          setRecordKey(record.uuid);
+        }}
+        onToggleStatus={(record) => toggle.mutate(record)}
+      />
     );
   }
 
   return (
     <WorkspacePage
       variant="list"
-
-      title="Connections"
-
-      description="Manage connections in the current tenant and company."
-
+      title=""
       technicalName="page.marketing.connection.list"
-
       actions={
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => void query.refetch()}>
-            Refresh
-          </Button>
-
-          <Button
-            onClick={() => {
-              save.reset();
-
-              setEditing(null);
-            }}
-          >
-            New Connection
-          </Button>
-        </div>
+        <Button
+          onClick={() => {
+            save.reset();
+            setEditingLocal(null);
+            setFormMode("new");
+          }}
+        >
+          New Connection
+        </Button>
       }
     >
-      <ConnectionAuthorizationCallback />
-
       <WorkspaceFilters
-        showSelectedFilterChip={false}
+        toolbarAction={
+          <>
+            <WorkspaceDateRangePicker
+              fromDate={fromDate}
+              toDate={toDate}
+              onValueChange={(val) => {
+                setQueryParams((prev) => ({ ...prev, fromDate: val.fromDate, toDate: val.toDate, page: 1 }));
+              }}
+            />
+            <Button
+              aria-label="Toggle column search filters"
+              aria-pressed={showInlineFilters}
+              className="h-8 min-w-8 gap-1 px-2"
+              title="Toggle column search filters"
+              type="button"
+              variant={showInlineFilters ? "default" : "outline"}
+              onClick={() => setShowInlineFilters((prev) => !prev)}
+            >
+              <SlidersHorizontal className="size-4" aria-hidden="true" />
+              {activeColumnFilters > 0 ? (
+                <span className="text-xs">{activeColumnFilters}</span>
+              ) : null}
+            </Button>
+          </>
+        }
+        columnOptions={columnOptions.map((column) => ({
+          ...column,
+          checked: visibleColumns[column.id] !== false,
+          onCheckedChange: (checked) => {
+            setHiddenColumnKeys((prev) => {
+              const current = prev.split(",").filter(Boolean);
+              const next = checked ? current.filter((id) => id !== column.id) : [...current, column.id];
+              return next.join(",");
+            });
+            if (!checked) {
+              setColumnFilters((prev) => {
+                const next = { ...prev };
+                delete next[column.id as keyof ConnectionColumnFilters];
+                return next;
+              });
+              setQueryParams((prev) => ({ ...prev, page: 1 }));
+            }
+          }
+        }))}
+        onShowAllColumns={() => setHiddenColumnKeys("")}
+        searchPlaceholder="Search connections"
+        searchValue={search}
+        onSearchValueChange={(value) => {
+          setQueryParams((prev) => ({ ...prev, search: value, page: 1 }));
+        }}
         filterValue={status}
+        showSelectedFilterChip={true}
+        onFilterValueChange={(nextStatus) => {
+          setQueryParams((prev) => ({ ...prev, status: nextStatus, page: 1 }));
+        }}
         filterOptions={[
           { id: "all", label: "All statuses" },
           { id: "active", label: "Active" },
           { id: "inactive", label: "Inactive" }
         ]}
-        onFilterValueChange={(status) =>
-          setFilters((previous) => ({ ...previous, status, page: 0 }))
-        }
-        columnOptions={columnOptions}
-        onShowAllColumns={() => setHiddenColumns([])}
-        searchValue={search}
-
-        searchPlaceholder="Search connections"
-
-        onSearchValueChange={(value) => {
-          setFilters((previous) => ({ ...previous, search: value, page: 0 }));
-        }}
       />
 
-      {detail.error ? <p role="alert">{detail.error.message}</p> : null}
-
       {query.error ? (
-        <p role="alert" className="text-destructive">
+        <p role="alert" className="text-sm text-destructive">
           {query.error.message}
         </p>
       ) : null}
 
       <ConnectionList
-        hiddenColumns={hiddenColumns}
-        records={query.data ?? []}
-
+        records={filteredRecords}
         loading={query.isLoading}
-
-        onView={setViewing}
-
+        visibleColumns={visibleColumns}
+        showInlineFilters={showInlineFilters}
+        columnFilters={columnFilters}
+        onColumnFilterChange={(col, val) => {
+          setColumnFilters((prev) => ({ ...prev, [col]: val }));
+          setQueryParams((prev) => ({ ...prev, page: 1 }));
+        }}
+        onHideInlineFilters={() => setShowInlineFilters(false)}
+        onView={(record) => {
+          setShowingLocal(record.uuid);
+          setShowKey(record.uuid);
+        }}
         onEdit={(record) => {
           save.reset();
-
-          setEditing(record);
+          setEditingLocal(record);
+          setFormMode("edit");
+          setRecordKey(record.uuid);
         }}
-
-        onToggle={(record) => {
-          if (
-            window.confirm(
-              record.status === "active"
-                ? "Deactivate this connection?"
-                : "Restore this connection?"
-            )
-          )
-            toggle.mutate(record);
-        }}
+        onToggle={(record) => toggle.mutate(record)}
       />
 
       <WorkspacePagination
-        page={page + 1}
-        rowsPerPage={50}
-        rowsPerPageOptions={[50]}
-        totalCount={count.data?.total ?? 0}
-        totalPages={Math.max(1, Math.ceil((count.data?.total ?? 0) / 50))}
-        showingLabel={`${page * 50 + ((query.data?.length ?? 0) ? 1 : 0)}–${page * 50 + (query.data?.length ?? 0)}`}
-        singularLabel="connections"
-        onPreviousPage={() => setPage(Math.max(0, page - 1))}
-        onNextPage={() => setPage(page + 1)}
-        onPageChange={(next) => setPage(next - 1)}
+        page={currentPage}
+        rowsPerPage={pageSize}
+        rowsPerPageOptions={[20, 50, 100]}
+        showingLabel={buildShowingLabel(currentPage, pageSize, total)}
+        singularLabel="connection"
+        totalCount={total}
+        totalPages={totalPages}
+        onNextPage={() => setQueryParams((prev) => ({ ...prev, page: Math.min(totalPages, currentPage + 1) }))}
+        onPageChange={(next) => setQueryParams((prev) => ({ ...prev, page: next }))}
+        onPreviousPage={() => setQueryParams((prev) => ({ ...prev, page: Math.max(1, currentPage - 1) }))}
+        onRowsPerPageChange={(nextSize) => {
+          setQueryParams((prev) => ({ ...prev, pageSize: nextSize, page: 1 }));
+        }}
       />
-
-      {viewing ? (
-        <ConnectionShow
-          record={viewing}
-
-          onClose={() => setViewing(null)}
-
-          onEdit={() => {
-            setEditing(viewing);
-
-            setViewing(null);
-          }}
-        />
-      ) : null}
     </WorkspacePage>
   );
 }

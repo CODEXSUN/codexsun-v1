@@ -11,17 +11,24 @@ const base = "/ecommerce/catalog/variants",
   service = new ProductVariantService(),
   params = z.object({ id: z.coerce.number().int().positive() }),
   status = z.enum(["active", "inactive"]);
+const optionPart = (maximum: number, label: string) =>
+  z
+    .string()
+    .refine((value) => Array.from(value).length <= maximum, {
+      message: `${label} must be at most ${maximum} characters.`
+    })
+    .default("");
 const payload = z.object({
   productInformationId: z.number().int().positive(),
   sku: z.string().trim().min(1).max(120),
   title: z.string().trim().max(191).default(""),
   barcode: z.string().max(120).default(""),
-  option1Name: z.string().max(PRODUCT_VARIANT_OPTION_NAME_MAX_LENGTH).default(""),
-  option1Value: z.string().max(PRODUCT_VARIANT_OPTION_VALUE_MAX_LENGTH).default(""),
-  option2Name: z.string().max(PRODUCT_VARIANT_OPTION_NAME_MAX_LENGTH).default(""),
-  option2Value: z.string().max(PRODUCT_VARIANT_OPTION_VALUE_MAX_LENGTH).default(""),
-  option3Name: z.string().max(PRODUCT_VARIANT_OPTION_NAME_MAX_LENGTH).default(""),
-  option3Value: z.string().max(PRODUCT_VARIANT_OPTION_VALUE_MAX_LENGTH).default(""),
+  option1Name: optionPart(PRODUCT_VARIANT_OPTION_NAME_MAX_LENGTH, "Option name"),
+  option1Value: optionPart(PRODUCT_VARIANT_OPTION_VALUE_MAX_LENGTH, "Option value"),
+  option2Name: optionPart(PRODUCT_VARIANT_OPTION_NAME_MAX_LENGTH, "Option name"),
+  option2Value: optionPart(PRODUCT_VARIANT_OPTION_VALUE_MAX_LENGTH, "Option value"),
+  option3Name: optionPart(PRODUCT_VARIANT_OPTION_NAME_MAX_LENGTH, "Option name"),
+  option3Value: optionPart(PRODUCT_VARIANT_OPTION_VALUE_MAX_LENGTH, "Option value"),
   priceAdjustment: z.number().default(0),
   compareAtAdjustment: z.number().default(0),
   costAdjustment: z.number().default(0),

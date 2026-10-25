@@ -93,9 +93,9 @@ by `.env.example`. `.container/deploy.env` is the private production/container
 configuration built from `.container/deploy.env.sample`. Container Compose,
 migrations, updates, cleanup metadata, and smoke tests must read only the
 deployment file. Environment variables must be validated before startup.
-Cloud operators prepare that file with `bash prepare-env.sh`; `bash setup.sh`
-only checks and consumes it. Setup must never create deployment configuration
-or offer to copy values or credentials from development `.env`.
+Cloud operators explicitly configure that file with `bash setup.sh --configure`.
+Normal `bash setup.sh` only checks and consumes it. Setup never copies development `.env`.
+The internal deployment contract lives under `.container/codexsun-v1`.
 
 All application-owned environment variables use the `CODEXSUN_*` prefix. The
 retired prefix has no runtime alias: root and deployment environment files must

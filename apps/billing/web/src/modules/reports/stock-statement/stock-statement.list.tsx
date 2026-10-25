@@ -42,8 +42,10 @@ export function StockStatementList({
                 </th>
               ))}
             </tr>
+          </thead>
+          <tbody>
             {tools.showFilters && (
-              <tr>
+              <tr className="border-b border-border/70 bg-white">
                 {[
                   "Product",
                   "HSN",
@@ -57,14 +59,12 @@ export function StockStatementList({
                 ]
                   .filter((label) => !tools.hidden.includes(label))
                   .map((label) => (
-                    <th className="px-3 pb-2" key={label}>
+                    <td className="px-4 py-2.5 text-foreground" key={label}>
                       {tools.filterRow(label)}
-                    </th>
+                    </td>
                   ))}
               </tr>
             )}
-          </thead>
-          <tbody>
             {entries.map((entry) => (
               <tr
                 className="border-b border-border/70 last:border-b-0 hover:bg-muted/20"

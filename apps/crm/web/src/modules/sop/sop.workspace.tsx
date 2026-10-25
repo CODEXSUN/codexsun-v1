@@ -1,3 +1,5 @@
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
+import { useCrmFrappeSyncEnabled } from "../frappe-sync/frappe-sync.hooks";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, RefreshCw } from "lucide-react";
@@ -10,6 +12,7 @@ import { SopSimpleForm } from "./sop.simple-form";
 import { FrappeSyncIndicator } from "../frappe-sync/frappe-sync.indicator";
 
 export function SopWorkspace() {
+  const frappeSyncEnabled = useCrmFrappeSyncEnabled();
   const query = useQuery({
     queryKey: ["crm", "sop-items"],
     queryFn: listSopItems,
@@ -74,60 +77,62 @@ export function SopWorkspace() {
         isLoading={query.isLoading}
         onRowClick={setEditing}
         emptyState="No SOPs found."
-        columns={[
-          {
-            id: "name",
-            accessorKey: "title",
-            header: "SOP name",
-            cell: ({ row }) => (
-              <button
-                type="button"
-                className="text-left font-medium hover:underline"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setEditing(row.original);
-                }}
-              >
-                {row.original.title}
-              </button>
-            )
-          },
-          { id: "department", accessorKey: "department", header: "Department" },
-          {
-            id: "frequency",
-            accessorKey: "frequency",
-            header: "Frequency",
-            cell: ({ row }) =>
-              row.original.frequency === "annually"
-                ? "Yearly"
-                : row.original.frequency.charAt(0).toUpperCase() + row.original.frequency.slice(1)
-          },
-          {
-            id: "steps",
-            header: "Steps",
-            cell: ({ row }) => (
-              <span className="line-clamp-2 max-w-xl whitespace-pre-wrap text-muted-foreground">
-                {row.original.currentRevision?.instructions ?? "�"}
-              </span>
-            )
-          },
-          {
-            id: "frappeSync",
-            header: "Frappe sync",
-            cell: ({ row }) => (
-              <FrappeSyncIndicator
-                status={row.original.frappeSyncStatus}
-                onVerify={async () => {
-                  const latest = await query.refetch();
-                  return (
-                    latest.data?.find((item) => item.id === row.original.id)?.frappeSyncStatus ??
-                    null
-                  );
-                }}
-              />
-            )
-          }
-        ]}
+        columns={(
+          [
+            {
+              id: "name",
+              accessorKey: "title",
+              header: "SOP name",
+              cell: ({ row }) => (
+                <button
+                  type="button"
+                  className="text-left font-medium hover:underline"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setEditing(row.original);
+                  }}
+                >
+                  {row.original.title}
+                </button>
+              )
+            },
+            { id: "department", accessorKey: "department", header: "Department" },
+            {
+              id: "frequency",
+              accessorKey: "frequency",
+              header: "Frequency",
+              cell: ({ row }) =>
+                row.original.frequency === "annually"
+                  ? "Yearly"
+                  : row.original.frequency.charAt(0).toUpperCase() + row.original.frequency.slice(1)
+            },
+            {
+              id: "steps",
+              header: "Steps",
+              cell: ({ row }) => (
+                <span className="line-clamp-2 max-w-xl whitespace-pre-wrap text-muted-foreground">
+                  {row.original.currentRevision?.instructions ?? "�"}
+                </span>
+              )
+            },
+            {
+              id: "frappeSync",
+              header: "Frappe sync",
+              cell: ({ row }) => (
+                <FrappeSyncIndicator
+                  status={row.original.frappeSyncStatus}
+                  onVerify={async () => {
+                    const latest = await query.refetch();
+                    return (
+                      latest.data?.find((item) => item.id === row.original.id)?.frappeSyncStatus ??
+                      null
+                    );
+                  }}
+                />
+              )
+            }
+          ] satisfies ColumnDef<SopItem>[]
+        ).filter((column) => column.id !== "frappeSync" || frappeSyncEnabled)}
       />
     </WorkspacePage>
   );

@@ -259,6 +259,15 @@ test("local enquiry changes enter the Frappe queue in order and coalesce safely"
         },
         transaction
       );
+      const beforeDeferral = await queue.getEvent(pendingLinkedComment);
+      await queue.deferDelivery(pendingLinkedComment);
+      const deferred = await queue.getEvent(pendingLinkedComment);
+      assert.notEqual(deferred?.correlation_id, beforeDeferral?.correlation_id);
+      assert.equal(deferred?.idempotency_key, beforeDeferral?.idempotency_key);
+      assert.equal(deferred?.entity_id, beforeDeferral?.entity_id);
+      assert.equal(deferred?.attempts, beforeDeferral?.attempts);
+      assert.equal(deferred?.last_error, beforeDeferral?.last_error);
+      assert.equal(deferred?.status, "pending");
       const completedLinkedUpdate = await queue.enqueueUpsert(
         {
           actorEmail: "sync-test@local.invalid",

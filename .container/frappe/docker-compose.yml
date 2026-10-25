@@ -1,0 +1,46 @@
+name: codexsun-frappe
+services:
+  frappe:
+    image: ${CODEXSUN_FRAPPE_IMAGE:?Run install.py to resolve the image}
+    container_name: codexsun-frappe
+    build:
+      context: .
+      args:
+        CODEXSUN_FRAPPE_BASE_IMAGE: ${CODEXSUN_FRAPPE_BASE_IMAGE:?Run install.py to resolve the base image}
+    restart: unless-stopped
+    stop_grace_period: 150s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    init: true
+    environment:
+      BACKEND: 127.0.0.1:8000
+      SOCKETIO: 127.0.0.1:9000
+      FRAPPE_SITE_NAME_HEADER: ${CODEXSUN_FRAPPE_SITE:?Set a site hostname}
+      NGINX_LISTEN_PORT: "8080"
+      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: "off"
+      PROXY_READ_TIMEOUT: "120"
+      CLIENT_MAX_BODY_SIZE: 50m
+    ports:
+      - "127.0.0.1:${CODEXSUN_FRAPPE_PORT:-8088}:8080"
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    networks: [shared]
+    healthcheck:
+      test: [CMD, python, /opt/codexsun/healthcheck.py]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+volumes:
+  sites:
+  logs:
+networks:
+  shared:
+    name: ${CODEXSUN_FRAPPE_NETWORK:?Set the existing network name}
+    external: true

@@ -1,5 +1,12 @@
 # Data Bridge working skills
 
+## Pattern references
+
+Read [cxapp-v2.md](cxapp-v2.md) for the reusable CXApp schema and row migration pattern.
+Read [thirumurugan-legacy.md](thirumurugan-legacy.md) for older uppercase keys, split entities, and normalization preparation.
+Read [thirumurugan-migration.md](thirumurugan-migration.md) for the approved local execution record, held rows, receipt review, and live-client repeat procedure.
+These guides do not authorize live writes or resolve pending business decisions.
+
 ## Purpose and entry points
 
 Use this guide for repeated migration work, manual operation, automation, review, and handoff.
@@ -24,6 +31,7 @@ Data Bridge owns preparation, import decisions, saved snapshots, conflicts, and 
 | import-review       | Own selected snapshots, legacy saved reviews, and public reference/audit contracts.            |
 | report              | Own combined results, row details, historical summaries, and explicit correction plans.        |
 | business-import     | Own ordered business runs, checkpointed chunks, invoice verification, and split report tabs.   |
+| legacy-cxapp        | Own local legacy normalization, prepared collections, source-key crosswalks, and review lists. |
 | data-bridge         | Compose API modules and retain the original migration ledger.                                  |
 | transport           | Frontend HTTP envelope, authentication slot, and error handling only.                          |
 

@@ -1,7 +1,6 @@
-import { CalendarRange, X } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "@codexsun/ui/components/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@codexsun/ui/components/popover";
-import { WorkspaceDatePicker } from "@codexsun/ui/workspace/date-picker";
+import { WorkspaceDateRangePicker } from "@codexsun/ui/workspace/date-range-picker";
 import { cn } from "@codexsun/ui/lib/utils";
 
 export type BillingDocumentReportRecord = {
@@ -22,6 +21,7 @@ const totalsViewOptions: Array<{ label: string; value: BillingDocumentTotalsView
 ];
 
 export function BillingDocumentListControls({
+  columnSearchAction,
   dateFrom,
   dateTo,
   onDateFromChange,
@@ -29,6 +29,7 @@ export function BillingDocumentListControls({
   onTotalsViewChange,
   totalsView
 }: {
+  columnSearchAction?: ReactNode;
   dateFrom: string;
   dateTo: string;
   onDateFromChange: (value: string) => void;
@@ -36,62 +37,17 @@ export function BillingDocumentListControls({
   onTotalsViewChange: (value: BillingDocumentTotalsViewMode) => void;
   totalsView: BillingDocumentTotalsViewMode;
 }) {
-  const hasDateRange = Boolean(dateFrom || dateTo);
-
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            className={cn(
-              "h-8 rounded-md border-border/80 bg-white px-3 text-sm shadow-none",
-              hasDateRange && "border-primary/40 bg-primary/5 text-primary"
-            )}
-            type="button"
-            variant="outline"
-          >
-            <CalendarRange className="size-4" />
-            Date range
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="end" className="w-[23rem] rounded-md border-border/80 p-3 shadow-lg">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <WorkspaceDatePicker
-              ariaLabel="From date"
-              onValueChange={(value) => {
-                onDateFromChange(value);
-                if (dateTo && value > dateTo) onDateToChange("");
-              }}
-              placeholder="From date"
-              value={dateFrom}
-            />
-            <WorkspaceDatePicker
-              ariaLabel="To date"
-              onValueChange={(value) => {
-                onDateToChange(value);
-                if (dateFrom && value < dateFrom) onDateFromChange("");
-              }}
-              placeholder="To date"
-              value={dateTo}
-            />
-          </div>
-          <div className="mt-3 flex justify-end">
-            <Button
-              className="h-8"
-              disabled={!hasDateRange}
-              onClick={() => {
-                onDateFromChange("");
-                onDateToChange("");
-              }}
-              type="button"
-              variant="ghost"
-            >
-              <X className="size-4" />
-              Clear dates
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
+      <WorkspaceDateRangePicker
+        fromDate={dateFrom}
+        toDate={dateTo}
+        onValueChange={({ fromDate, toDate }) => {
+          onDateFromChange(fromDate);
+          onDateToChange(toDate);
+        }}
+      />
+      {columnSearchAction}
       <div
         aria-label="Totals view"
         className="flex h-8 items-center rounded-md border border-border/80 bg-white p-0.5"

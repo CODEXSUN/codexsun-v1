@@ -1,3 +1,4 @@
+import { useCrmFrappeSyncEnabled } from "../frappe-sync/frappe-sync.hooks";
 import { countTaskStatuses } from "./task.filters";
 import { enquiryContactsQueryKey } from "../enquiry";
 import { contactsQueryKey } from "../contact";
@@ -44,6 +45,7 @@ export function TaskWorkspace({
   onCancelCreate?: () => void;
   onEditActionChange?: (action: { run: () => void } | null) => void;
 }) {
+  const frappeSyncEnabled = useCrmFrappeSyncEnabled();
   const client = useQueryClient();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("active");
@@ -204,18 +206,20 @@ export function TaskWorkspace({
             </Button>
           </>
         }
-        columnOptions={columns.map((column) => ({
-          ...column,
-          checked: visibleColumns[column.id] !== false,
-          onCheckedChange: (checked: boolean) => {
-            setVisibleColumns((current) => ({ ...current, [column.id]: checked }));
-            if (!checked) {
-              const key = filterKey(column.id);
-              setColumnFilters((current) => ({ ...current, [key]: "" }));
-              setPage(1);
+        columnOptions={columns
+          .filter((column) => column.id !== "frappeSync" || frappeSyncEnabled)
+          .map((column) => ({
+            ...column,
+            checked: visibleColumns[column.id] !== false,
+            onCheckedChange: (checked: boolean) => {
+              setVisibleColumns((current) => ({ ...current, [column.id]: checked }));
+              if (!checked) {
+                const key = filterKey(column.id);
+                setColumnFilters((current) => ({ ...current, [key]: "" }));
+                setPage(1);
+              }
             }
-          }
-        }))}
+          }))}
         onShowAllColumns={() => setVisibleColumns({})}
         searchPlaceholder="Search task, list, assignee, or details"
         searchValue={search}
@@ -245,7 +249,10 @@ export function TaskWorkspace({
         onOpen={open}
         onEdit={setEditing}
         canEdit={Boolean(options.data?.capabilities.update)}
-        visibleColumns={visibleColumns}
+        visibleColumns={{
+          ...visibleColumns,
+          frappeSync: frappeSyncEnabled && visibleColumns.frappeSync !== false
+        }}
         showInlineFilters={showInlineFilters}
         columnFilters={columnFilters}
         onColumnFilterChange={(column, value) => {

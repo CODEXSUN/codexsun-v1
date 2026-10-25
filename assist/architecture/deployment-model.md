@@ -80,10 +80,12 @@ The executable local product stacks use the same composition contract:
 framework + platform + core + billing = billing stack
 ```
 
-The executable container layout lives under `.container/`. MariaDB, Redis, and Media form one
-persistent infrastructure layer alongside the independent Billing Compose project. A normal product upgrade pulls
-versioned images, applies only Billing's forward migrations, and replaces only its application containers. It must
-preserve the deployment input, credentials, named volumes, databases, and uploads.
+The active VPS container contract lives under `.container/codexsun-v1`.
+Root setup and update commands select API, Web, Shop, and optional Worker/Chatb images from that contract.
+MariaDB and Redis retain their definitions under `.container/database`. Existing infrastructure remains persistent.
+Media is retained separately and Frappe setup is deferred. Neither is installed or bound by this contract.
+Updates verify backups before GitHub source changes, builds, migrations, and application replacement.
+Read the internal `.container/docs/DEPLOYMENT.md` guide for ownership, version, checksum, and rollback guards.
 
 Platform supplies identity, tenant, permission, activation, audit, queue, storage, and operational
 services. Core supplies tenant-owned common masters through fixed public contracts. Billing remains

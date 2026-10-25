@@ -2,9 +2,32 @@ import { createHash, randomBytes } from "node:crypto";
 import { sql } from "kysely";
 import { AppError } from "@codexsun/framework/errors";
 import type { MarketingContext } from "../../context.js";
-import type { ConsentInput, ConsentRecord, EligibilityInput } from "./consent.types.js";
+import type {
+  ConsentInput,
+  ConsentRecord,
+  EligibilityInput,
+  ContactRestrictionInput,
+  ContactRestrictionRecord,
+  ContactRestrictionChannel,
+  PolicyResult
+} from "./consent.types.js";
+
+type RestrictionDbRow = {
+  uuid: string;
+  companyId: number;
+  recipient: string;
+  channel: ContactRestrictionChannel;
+  blocked: number | boolean;
+  reason: string;
+  status: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export class ConsentRepository {
   constructor(private readonly context: MarketingContext) {}
+
   private projection() {
     return sql`uuid,company_id AS companyId,brand_uuid AS brandUuid,recipient,channel,purpose,action,
       notice_version AS noticeVersion,evidence,source,request_key AS requestKey,created_by AS createdBy,
@@ -12,10 +35,12 @@ export class ConsentRepository {
       DATE_FORMAT(expires_at,'%Y-%m-%dT%H:%i:%s.%fZ') AS expiresAt,
       DATE_FORMAT(created_at,'%Y-%m-%dT%H:%i:%s.%fZ') AS createdAt`;
   }
+
   private scope() {
     const c = this.context;
     return c.allowedBrands.length ? sql`brand_uuid IN (${sql.join(c.allowedBrands)})` : sql`FALSE`;
   }
+
   async list(search: string, action: string, limit: number, offset: number) {
     return (
       await sql<ConsentRecord>`SELECT ${this.projection()} FROM marketing_consent_events
@@ -24,6 +49,7 @@ export class ConsentRepository {
       ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`.execute(this.context.database)
     ).rows;
   }
+
   async count(search: string, action: string) {
     return Number(
       (
@@ -35,6 +61,7 @@ export class ConsentRepository {
       ).rows[0]?.total ?? 0
     );
   }
+
   async get(uuid: string) {
     return (
       (
@@ -45,6 +72,7 @@ export class ConsentRepository {
       ).rows[0] ?? null
     );
   }
+
   async latest(input: EligibilityInput) {
     return (
       (
@@ -55,6 +83,7 @@ export class ConsentRepository {
       ).rows[0] ?? null
     );
   }
+
   async append(input: ConsentInput) {
     const hash = createHash("sha256").update(JSON.stringify(input)).digest("hex");
     return this.context.database.transaction().execute(async (database) => {
@@ -95,6 +124,80 @@ export class ConsentRepository {
       );
       return uuid;
     });
+  }
+
+  // Contact Restrictions
+  async listRestrictions(
+    search = "",
+    channel = "all",
+    limit = 50,
+    offset = 0
+  ): Promise<ContactRestrictionRecord[]> {
+    const channelFilter = channel === "all" ? sql`` : sql`AND channel=${channel}`;
+    const rows = (
+      await sql<RestrictionDbRow>`SELECT uuid, company_id AS companyId, recipient, channel, blocked, reason, status, created_by AS createdBy, DATE_FORMAT(created_at,'%Y-%m-%dT%H:%i:%s.000Z') AS createdAt, DATE_FORMAT(updated_at,'%Y-%m-%dT%H:%i:%s.000Z') AS updatedAt FROM marketing_contact_restrictions
+      WHERE company_id=${this.context.companyId} ${channelFilter} AND (recipient LIKE ${"%" + search + "%"} OR reason LIKE ${"%" + search + "%"})
+      ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`.execute(this.context.database)
+    ).rows;
+
+    return rows.map((r) => ({
+      ...r,
+      blocked: Boolean(r.blocked)
+    }));
+  }
+
+  async countRestrictions(search = "", channel = "all"): Promise<number> {
+    const channelFilter = channel === "all" ? sql`` : sql`AND channel=${channel}`;
+    return Number(
+      (
+        await sql<{ total: number }>`SELECT COUNT(*) AS total FROM marketing_contact_restrictions
+      WHERE company_id=${this.context.companyId} ${channelFilter} AND (recipient LIKE ${"%" + search + "%"} OR reason LIKE ${"%" + search + "%"})`.execute(
+          this.context.database
+        )
+      ).rows[0]?.total ?? 0
+    );
+  }
+
+  async getRestriction(uuid: string): Promise<ContactRestrictionRecord | null> {
+    const row = (
+      await sql<RestrictionDbRow>`SELECT uuid, company_id AS companyId, recipient, channel, blocked, reason, status, created_by AS createdBy, DATE_FORMAT(created_at,'%Y-%m-%dT%H:%i:%s.000Z') AS createdAt, DATE_FORMAT(updated_at,'%Y-%m-%dT%H:%i:%s.000Z') AS updatedAt FROM marketing_contact_restrictions
+      WHERE uuid=${uuid} AND company_id=${this.context.companyId}`.execute(this.context.database)
+    ).rows[0];
+
+    if (!row) return null;
+    return {
+      ...row,
+      blocked: Boolean(row.blocked)
+    };
+  }
+
+  async recordRestriction(input: ContactRestrictionInput, uuid: string): Promise<string> {
+    await sql`INSERT INTO marketing_contact_restrictions(uuid, company_id, recipient, channel, blocked, reason, status, created_by, created_at, updated_at)
+    VALUES(${uuid}, ${this.context.companyId}, ${input.recipient}, ${input.channel}, ${input.blocked}, ${input.reason}, 'active', ${this.context.actorEmail}, UTC_TIMESTAMP(), UTC_TIMESTAMP())`.execute(
+      this.context.database
+    );
+    return uuid;
+  }
+
+  async checkRestriction(
+    recipient: string,
+    channel: ContactRestrictionChannel = "all"
+  ): Promise<PolicyResult> {
+    const channelFilter =
+      channel === "all"
+        ? sql``
+        : sql`AND (channel=${channel} OR channel='all')`;
+
+    const row = (
+      await sql<{ blocked: number; reason: string }>`SELECT blocked, reason FROM marketing_contact_restrictions
+      WHERE company_id=${this.context.companyId} AND recipient=${recipient} ${channelFilter}
+      ORDER BY id DESC LIMIT 1`.execute(this.context.database)
+    ).rows[0];
+
+    if (row && Boolean(row.blocked)) {
+      return { allowed: false, reason: "do_not_contact" };
+    }
+    return { allowed: true, reason: "no_restriction" };
   }
 }
 

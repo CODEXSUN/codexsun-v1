@@ -159,11 +159,24 @@ const capabilityBackendRoles = new Map([
   ["platform-api/qcafe", ["module"]],
 
   ["auditor-api/client", ["module", "service", "repository", "routes", "migration", "types"]],
+  ["ecommerce-api/catalog-activity", ["service", "repository", "migration", "types"]],
   ["ecommerce-api/catalog-data-source", ["service", "repository", "routes", "migration", "types"]],
   ["ecommerce-api/catalog-matching", [...reducedBackendRoles, "worker"]],
   ["ecommerce-api/ecommerce-composition", ["module", "migration", "seed"]],
   ["ecommerce-api/featured-card", reducedBackendRoles],
   ["ecommerce-api/product-image", reducedBackendRoles],
+  [
+    "ecommerce-api/product-attribute",
+    ["module", "service", "repository", "routes", "migration", "types"]
+  ],
+  [
+    "ecommerce-api/product-specification",
+    ["module", "service", "repository", "routes", "migration", "types"]
+  ],
+  [
+    "ecommerce-api/product-collection",
+    ["module", "service", "repository", "routes", "migration", "types"]
+  ],
   ["ecommerce-api/product-information", reducedBackendRoles],
   ["ecommerce-api/product-variant", reducedBackendRoles],
   ["ecommerce-api/promotion-card", reducedBackendRoles],
@@ -207,7 +220,18 @@ const capabilityBackendRoles = new Map([
   ["crm-api/lead", reducedBackendRoles],
   ["crm-api/contact-restriction", reducedBackendRoles],
   ["mail-api/suppression", reducedBackendRoles],
-  ...["brand", "campaign", "capture", "connection", "consent"].map((name) => [
+  ...[
+    "brand",
+    "campaign",
+    "capture",
+    "connection",
+    "consent",
+    "lead",
+    "qualification",
+    "conversion",
+    "outcome",
+    "follow-up"
+  ].map((name) => [
     `marketing-api/${name}`,
     reducedBackendRoles
   ]),
@@ -379,6 +403,18 @@ const capabilityFrontendRoles = new Map([
   ],
   [
     "ecommerce-web/season-strip",
+    ["workspace", "list", "form", "services", "hooks", "types", "schema"]
+  ],
+  [
+    "ecommerce-web/product-attribute",
+    ["workspace", "list", "form", "services", "hooks", "types", "schema"]
+  ],
+  [
+    "ecommerce-web/product-specification",
+    ["workspace", "list", "form", "services", "hooks", "types", "schema"]
+  ],
+  [
+    "ecommerce-web/product-collection",
     ["workspace", "list", "form", "services", "hooks", "types", "schema"]
   ],
   ["logicx-erp-web/overview", ["workspace", "services", "hooks", "types"]],

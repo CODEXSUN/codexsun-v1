@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": false,
+    "outDir": "../../../dist/apps/worker/api",
+    "rootDir": "src",
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

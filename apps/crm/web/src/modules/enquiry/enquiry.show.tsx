@@ -1,3 +1,4 @@
+import { useCrmFrappeSyncEnabled } from "../frappe-sync/frappe-sync.hooks";
 import { EnquiryWhatsAppWorkspace } from "../enquiry-whatsapp";
 import { useWhatsAppMessages } from "../enquiry-whatsapp/enquiry-whatsapp.hooks";
 import { WorkChargesWorkspace, WorkReportWorkspace } from "../work-report/index";
@@ -94,7 +95,11 @@ export function EnquiryShow({
   const whatsApp = useWhatsAppMessages(Number(id));
   const schedules = useRecordSchedules("enquiry", Number(id));
   const record = enquiry.data;
-  const frappeSync = useEnquiryFrappeSync(id, record?.canViewFrappeSync === true);
+  const frappeSyncEnabled = useCrmFrappeSyncEnabled();
+  const frappeSync = useEnquiryFrappeSync(
+    id,
+    frappeSyncEnabled && record?.canViewFrappeSync === true
+  );
   const contact = contacts.find((item) => item.id === record?.contactId);
   const mobile = contact?.primaryPhone || record?.capturedPhone || null;
   const error = enquiry.error ?? comments.error ?? jobs.error ?? estimates.error;
@@ -269,7 +274,7 @@ export function EnquiryShow({
         />
       ) : null
     },
-    ...(record?.canViewFrappeSync
+    ...(frappeSyncEnabled && record?.canViewFrappeSync
       ? [
           {
             value: "frappe-sync" as const,
@@ -359,9 +364,14 @@ export function EnquiryShow({
             mobile={mobile}
             closurePending={closure.data?.item?.status === "pending"}
           />
-          {record.frappeSyncError ? <p role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            Frappe export error: {record.frappeSyncError}
-          </p> : null}
+          {frappeSyncEnabled && record.canViewFrappeSync && record.frappeSyncError ? (
+            <p
+              role="alert"
+              className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+            >
+              Frappe export error: {record.frappeSyncError}
+            </p>
+          ) : null}
           <WorkspaceAnimatedTabs
             keepMounted
             tabs={tabs}

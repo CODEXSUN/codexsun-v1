@@ -4253,58 +4253,6 @@
       "sortOrder": 18
     },
     {
-      "pageKey": "repository/sources/fd7a8c5d23af0f32",
-      "appKey": "repository",
-      "appLabel": "Repository",
-      "groupKey": "repository",
-      "groupLabel": "Repository references",
-      "moduleKey": "",
-      "title": ".container/demo/README.md",
-      "summary": "CODEXSUN demo on Hostinger — .container/demo/README.md",
-      "sourcePath": "applications/repository/sources/fd7a8c5d23af0f32.md",
-      "sourceHash": "1874d40d6ea9ea9a0b8f2723b1c2e90a9fb66b46fe5f35352bde1ee9b8bf8a91",
-      "sortOrder": 0
-    },
-    {
-      "pageKey": "repository/sources/c1d8ecc3a494ef8a",
-      "appKey": "repository",
-      "appLabel": "Repository",
-      "groupKey": "repository",
-      "groupLabel": "Repository references",
-      "moduleKey": "",
-      "title": ".container/docs/ssh.md",
-      "summary": ".container/docs/ssh.md — .container/docs/ssh.md",
-      "sourcePath": "applications/repository/sources/c1d8ecc3a494ef8a.md",
-      "sourceHash": "2a9fbee5732ea4ba8275313681f8e5fe07da8ab95f3ec4252a22713e9f4a717a",
-      "sortOrder": 100
-    },
-    {
-      "pageKey": "repository/sources/f048215054a956fd",
-      "appKey": "repository",
-      "appLabel": "Repository",
-      "groupKey": "repository",
-      "groupLabel": "Repository references",
-      "moduleKey": "",
-      "title": ".container/README.md",
-      "summary": "CODEXSUN Container Deployment — .container/README.md",
-      "sourcePath": "applications/repository/sources/f048215054a956fd.md",
-      "sourceHash": "dc211d8ee24e4bb271995e216744a599b272bd98ed851d1107110eb9178ac591",
-      "sortOrder": 200
-    },
-    {
-      "pageKey": "repository/sources/42224fc4930ac411",
-      "appKey": "repository",
-      "appLabel": "Repository",
-      "groupKey": "repository",
-      "groupLabel": "Repository references",
-      "moduleKey": "",
-      "title": ".container/setup.md",
-      "summary": "CODEXSUN Host Setup — .container/setup.md",
-      "sourcePath": "applications/repository/sources/42224fc4930ac411.md",
-      "sourceHash": "e8b8c4b4215185ed2a7d654360809e439684d22acf36c2a78e61130f0110bbde",
-      "sortOrder": 300
-    },
-    {
       "pageKey": "repository/sources/d057f10bbc7ffa9b",
       "appKey": "repository",
       "appLabel": "Repository",

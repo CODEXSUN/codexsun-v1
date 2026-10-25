@@ -279,6 +279,11 @@ const FrappeCallLogExportWorkspace = lazyWorkspace(() =>
     (module) => module.FrappeCallLogExportWorkspace
   )
 );
+const FrappeAvailabilityWorkspace = lazyWorkspace(() =>
+  import("@codexsun/frappe-web/modules/live-sync").then(
+    (module) => module.FrappeAvailabilityWorkspace
+  )
+);
 const FrappeLiveSyncWorkspace = lazyWorkspace(() =>
   import("@codexsun/frappe-web/modules/live-sync").then((module) => module.FrappeLiveSyncWorkspace)
 );
@@ -671,6 +676,7 @@ type AppPage =
   | "frappe.export.enquiries"
   | "frappe.export.activities"
   | "frappe.export.call-logs"
+  | "frappe.availability"
   | "frappe.live-sync"
   | "frappe.live-sync-queue"
   | "frappe.connection"
@@ -698,6 +704,9 @@ type AppPage =
   | "ecommerce.catalog"
   | "ecommerce.storefront"
   | "ecommerce.product-information"
+  | "ecommerce.product-attributes"
+  | "ecommerce.product-specifications"
+  | "ecommerce.product-collections"
   | "ecommerce.product-variants"
   | "ecommerce.product-images"
   | "ecommerce.catalog-data-source"
@@ -740,6 +749,11 @@ type AppPage =
   | "marketing.campaigns"
   | "marketing.captures"
   | "marketing.connections"
+  | "marketing.leads"
+  | "marketing.qualifications"
+  | "marketing.conversions"
+  | "marketing.outcomes"
+  | "marketing.followups"
   | "crm.overview"
   | "crm.reports"
   | "crm.enquiries"
@@ -1527,7 +1541,9 @@ export function AppDesk() {
   const bootstrapError =
     (runtimeQuery.isError && !runtimeQuery.isFetching ? runtimeQuery.error : null) ??
     (companiesQuery.isError && !companiesQuery.isFetching ? companiesQuery.error : null) ??
-    (financialYearsQuery.isError && !financialYearsQuery.isFetching ? financialYearsQuery.error : null) ??
+    (financialYearsQuery.isError && !financialYearsQuery.isFetching
+      ? financialYearsQuery.error
+      : null) ??
     (defaultCompanyQuery.isError && !defaultCompanyQuery.isFetching
       ? defaultCompanyQuery.error
       : null) ??
@@ -1996,6 +2012,7 @@ export function AppDesk() {
             {safePage === "frappe.export.enquiries" ? <FrappeEnquiryExportWorkspace /> : null}
             {safePage === "frappe.export.activities" ? <FrappeActivityExportWorkspace /> : null}
             {safePage === "frappe.export.call-logs" ? <FrappeCallLogExportWorkspace /> : null}
+            {safePage === "frappe.availability" ? <FrappeAvailabilityWorkspace /> : null}
             {safePage === "frappe.live-sync" ? <FrappeLiveSyncWorkspace /> : null}
             {safePage === "frappe.live-sync-queue" ? <FrappeLiveSyncQueueWorkspace /> : null}
             {safePage === "frappe.connection" ? <FrappeConnectionWorkspace /> : null}
@@ -2520,6 +2537,7 @@ function pageFromUrl(landingApp: PlatformAppId | null, pathname: string): AppPag
     key === "frappe.export.enquiries" ||
     key === "frappe.export.activities" ||
     key === "frappe.export.call-logs" ||
+    key === "frappe.availability" ||
     key === "frappe.live-sync" ||
     key === "frappe.live-sync-queue" ||
     key === "frappe.connection" ||
@@ -3000,6 +3018,11 @@ function titleForPage(page: AppPage) {
     "marketing.captures": "Capture forms",
     "marketing.submissions": "Submissions",
     "marketing.connections": "Connections",
+    "marketing.leads": "Leads",
+    "marketing.qualifications": "Qualifications",
+    "marketing.conversions": "Sales conversions",
+    "marketing.outcomes": "Outcomes",
+    "marketing.followups": "Follow-ups",
     "hrms.overview": "HRMS",
     "hrms.employees": "Employees",
     "hrms.attendance": "Attendance",
@@ -3034,6 +3057,7 @@ function titleForPage(page: AppPage) {
     "frappe.export.enquiries": "Export enquiries",
     "frappe.export.activities": "Export activities",
     "frappe.export.call-logs": "Export call logs",
+    "frappe.availability": "Server availability",
     "frappe.live-sync": "Live sync",
     "frappe.live-sync-queue": "Live sync queue",
     "frappe.connection": "Frappe connection",
@@ -3061,6 +3085,9 @@ function titleForPage(page: AppPage) {
     "ecommerce.campaign-events": "Campaign Events",
     "ecommerce.organisation": "Storefront Organisation",
     "ecommerce.product-information": "Items",
+    "ecommerce.product-attributes": "Attributes",
+    "ecommerce.product-specifications": "Specifications",
+    "ecommerce.product-collections": "Collections",
     "ecommerce.product-variants": "Variants",
     "ecommerce.product-images": "Images",
     "ecommerce.catalog-data-source": "Data Sources",

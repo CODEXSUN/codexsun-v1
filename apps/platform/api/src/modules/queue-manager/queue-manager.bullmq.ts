@@ -1,5 +1,6 @@
+import { QueueJobHeld } from "./queue-manager.worker.js";
 import { createHash } from "node:crypto";
-import { Queue, Worker, type JobsOptions } from "bullmq";
+import { Queue, Worker, DelayedError, type JobsOptions } from "bullmq";
 import { env } from "../../env.js";
 import type { QueueJobRecord } from "./queue-manager.types.js";
 import {
@@ -48,9 +49,15 @@ export function startBullMqWorker(
   if (workers.has(queueName)) return null;
   const worker = new Worker(
     queueName,
-    async (job) => {
+    async (job, token) => {
       const identity = readQueueDelivery(job.data);
-      return run(identity.id, identity.uuid);
+      try {
+        return await run(identity.id, identity.uuid);
+      } catch (error) {
+        if (!(error instanceof QueueJobHeld)) throw error;
+        await job.moveToDelayed(Date.parse(error.retryAt), token);
+        throw new DelayedError();
+      }
     },
     { connection: redisConnectionOptions(), prefix: queueRedisPrefix }
   );

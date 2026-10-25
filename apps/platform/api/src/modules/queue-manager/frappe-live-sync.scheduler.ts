@@ -1,3 +1,4 @@
+import { readCrmFrappeSyncAccess, crmFrappeAvailability } from "../../crm-frappe-sync-access.js";
 import type { Kysely } from "kysely";
 import {
   FrappeConnectionAccess,
@@ -24,8 +25,15 @@ export function startFrappeLiveSyncScheduler(queue: QueueManagerService) {
         if (tenant.status !== "active" || !tenant.enabledModuleKeys.includes("frappe")) continue;
         const database = getTenantDatabase(tenant) as unknown as Kysely<FrappeDatabase>;
         try {
+          if (!(await readCrmFrappeSyncAccess(getTenantDatabase(tenant))).enabled) continue;
           const liveSync = new FrappeLiveSyncService(database);
           const previous = await liveSync.settings();
+          if (
+            !previous.enabled ||
+            previous.paused ||
+            !(await crmFrappeAvailability(getTenantDatabase(tenant)).ready()).ready
+          )
+            continue;
           const kinds = await liveSync.dueKinds();
           // Enquiry writes use the immediate outbox, avoiding a second competing creation path.
           for (const kind of approvedFrappeAutomaticExports(kinds, previous.direction).filter(

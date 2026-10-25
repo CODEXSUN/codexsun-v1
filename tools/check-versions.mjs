@@ -100,12 +100,7 @@ function checkVersions(rootDir) {
         .filter(Boolean)
         .map((match) => [match[1], match[2]])
     );
-    for (const key of [
-      "CODEXSUN_VERSION",
-      "BILLING_STACK_API_IMAGE_TAG",
-      "BILLING_STACK_WEB_IMAGE_TAG",
-      "BILLING_STACK_MIGRATIONS_IMAGE_TAG"
-    ]) {
+    for (const key of ["CODEXSUN_VERSION"]) {
       if (values[key] !== rootVersion) {
         failures.push(`.container/deploy.env.sample ${key} must be ${rootVersion}.`);
       }

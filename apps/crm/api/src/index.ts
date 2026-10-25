@@ -124,3 +124,5 @@ export {
 } from "./modules/contact-restriction/index.js";
 
 export { seedCrmUserAccess } from "./crm.user-access.seed.js";
+
+export { registerCrmFrappeSyncCapabilities } from "./modules/frappe-sync/frappe-sync.capabilities.js";

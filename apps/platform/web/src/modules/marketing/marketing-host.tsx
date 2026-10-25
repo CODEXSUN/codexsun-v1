@@ -6,6 +6,11 @@ import {
   CampaignWorkspace,
   CaptureWorkspace,
   ConnectionWorkspace,
+  LeadWorkspace,
+  QualificationWorkspace,
+  ConversionWorkspace,
+  OutcomeWorkspace,
+  FollowUpWorkspace,
   MarketingTransportProvider
 } from "@codexsun/marketing-web";
 import { createSessionBoundGateway } from "../../shared/api/platform-api";
@@ -32,6 +37,11 @@ export function MarketingHost({ page, companyId }: { page: string; companyId: nu
       {page === "marketing.campaigns" ? <CampaignWorkspace /> : null}
       {page === "marketing.captures" ? <CaptureWorkspace /> : null}
       {page === "marketing.connections" ? <ConnectionWorkspace /> : null}
+      {page === "marketing.leads" ? <LeadWorkspace /> : null}
+      {page === "marketing.qualifications" ? <QualificationWorkspace /> : null}
+      {page === "marketing.conversions" ? <ConversionWorkspace /> : null}
+      {page === "marketing.outcomes" ? <OutcomeWorkspace /> : null}
+      {page === "marketing.followups" ? <FollowUpWorkspace /> : null}
     </MarketingTransportProvider.Provider>
   );
 }

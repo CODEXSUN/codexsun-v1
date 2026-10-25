@@ -155,8 +155,10 @@ export function GstStatementDocumentCard({
                     </th>
                   ))}
                 </tr>
+              </thead>
+              <tbody>
                 {tools.showFilters && (
-                  <tr>
+                  <tr className="border-b border-border/70 bg-white">
                     {[
                       "Show",
                       "#",
@@ -171,14 +173,12 @@ export function GstStatementDocumentCard({
                     ]
                       .filter((label) => !tools.hidden.includes(label))
                       .map((label) => (
-                        <th className="px-3 pb-2" key={label}>
+                        <td className="px-4 py-2.5 text-foreground" key={label}>
                           {tools.filterRow(label)}
-                        </th>
+                        </td>
                       ))}
                   </tr>
                 )}
-              </thead>
-              <tbody>
                 {displayedDocuments.map((entry) => {
                   const visible = visibleDocumentKeys.has(documentKey(entry));
                   return (
@@ -339,8 +339,10 @@ export function GstStatementHsnCard({
                   </th>
                 ))}
               </tr>
+            </thead>
+            <tbody>
               {tools.showFilters && (
-                <tr>
+                <tr className="border-b border-border/70 bg-white">
                   {[
                     "HSN code",
                     "Product name",
@@ -352,14 +354,12 @@ export function GstStatementHsnCard({
                   ]
                     .filter((label) => !tools.hidden.includes(label))
                     .map((label) => (
-                      <th className="px-3 pb-2" key={label}>
+                      <td className="px-4 py-2.5 text-foreground" key={label}>
                         {tools.filterRow(label)}
-                      </th>
+                      </td>
                     ))}
                 </tr>
               )}
-            </thead>
-            <tbody>
               {hsn.map((entry) => (
                 <tr
                   className="border-b border-border/70 last:border-b-0"

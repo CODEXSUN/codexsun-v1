@@ -53,6 +53,17 @@ export function PaymentList({
   totalsRecords: BillingDocumentReportRecord[];
   totalsView: BillingDocumentTotalsViewMode;
 }) {
+  const headings = [
+    "Payment no",
+    "Date",
+    "Supplier",
+    "Mode",
+    "Amount",
+    "Unallocated",
+    "Status",
+    "Action"
+  ].filter((label) => !listTools.hidden.includes(columnIds[label] ?? ""));
+
   return (
     <WorkspaceTablePanel>
       <div className="overflow-x-auto">
@@ -61,33 +72,28 @@ export function PaymentList({
             <>
               <thead className="bg-muted/50">
                 <tr>
-                  {[
-                    "Payment no",
-                    "Date",
-                    "Supplier",
-                    "Mode",
-                    "Amount",
-                    "Unallocated",
-                    "Status",
-                    "Action"
-                  ]
-                    .filter((label) => !listTools.hidden.includes(columnIds[label] ?? ""))
-                    .map((label) => (
-                      <th
-                        className="border-b border-border/70 px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-                        key={label}
-                      >
-                        {label}
-                        {listTools.showFilters ? (
-                          <div className="mt-2 font-normal normal-case tracking-normal">
-                            {listTools.filterRow(columnIds[label] ?? "")}
-                          </div>
-                        ) : null}
-                      </th>
-                    ))}
+                  {headings.map((label) => (
+                    <th
+                      className="border-b border-border/70 px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                      key={label}
+                    >
+                      {label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
+                {listTools.showFilters ? (
+                  <tr className="border-b border-border/70 bg-white">
+                    {headings.map((heading) => (
+                      <td key={heading} className="px-4 py-2.5 text-foreground">
+                        {heading === "Action" || heading === "Print"
+                          ? null
+                          : listTools.filterRow(columnIds[heading] ?? "")}
+                      </td>
+                    ))}
+                  </tr>
+                ) : null}
                 {entries.map((payment) => (
                   <tr
                     aria-label={`View payment ${payment.paymentNumber}`}

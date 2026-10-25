@@ -1,59 +1,146 @@
-import { formatDateTime } from "@codexsun/ui/workspace/utils";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, RefreshCw, UserCheck } from "lucide-react";
 import { Button } from "@codexsun/ui/components/button";
-import { WorkspaceDetailTable } from "@codexsun/ui/workspace/show";
-import { WorkspaceUpsertDialog } from "@codexsun/ui/workspace/upsert";
+import {
+  WorkspaceDetailTable,
+  WorkspaceShowCard,
+  WorkspaceShowLayout
+} from "@codexsun/ui/workspace/show";
+import { WorkspacePage } from "@codexsun/ui/workspace/page";
+import { WorkspaceStatusBadge } from "@codexsun/ui/workspace/status";
+import { formatDateTime } from "@codexsun/ui/workspace/utils";
+import { useMarketingTransport } from "../../transport";
+import { getSubmission } from "./submission.services";
 import type { SubmissionRecord } from "./submission.types";
+
 export function SubmissionShow({
-  record,
-  onClose,
+  uuid,
+  initialRecord,
+  onBack,
   onRetry,
-  pending
+  retryPending
 }: {
-  record: SubmissionRecord;
-  onClose: () => void;
+  uuid: string;
+  initialRecord?: SubmissionRecord | null | undefined;
+  onBack: () => void;
   onRetry: () => void;
-  pending: boolean;
+  retryPending: boolean;
 }) {
+  const api = useMarketingTransport();
+
+  const detail = useQuery({
+    queryKey: ["marketing", api.scopeKey, "submission-detail", uuid],
+    queryFn: () => getSubmission(api, uuid),
+    initialData: initialRecord ?? undefined
+  });
+  const record = detail.data;
+
+  if (detail.isLoading && !record) {
+    return (
+      <WorkspacePage title="Loading Submission…" technicalName="page.marketing.submission.show">
+        <p className="p-4 text-sm text-muted-foreground">Loading submission details…</p>
+      </WorkspacePage>
+    );
+  }
+
+  if (detail.error || !record) {
+    return (
+      <WorkspacePage title="Submission not found" technicalName="page.marketing.submission.show">
+        <div className="space-y-3 p-4">
+          <p role="alert" className="text-sm text-destructive">
+            {detail.error?.message ?? "The requested submission could not be loaded."}
+          </p>
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="mr-1 size-4" />
+            Back to list
+          </Button>
+        </div>
+      </WorkspacePage>
+    );
+  }
+
   return (
-    <WorkspaceUpsertDialog
-      open
+    <WorkspacePage
       title={record.name}
-      description="Original capture evidence and CRM handoff."
-      onClose={onClose}
+      description="Original capture evidence, privacy consent, and Marketing lead handoff."
+      technicalName="page.marketing.submission.show"
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="mr-1 size-4" />
+            Back
+          </Button>
+          {record.status === "pending" ? (
+            <Button disabled={retryPending} onClick={onRetry}>
+              <RefreshCw className="mr-1 size-4" />
+              {retryPending ? "Retrying…" : "Retry handoff"}
+            </Button>
+          ) : record.leadUuid ? (
+            <Button variant="outline" asChild>
+              <a href={"/app/marketing/leads?show=" + record.leadUuid}>
+                <UserCheck className="mr-1 size-4" />
+                Open Marketing Lead
+              </a>
+            </Button>
+          ) : null}
+        </div>
+      }
     >
-      <WorkspaceDetailTable
-        rows={[
-          ["Reference", record.uuid],
-          ["Campaign", record.campaignLabel],
-          ["Email", record.email],
-          ["Phone", record.phone],
-          ["Message", record.message],
-          ["Capture notice version", record.noticeVersion],
-          ["Capture notice", record.consentNotice],
-          ["Received", formatDateTime(record.createdAt)],
-          ["Original source", record.sourceReference],
-          ["Source consent time", record.sourceConsentAt],
-          ["Original notice version", record.sourceNoticeVersion],
-          ["Marketing subscription", "Not granted by this capture"],
-          ["Captured by", record.createdBy],
-          ["Handoff", record.status],
-          ["CRM Lead", record.leadUuid ?? "Pending"]
-        ]}
-      />
-      <div className="flex justify-end gap-2 p-4">
-        <Button variant="outline" onClick={onClose}>
-          Close
-        </Button>
-        {record.status === "pending" ? (
-          <Button disabled={pending} onClick={onRetry}>
-            Retry CRM handoff
-          </Button>
-        ) : (
-          <Button variant="outline" asChild>
-            <a href={"/app/crm/leads?show=" + record.leadUuid}>Open CRM Leads</a>
-          </Button>
-        )}
-      </div>
-    </WorkspaceUpsertDialog>
+      <WorkspaceShowLayout>
+        <div className="space-y-4">
+          <WorkspaceShowCard title="Submission Details">
+            <WorkspaceDetailTable
+              rows={[
+                ["Reference ID", record.uuid],
+                ["Contact Name", record.name],
+                ["Email", record.email || "—"],
+                ["Phone", record.phone || "—"],
+                ["Campaign", record.campaignLabel || record.campaignUuid],
+                ["Message", record.message || "—"],
+                [
+                  "Handoff Status",
+                  <WorkspaceStatusBadge
+                    key="status"
+                    label={record.status === "delivered" ? "Delivered" : "Pending"}
+                    tone={record.status === "delivered" ? "success" : "warning"}
+                  />
+                ],
+                [
+                  "Marketing Lead",
+                  record.leadUuid ? (
+                    <a
+                      href={"/app/marketing/leads?show=" + record.leadUuid}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      View Lead ({record.leadUuid})
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground">Pending delivery</span>
+                  )
+                ],
+                ["Received At", formatDateTime(record.createdAt)],
+                ["Recorded By", record.createdBy || "System"]
+              ]}
+            />
+          </WorkspaceShowCard>
+        </div>
+
+        <div className="space-y-4">
+          <WorkspaceShowCard title="Consent & Provenance">
+            <WorkspaceDetailTable
+              rows={[
+                ["Capture Definition", record.captureUuid],
+                ["Capture Notice Version", record.noticeVersion],
+                ["Consent Notice Text", record.consentNotice],
+                ["Original Source", record.sourceReference || "Direct"],
+                ["Source Notice Version", record.sourceNoticeVersion],
+                ["Source Consent Time", record.sourceConsentAt ? formatDateTime(record.sourceConsentAt) : "—"],
+                ["Marketing Subscription", "Not granted by enquiry capture"]
+              ]}
+            />
+          </WorkspaceShowCard>
+        </div>
+      </WorkspaceShowLayout>
+    </WorkspacePage>
   );
 }

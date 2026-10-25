@@ -1,5 +1,29 @@
 # Platform tasks
 
+## Frappe daily server hours and offline queue holds - 2026-10-25
+
+- [x] Add a tenant Server availability settings page, timezone, daily hours, and explicit live connection check.
+- [x] Add tracked availability-v11 storage and a shared health-probe lease with offline cooldown.
+- [x] Gate scheduled and immediate dispatch before queue creation. Hold existing jobs before claiming attempts.
+- [x] Keep the same BullMQ delivery delayed until recovery. Preserve checkpoints and stable retry identities.
+- [x] Verify schedule boundaries, daylight saving, offline cooldown, lease sharing, duplicate-safe recovery, and queue attempts in disposable databases.
+- [x] Verify real BullMQ/Redis hold and recovery on the isolated local clone with one job, zero held attempts, one completion, and no failures.
+- [x] Replay the migration in four local clone tenants. Preserve TECHMEDIA's 2,083 enquiries and existing numbers.
+- [x] Verify saved hours after browser reload and the local Super Admin waiting display. Preserve historical failed jobs.
+- [x] Verify the cloned scheduler at 21:30: zero probes, zero jobs, and unchanged last schedule/checkpoint.
+- [x] Final Platform API and web builds pass. The local clone uses a verified patch of affected modules on its captured API image.
+- No VPS change, commit, push, mobile build, or remote Frappe write is part of this stage.
+
+## Tenant Frappe switch audit - 2026-10-25
+
+- [x] Hide CRM Frappe columns, detail indicators, and verification actions when tenant live sync is off.
+- [x] Check app activation before reading optional Frappe settings. Scope web capability caching by tenant and database.
+- [x] Gate immediate jobs, relays, manual requests, and queued worker execution. Preserve pending events and source identities.
+- [x] Give deferred deliveries a fresh generation so re-enabling sync can resume pending work.
+- [x] Verify disposable-database switch and queue behavior, tenant-scoped table rendering, and existing duty persistence/retry behavior.
+- [ ] Live browser and remote Frappe verification: intentionally not performed in this local-only task.
+- No version change, commit, push, or deployment is authorized for this task.
+
 ## Future staged deployment routing
 
 Planning only. No production routing or container change is included in this work.

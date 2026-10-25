@@ -258,3 +258,38 @@ Report database, browser, native, and deployment checks separately.
 
 - `@codexsun/frappe-api`: `.`.
 - `@codexsun/frappe-web`: `./modules/connection`, `./modules/data-source`, `./modules/overview`, `./modules/enquiry-sync`, `./modules/contact-import`, `./modules/activity-import`, `./modules/call-log-import`, `./modules/export`, `./modules/live-sync`, `./modules/user-sync`, `./modules/user-mapping`.
+
+## Tenant sync activation
+
+The Live sync switch also controls CRM integration visibility and manual CRM transfer requests.
+The public `FrappeLiveSyncService.access()` reads only persisted tenant connection and live-sync settings.
+An enabled saved connection and the master switch enable visibility.
+Verified connection, bidirectional mode, and an unpaused schedule additionally enable outbound work.
+Platform checks CRM and Frappe app activation before reading integration settings.
+Turning the switch off preserves source links, local records, checkpoints, and pending change events.
+Queued jobs recheck access before remote work. A request already in flight can finish.
+Connection setup and connection verification do not require live sync.
+
+## Server availability and queue holds
+
+Open **Frappe > Server availability** at `/app/frappe/availability`.
+The tenant can enable daily server hours, choose an IANA timezone, and set opening and closing times.
+Defaults are 08:00 to 21:00 in Asia/Kolkata. The hours switch starts off for existing tenants.
+This setting controls sync access. It does not start or stop the Frappe server.
+
+Migration `frappe.connection.availability-v11` adds `frappe_availability_settings` without changing business records or source links.
+Apply the tracked Frappe migration before enabling workers on an existing installation.
+GET/PUT `/frappe/availability` and POST `/frappe/availability/check` require the tenant Frappe app and `frappe.connection.manage`.
+The connection check uses authenticated, read-only `/api/method/ping` with a five-second timeout.
+Checks share a persisted lease. Online results last one minute. Unavailable results wait five minutes before another probe.
+Outside server hours, no probe or automatic sync job is sent. Pending work waits until the next opening.
+A late server start keeps work held until a successful probe. Successful import checkpoints remain unchanged during a hold.
+Existing direction, master switch, module switches, permissions, and stable retry identities remain in force.
+
+Queue Manager records held jobs as pending with a waiting label, reason, and next check time.
+A hold does not consume queue attempts. BullMQ moves the same delivery to delayed without recording a failed attempt.
+Transport failures after a successful check open the circuit. Mapping and validation failures retain their normal error handling.
+Local CRM remains usable during holds. Existing failed history is preserved.
+
+Run `npx tsx --test apps/frappe/api/src/modules/live-sync/live-sync.availability.policy.test.ts apps/frappe/api/src/modules/live-sync/live-sync.availability.routes.test.ts tools/e2e/frappe-availability.e2e.ts`.
+The local clone audit report is generated under root `dist/local-cloud`. Do not commit its credentials or database backups.

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { Button } from "@codexsun/ui/components/button";
 import { Input } from "@codexsun/ui/components/input";
 import {
   Select,
@@ -8,18 +8,19 @@ import {
   SelectTrigger,
   SelectValue
 } from "@codexsun/ui/components/select";
-import { WorkspaceLookup } from "@codexsun/ui/workspace/lookup";
 import {
-  WorkspaceFormPanel,
+  WorkspaceFormActions,
+  WorkspaceFormBanner,
+  WorkspaceFormBody,
   WorkspaceFormField,
   WorkspaceFormGrid,
-  WorkspaceFormFooter,
-  WorkspaceFormBanner
+  WorkspaceFormSurface,
+  WorkspaceUpsertPage
 } from "@codexsun/ui/workspace/upsert";
-import { useMarketingTransport } from "../../transport";
-import { consentBrandOptions } from "./consent.services";
 import { consentSchema } from "./consent.schema";
+import { useConsentBrandOptions } from "./consent.hooks";
 import type { ConsentInput } from "./consent.types";
+
 export function ConsentForm({
   pending,
   error,
@@ -31,172 +32,204 @@ export function ConsentForm({
   onSubmit: (value: ConsentInput) => void;
   onCancel: () => void;
 }) {
-  const api = useMarketingTransport();
-  const brands = useQuery({
-    queryKey: ["marketing", api.scopeKey, "consent-brand-options"],
-    queryFn: () => consentBrandOptions(api)
-  });
-  const [initial] = useState<ConsentInput>(() => ({
+  const brands = useConsentBrandOptions();
+  const [value, setValue] = useState<ConsentInput>({
     brandUuid: "",
     recipient: "",
     channel: "email",
     purpose: "promotional",
     action: "grant",
-    noticeVersion: "",
+    noticeVersion: "v1",
     evidence: "",
-    source: "",
+    source: "explicit_consent_form",
     occurredAt: new Date().toISOString(),
     expiresAt: null,
     requestKey: crypto.randomUUID()
-  }));
-  const [value, setValue] = useState(initial),
-    [issues, setIssues] = useState<Record<string, string>>({});
-  const close = () => {
-    if (pending) return;
-    if (
-      JSON.stringify(initial) !== JSON.stringify(value) &&
-      !window.confirm("Discard unsaved evidence?")
-    )
+  });
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [issues, setIssues] = useState<Record<string, string>>({});
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    setHasSubmitted(true);
+    const result = consentSchema.safeParse(value);
+    if (!result.success) {
+      const nextIssues: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const field = String(issue.path[0]);
+        if (!nextIssues[field]) {
+          nextIssues[field] = issue.message;
+        }
+      }
+      setIssues(nextIssues);
       return;
-    onCancel();
+    }
+    setIssues({});
+    onSubmit(result.data);
   };
-  const fieldError = (key: string) =>
-    issues[key] ? <p className="text-xs text-destructive">{issues[key]}</p> : null;
+
+  const hasErrors = hasSubmitted && (Boolean(error) || Object.keys(issues).length > 0);
+
   return (
-    <WorkspaceFormPanel
-      title="Consent evidence"
-      description="Record explicit promotional email evidence. Enquiry privacy consent does not grant promotional permission."
+    <WorkspaceUpsertPage
+      title="Record Consent Evidence"
+      description="Record explicit promotional email evidence. Consent evidence is append-only and cannot be altered once stored."
+      onBack={onCancel}
     >
-      <form
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          const parsed = consentSchema.safeParse(value);
-          if (!parsed.success) {
-            setIssues(
-              Object.fromEntries(
-                parsed.error.issues.map((issue) => [String(issue.path[0]), issue.message])
-              )
-            );
-            return;
-          }
-          setIssues({});
-          onSubmit(parsed.data);
-        }}
-      >
-        {error || Object.keys(issues).length ? (
-          <WorkspaceFormBanner title="Unable to save" tone="error">
-            {error || "Check the required fields."}
-          </WorkspaceFormBanner>
-        ) : null}
-        {brands.error ? <p role="alert">{brands.error.message}</p> : null}
-        <WorkspaceFormGrid>
-          <WorkspaceFormField label="Brand" required>
-            <WorkspaceLookup
-              ariaLabel="Brand"
-              value={value.brandUuid}
-              options={(brands.data ?? []).map((row) => ({ value: row.uuid, label: row.name }))}
-              allowTextValue={false}
-              invalid={!!issues.brandUuid}
-              onValueChange={(brandUuid) =>
-                setValue({ ...value, brandUuid: String(brandUuid ?? "") })
-              }
-            />
-            {fieldError("brandUuid")}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Recipient email" required>
-            <Input
-              aria-label="Recipient email"
-              value={value.recipient}
-              aria-invalid={!!issues.recipient}
-              onChange={(event) => setValue({ ...value, recipient: event.target.value })}
-            />
-            {fieldError("recipient")}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Action" required>
-            <Select
-              value={value.action}
-              onValueChange={(action) =>
-                setValue({ ...value, action: action === "withdraw" ? "withdraw" : "grant" })
-              }
-            >
-              <SelectTrigger aria-label="Action">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="grant">Record grant</SelectItem>
-                <SelectItem value="withdraw">Record withdrawal</SelectItem>
-              </SelectContent>
-            </Select>
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Notice version" required>
-            <Input
-              aria-label="Notice version"
-              value={value.noticeVersion}
-              aria-invalid={!!issues.noticeVersion}
-              onChange={(event) => setValue({ ...value, noticeVersion: event.target.value })}
-            />
-            {fieldError("noticeVersion")}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Evidence reference" required>
-            <Input
-              aria-label="Evidence reference"
-              value={value.evidence}
-              aria-invalid={!!issues.evidence}
-              onChange={(event) => setValue({ ...value, evidence: event.target.value })}
-            />
-            {fieldError("evidence")}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Source" required>
-            <Input
-              aria-label="Source"
-              value={value.source}
-              aria-invalid={!!issues.source}
-              onChange={(event) => setValue({ ...value, source: event.target.value })}
-            />
-            {fieldError("source")}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Evidence time (UTC)" required>
-            <Input
-              aria-label="Evidence time (UTC)"
-              type="datetime-local"
-              value={value.occurredAt.slice(0, 16)}
-              aria-invalid={!!issues.occurredAt}
-              onChange={(event) =>
-                setValue({
-                  ...value,
-                  occurredAt: event.target.value
-                    ? new Date(event.target.value + "Z").toISOString()
-                    : ""
-                })
-              }
-            />
-            {fieldError("occurredAt")}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Expires at (UTC, optional)">
-            <Input
-              aria-label="Expires at (UTC, optional)"
-              type="datetime-local"
-              value={value.expiresAt?.slice(0, 16) ?? ""}
-              aria-invalid={!!issues.expiresAt}
-              onChange={(event) =>
-                setValue({
-                  ...value,
-                  expiresAt: event.target.value
-                    ? new Date(event.target.value + "Z").toISOString()
-                    : null
-                })
-              }
-            />
-            {fieldError("expiresAt")}
-          </WorkspaceFormField>
-        </WorkspaceFormGrid>
-        <WorkspaceFormFooter
-          primaryLabel="Record evidence"
-          primaryLoading={pending}
-          onCancel={close}
-        />
+      <form noValidate onSubmit={handleSubmit}>
+        <WorkspaceFormSurface>
+          <WorkspaceFormBody>
+            {hasErrors ? (
+              <WorkspaceFormBanner title="Unable to save" tone="error">
+                {error || "Check the required fields below and try again."}
+              </WorkspaceFormBanner>
+            ) : null}
+
+            <WorkspaceFormGrid columns={2}>
+              <WorkspaceFormField label="Brand" required>
+                <Select
+                  value={value.brandUuid}
+                  onValueChange={(val) => {
+                    setValue((prev) => ({ ...prev, brandUuid: val }));
+                    if (issues.brandUuid) setIssues((prev) => ({ ...prev, brandUuid: "" }));
+                  }}
+                >
+                  <SelectTrigger
+                    aria-label="Brand"
+                    aria-invalid={Boolean(issues.brandUuid)}
+                    className={issues.brandUuid ? "border-destructive" : ""}
+                  >
+                    <SelectValue placeholder="Select Brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(brands.data ?? []).map((b) => (
+                      <SelectItem key={b.uuid} value={b.uuid}>
+                        {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {issues.brandUuid ? (
+                  <p className="text-xs text-destructive">{issues.brandUuid}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Evidence action" required>
+                <Select
+                  value={value.action}
+                  onValueChange={(val) => {
+                    setValue((prev) => ({ ...prev, action: val as "grant" | "withdraw" }));
+                    if (issues.action) setIssues((prev) => ({ ...prev, action: "" }));
+                  }}
+                >
+                  <SelectTrigger
+                    aria-label="Evidence action"
+                    aria-invalid={Boolean(issues.action)}
+                    className={issues.action ? "border-destructive" : ""}
+                  >
+                    <SelectValue placeholder="Select action" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="grant">Grant (Opt-in)</SelectItem>
+                    <SelectItem value="withdraw">Withdraw (Opt-out)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {issues.action ? (
+                  <p className="text-xs text-destructive">{issues.action}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Recipient email" required>
+                <Input
+                  type="email"
+                  aria-label="Recipient email"
+                  value={value.recipient}
+                  aria-invalid={Boolean(issues.recipient)}
+                  className={issues.recipient ? "border-destructive" : ""}
+                  placeholder="subscriber@example.com"
+                  onChange={(event) => {
+                    setValue((prev) => ({ ...prev, recipient: event.target.value }));
+                    if (issues.recipient) setIssues((prev) => ({ ...prev, recipient: "" }));
+                  }}
+                />
+                {issues.recipient ? (
+                  <p className="text-xs text-destructive">{issues.recipient}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Notice version" required>
+                <Input
+                  aria-label="Notice version"
+                  value={value.noticeVersion}
+                  aria-invalid={Boolean(issues.noticeVersion)}
+                  className={issues.noticeVersion ? "border-destructive" : ""}
+                  placeholder="e.g. 2026-v1"
+                  onChange={(event) => {
+                    setValue((prev) => ({ ...prev, noticeVersion: event.target.value }));
+                    if (issues.noticeVersion) setIssues((prev) => ({ ...prev, noticeVersion: "" }));
+                  }}
+                />
+                {issues.noticeVersion ? (
+                  <p className="text-xs text-destructive">{issues.noticeVersion}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Source description" required>
+                <Input
+                  aria-label="Source description"
+                  value={value.source}
+                  aria-invalid={Boolean(issues.source)}
+                  className={issues.source ? "border-destructive" : ""}
+                  placeholder="e.g. newsletter_signup_form"
+                  onChange={(event) => {
+                    setValue((prev) => ({ ...prev, source: event.target.value }));
+                    if (issues.source) setIssues((prev) => ({ ...prev, source: "" }));
+                  }}
+                />
+                {issues.source ? (
+                  <p className="text-xs text-destructive">{issues.source}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Evidence reference" required>
+                <Input
+                  aria-label="Evidence reference"
+                  value={value.evidence}
+                  aria-invalid={Boolean(issues.evidence)}
+                  className={issues.evidence ? "border-destructive" : ""}
+                  placeholder="e.g. audit-log-id or signed-token-hash"
+                  onChange={(event) => {
+                    setValue((prev) => ({ ...prev, evidence: event.target.value }));
+                    if (issues.evidence) setIssues((prev) => ({ ...prev, evidence: "" }));
+                  }}
+                />
+                {issues.evidence ? (
+                  <p className="text-xs text-destructive">{issues.evidence}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <div className="md:col-span-2">
+                <div className="rounded-md border border-border/70 bg-muted/20 p-3 text-xs text-muted-foreground">
+                  <p className="font-medium text-foreground">Immutable Evidence Notice</p>
+                  <p className="mt-0.5">
+                    Consent records are strictly append-only. Submitting records an immutable audit entry
+                    with explicit timestamp and unique request key.
+                  </p>
+                </div>
+              </div>
+            </WorkspaceFormGrid>
+          </WorkspaceFormBody>
+
+          <WorkspaceFormActions>
+            <Button type="submit" disabled={pending}>
+              {pending ? "Recording..." : "Save consent evidence"}
+            </Button>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
+              Cancel
+            </Button>
+          </WorkspaceFormActions>
+        </WorkspaceFormSurface>
       </form>
-    </WorkspaceFormPanel>
+    </WorkspaceUpsertPage>
   );
 }

@@ -237,3 +237,24 @@ Unsupported hashes, schemas, usernames, or missing User roles produce sanitized 
 Core, Billing, and CRM public seed contracts establish their User access defaults on the registered target.
 App activation and tenant/record scopes remain enforced. Permission grants do not activate applications or bypass entitlements.
 Data Bridge persists sanitized account outcomes in a separate Users report tab.
+
+## CRM tenant sync gate
+
+Platform composes CRM/Frappe activation with the Frappe-owned saved connection and Live sync settings.
+The CRM capability endpoint returns only an authenticated tenant-scoped Boolean.
+Enquiry sync permission remains an additional requirement for enquiry status/history.
+Immediate dispatch, relays, import/export requests, and queued workers check this gate.
+A disabled queued enquiry/contact/duty delivery retains its pending event and advances only its delivery generation.
+It does not consume a remote attempt or change the stable event identity.
+This permits safe resume without reusing the completed deferred queue job.
+
+## Queue availability holds
+
+Frappe jobs use a registered Queue Manager readiness check before claiming an attempt.
+Pending holds store `held`, `holdReason`, and `resumeAt` in their result and keep `available_at` in the future.
+Database workers leave these jobs pending. BullMQ moves the same delivery to delayed with `DelayedError`.
+No failure audit or retry attempt is created for a preflight hold.
+A transport failure after claim refunds the queue attempt and uses the Frappe-owned availability cooldown.
+Business mapping failures still use normal retry and error behavior.
+Platform composes the Frappe-owned schedule and health check for imports, exports, contact/enquiry outboxes, SOPs, and duties.
+Schedulers and relays check readiness before creating automatic jobs. CRM list reads never ping Frappe.

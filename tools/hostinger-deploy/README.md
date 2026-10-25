@@ -1,25 +1,8 @@
-# Hostinger deployment connection
+# Hostinger connection status
 
-This package owns the SSH connection check for the CODEXSUN demo VPS. Future deploy
-commands can use `HostingerSshService` after the separate demo stack exists.
-The package does not store a private key or an API token.
-
-The `HostingerSshService.runOnVerifiedHost(script)` method verifies the pinned VPS
-again before it sends a script over SSH. Future demo deployment code can use this
-method for a reviewed server script. The CLI does not accept arbitrary commands.
-
-Run `npm run hostinger:status` from the repository root. The command checks the
-local SSH alias, connects to the pinned VPS, verifies its identity and Docker,
-and reports whether `/home/codexsun-demo` exists. It does not change the server.
-
-Run `npm run hostinger:bootstrap` to create `/home/codexsun-demo` from the public
-CODEXSUN repository. If the checkout already exists, the command checks its origin,
-branch, and clean state. It does not overwrite an existing checkout.
-
-Run `npm run hostinger:sync -- --ref <full-commit-sha>` to fast-forward the demo
-checkout to an exact commit on `origin/main`. The command rejects a dirty tree,
-a different origin, a non-forward update, or a commit outside `origin/main`.
-Sync changes source only. It does not build or replace containers.
+This tool checks the pinned SSH host identity, Docker, Compose, and `/home/codexsun` checkout presence.
+Run `npm run hostinger:status` only when a read-only VPS check is requested.
+It does not clone, synchronize, or deploy source. Root `setup.sh` and `update.sh` own deployment through `.container/codexsun-v1`.
 
 Create a local SSH alias named `codexsun-hostinger` before using this package:
 
@@ -39,15 +22,11 @@ file remain under the protected DevKit storage directory. To use another alias,
 set `CODEXSUN_DEPLOY_SSH_ALIAS` to its name. The alias must still resolve to the
 pinned VPS.
 
-The CODEXSUN demo deployment needs its own checkout, database, containers, and
-Cloudflare hostname. Do not use the production `/home/cxapp` checkout or its
-database for the demo.
-
 ## Component documentation
 
-The pinned-host SSH status, demo checkout bootstrap, and reviewed commit synchronization tooling.
+Read-only pinned-host SSH, Docker, Compose, and deployment-checkout status.
 
-Keep private credentials outside source. Verify the configured host and separate demo checkout. A source sync does not deploy containers. Do not contact or change a host merely to update documentation.
+Keep private credentials outside source. Verify the pinned host. This tool has no source mutation or deployment operation. Do not contact a host merely to update documentation.
 
 - [TASK.md](agent/TASK.md): work items and acceptance evidence.
 - [PLAN.md](agent/PLAN.md): scope, ownership, delivery order, and verification gates.

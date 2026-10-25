@@ -1,0 +1,8 @@
+services:
+  frappe:
+    networks: [shared, entry]
+
+networks:
+  entry:
+    name: ${CODEXSUN_FRAPPE_ENTRY_NETWORK:?Set the existing host-accessible network}
+    external: true

@@ -221,7 +221,7 @@ export async function requestFrappe<T>(
   method: "GET" | "POST" | "PUT" | "DELETE",
   settings: FrappeSettings,
   body?: unknown,
-  options: { allowExport?: boolean } = {}
+  options: { allowExport?: boolean; timeoutMs?: number } = {}
 ): Promise<T> {
   if (
     !options.allowExport &&
@@ -257,7 +257,7 @@ export async function requestFrappe<T>(
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       redirect: "error",
-      signal: AbortSignal.timeout(15_000)
+      signal: AbortSignal.timeout(options.timeoutMs ?? 15_000)
     });
   } catch {
     throw upstreamError("Frappe could not be reached.");

@@ -31,6 +31,8 @@ if (Array.from(current.keys()).some((key) => /^CX[A]PP_/u.test(key))) {
 }
 
 const optionalEmpty = new Set([
+  "CODEXSUN_VERIFIED_BACKUP_ID",
+  "CODEXSUN_WORKER_CONTROL_TOKEN",
   "CODEXSUN_DB_RESET_CONFIRM",
   "CODEXSUN_RESTORE_TEST_DB_NAME",
   "CODEXSUN_LIVE_RESTORE_CONFIRM",
@@ -63,7 +65,6 @@ const retiredKeys = new Set([
 const interactiveKeys = [
   ["DB_USER", "MariaDB application user", false],
   ["DB_PASSWORD", "MariaDB application password", true],
-  ["CODEXSUN_VERIFIED_BACKUP_ID", "Verified pre-migration backup ID", false],
   ["MARIADB_ADMIN_USER", "MariaDB administrative user", false],
   ["MARIADB_ROOT_PASSWORD", "MariaDB administrative password", true],
   ["REDIS_PASSWORD", "Redis password", true],
@@ -115,7 +116,7 @@ if (!checkOnly) {
 
   if (deployment) {
     current.set("NODE_ENV", "production");
-    current.set("DB_HOST", "codexsun-mariadb");
+    current.set("DB_HOST", current.get("CODEXSUN_MARIADB_CONTAINER") || "codexsun-mariadb");
     current.set("DB_PORT", "3306");
     current.set("CODEXSUN_QUEUE_BACKEND", "bullmq-redis");
   }
@@ -155,12 +156,12 @@ if (!checkOnly) {
 
   const redisPassword = current.get("REDIS_PASSWORD");
   if (!isMissing(redisPassword)) {
-    current.set(
-      "CODEXSUN_REDIS_URL",
-      deployment
-        ? `redis://:${encodeURIComponent(redisPassword)}@codexsun-redis:6379/0`
-        : `redis://:${encodeURIComponent(redisPassword)}@127.0.0.1:6379/0`
-    );
+    const redis = new URL(current.get("CODEXSUN_REDIS_URL") || "redis://127.0.0.1:6379/0");
+    redis.password = redisPassword;
+    redis.hostname = deployment
+      ? current.get("CODEXSUN_REDIS_CONTAINER") || "codexsun-redis"
+      : "127.0.0.1";
+    current.set("CODEXSUN_REDIS_URL", redis.toString());
   }
 
   validate(current, deployment);
@@ -182,7 +183,8 @@ function validate(values, validateDeployment) {
   }
   if (values.get("CODEXSUN_TENANCY_MODE") === "single") {
     const configuredId = values.get("CODEXSUN_SINGLE_TENANT_CORPORATE_ID")?.trim().toUpperCase();
-    if (!configuredId) problems.push("CODEXSUN_SINGLE_TENANT_CORPORATE_ID is required in single mode");
+    if (!configuredId)
+      problems.push("CODEXSUN_SINGLE_TENANT_CORPORATE_ID is required in single mode");
     if (
       values.get("ENABLE_DEFAULT_TENANT_SEED") === "1" &&
       configuredId !== values.get("DEFAULT_TENANT_CORPORATE_ID")?.trim().toUpperCase()
@@ -215,9 +217,10 @@ function validate(values, validateDeployment) {
   }
   if (
     validateDeployment &&
-    (values.get("DB_HOST") !== "codexsun-mariadb" || values.get("DB_PORT") !== "3306")
+    (values.get("DB_HOST") !== values.get("CODEXSUN_MARIADB_CONTAINER") ||
+      values.get("DB_PORT") !== "3306")
   ) {
-    problems.push("container deployment requires DB_HOST=codexsun-mariadb and DB_PORT=3306");
+    problems.push("deployment requires DB_HOST=CODEXSUN_MARIADB_CONTAINER and DB_PORT=3306");
   }
   if (validateDeployment && values.get("CODEXSUN_QUEUE_BACKEND") !== "bullmq-redis") {
     problems.push("container deployment requires CODEXSUN_QUEUE_BACKEND=bullmq-redis");
@@ -256,7 +259,15 @@ function parseEnv(source) {
       ((value.startsWith('"') && value.endsWith('"')) ||
         (value.startsWith("'") && value.endsWith("'")))
     ) {
-      value = value.slice(1, -1);
+      if (value.startsWith('"')) {
+        try {
+          value = JSON.parse(value);
+        } catch {
+          value = value.slice(1, -1);
+        }
+      } else {
+        value = value.slice(1, -1).replaceAll("\\'", "'");
+      }
     }
     values.set(match[1], value);
   }
@@ -289,7 +300,9 @@ function renderEnv(templateSource, values) {
 }
 
 function quoteEnv(value) {
-  return /^[A-Za-z0-9_./:@+-]*$/u.test(value) ? value : JSON.stringify(value);
+  if (/[\r\n]/u.test(value)) fail("Environment values must fit on one line.");
+  // Compose interpolates dollar signs inside double quotes. Keep credentials literal.
+  return /^[A-Za-z0-9_./:@+-]*$/u.test(value) ? value : `'${value.replaceAll("'", "\\'")}'`;
 }
 
 function isMissing(value) {

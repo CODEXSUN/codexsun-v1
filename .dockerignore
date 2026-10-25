@@ -6,13 +6,23 @@ node_modules
 .env
 .env.*
 .container/deploy.env
-.container/demo/deploy.env
+.container/local-deploy.private.json
+.container/**/deploy.env
+.container/frappe/frappe.env
+.container/backups
+.container/**/*.private.json
+.container/**/*.sql
+.container/**/*.sql.gz
 .temp
 dist
 storage
 coverage
 apps/*/*/node_modules
 apps/*/*/dist
+apps/**/.dart_tool
+apps/**/.gradle
+apps/**/build
+devkits/*/dist
 packages/*/node_modules
 *.tsbuildinfo
 

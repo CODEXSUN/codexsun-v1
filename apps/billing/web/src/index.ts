@@ -9,7 +9,10 @@ export { ReceiptWorkspace } from "./modules/receipt";
 export { BillingDashboardWorkspace } from "./modules/dashboard";
 export {
   CustomerStatementWorkspace,
+  CustomerSummaryWorkspace,
   GstStatementWorkspace,
   StockStatementWorkspace,
-  SupplierStatementWorkspace
+  SupplierStatementWorkspace,
+  SupplierSummaryWorkspace
 } from "./modules/reports";
+export { OpeningBalanceWorkspace } from "./modules/opening-balance";

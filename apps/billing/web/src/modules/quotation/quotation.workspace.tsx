@@ -446,8 +446,8 @@ export function QuotationWorkspace() {
         onShowAllColumns={listTools.onShowAllColumns}
         toolbarAction={
           <>
-            {listTools.toolbarAction}{" "}
             <BillingDocumentListControls
+              columnSearchAction={listTools.toolbarAction}
               dateFrom={dateFrom}
               dateTo={dateTo}
               onDateFromChange={(value) => {

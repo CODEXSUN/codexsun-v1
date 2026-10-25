@@ -24,19 +24,19 @@ export function OpeningBalanceList({
             {!tools.hidden.includes("Source") && <th className="p-3">SOURCE</th>}
             {!tools.hidden.includes("Action") && <th className="p-3">ACTION</th>}
           </tr>
+        </thead>
+        <tbody>
           {tools.showFilters && (
-            <tr>
+            <tr className="border-b border-border/70 bg-white">
               {["Party", "Role", "Opening", "Source", "Action"]
                 .filter((label) => !tools.hidden.includes(label))
                 .map((label) => (
-                  <th className="px-3 pb-2" key={label}>
-                    {tools.filterRow(label)}
-                  </th>
+                  <td className="px-4 py-2.5 text-foreground" key={label}>
+                    {label === "Action" ? null : tools.filterRow(label)}
+                  </td>
                 ))}
             </tr>
           )}
-        </thead>
-        <tbody>
           {items.map((item) => (
             <tr key={item.id} className="border-b">
               <td hidden={tools.hidden.includes("Party")} className="p-3">

@@ -3,6 +3,8 @@ import { AppError } from "@codexsun/framework/errors";
 import type { MarketingContext } from "../../context.js";
 import { SubmissionRepository } from "./submission.repository.js";
 import type { SubmissionInput, SubmissionDependencies } from "./submission.types.js";
+import { processSubmissionHandoff } from "./submission.worker.js";
+
 export class SubmissionService {
   private readonly repository: SubmissionRepository;
   constructor(
@@ -53,5 +55,8 @@ export class SubmissionService {
     if (row.status === "pending")
       await this.deps.enqueue({ ...this.ctx, actorEmail: row.createdBy }, uuid);
     return row;
+  }
+  async handoff(uuid: string) {
+    return processSubmissionHandoff(this.ctx, uuid);
   }
 }

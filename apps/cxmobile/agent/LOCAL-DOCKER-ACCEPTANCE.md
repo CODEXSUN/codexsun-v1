@@ -1,0 +1,80 @@
+# cxmobile local Docker and existing UI acceptance
+
+## User requirement
+
+Connect cxmobile to the existing local Docker Platform stack and verify actual business workflows.
+Use the existing CODEXSUN shadcn theme and existing tenant login page design and behavior.
+Do not accept a custom dark mobile theme, a sample login, or mock-only evidence as completion.
+
+## Observed local endpoints
+
+The following endpoints were inspected on 25 October 2026:
+
+- Platform API gateway: `http://127.0.0.1:18010/api/app`.
+- Platform Web reference: `http://127.0.0.1:18020`.
+- Shop reference: `http://127.0.0.1:18030`.
+- `GET http://127.0.0.1:18010/api/app/health` returned HTTP 200.
+- Existing containers include codexsun-api, codexsun-web, codexsun-shop, and shared database/Redis services.
+
+Recheck endpoints before testing. The old `.container/local-cloud` directory does not exist in the inspected checkout.
+Discover current Compose configuration from container labels if needed. Do not print private Compose content or secrets.
+The stack is already running. Do not recreate it, remove volumes, reseed customer databases, or change unrelated containers.
+
+Read-only PowerShell checks from the repository root:
+
+```powershell
+docker ps --format '{{.Names}} {{.Ports}}'
+Invoke-WebRequest -Uri 'http://127.0.0.1:18010/api/app/health' -TimeoutSec 10 | Select-Object StatusCode
+```
+
+For the connected Android emulator, a debug-only localhost mapping can preserve the local API host:
+
+```powershell
+adb -s emulator-5554 reverse tcp:18010 tcp:18010
+```
+
+Use the actual available adb path and confirm reverse support before relying on this mapping.
+Configure cxmobile's debug API base to the full `/api/app` URL.
+Do not truncate the base path or invent a Host override to bypass server tenant/domain checks.
+If debug cleartext networking needs configuration, limit it to the local debug variant and approved loopback destination.
+Keep release HTTPS, native session protection, origin validation, and tenant isolation unchanged.
+
+## Existing login and theme contracts
+
+Inspect `apps/platform/web/src/public/login/LoginPage.tsx` and its public dependencies.
+Reuse the existing form presentation through a reviewed Platform public export or a presentation extraction with injected auth/navigation contracts.
+Do not import private Platform desk internals or copy a second divergent login implementation.
+Preserve Corporate ID/shared-host rules, username/email behavior, recovery links, branding, validation, loading, and session-expiry behavior.
+Use the approved native session integration underneath the same presentation.
+Remove fabricated account, tenant, and password defaults from the installed application.
+
+Use `@codexsun/ui`, its AuthLayout/AppLayout and workspace primitives, shared shadcn controls, theme tokens, fonts, and styles.
+Remove one-off fixed slate/dark palettes that replace the existing theme.
+Preserve supported light/dark settings and tenant branding.
+Limit host styling to responsive layout, safe areas, keyboard, navigation, and native needs.
+Match the running Platform Web login and representative owner screens at phone widths.
+
+## Real verification
+
+Use approved disposable fixture tenants and existing configured test accounts without printing credentials.
+If an isolated fixture is unavailable, report the prerequisite and continue read-only or UI checks.
+Do not create test business records in a live customer tenant.
+
+1. Verify Docker health and the deployed API version/capabilities against the current client.
+2. Sign in through cxmobile's reused login presentation and call the actual Platform session API.
+3. Create/reload a CRM enquiry and authorized comment using owner payload schemas and persisted lookup records.
+4. Create/reload an unposted Billing quotation and compare server totals, company/year, and PDF preview/share.
+5. Send/read a Chat message and attachment between fixture users and verify actual socket authentication and reconnect.
+6. Save/reload an unpublished Ecommerce item/image and check isolated public preview behavior.
+7. Verify denied roles, disabled apps, foreign record IDs, company/year changes, logout/revocation, and second-account cleanup.
+8. Test 320/390/430-width rendering, matching login/theme, keyboard/back navigation, and safe areas.
+9. Rebuild/sync/install the Android debug client and repeat the relevant flows against Docker.
+
+Record browser and installed Android evidence separately from Node mocks and plugin-registration callbacks.
+An installed process, healthy API, or unopened screen is not workflow acceptance.
+Capture images through binary-safe output and verify that each opens as a valid image.
+The earlier candidate screenshot was UTF-16 text rather than valid PNG data and must be replaced.
+
+Keep iPhone/macOS build, signing, and native workflow evidence explicitly pending when the required host/device is unavailable.
+Do not claim iOS success from Android or browser checks.
+Continue the XR01-XR08 repair loop and independent review until these requirements and the original acceptance gates have evidence.

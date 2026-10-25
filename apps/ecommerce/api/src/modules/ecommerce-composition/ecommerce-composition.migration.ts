@@ -15,6 +15,16 @@ import {
   upgradeProductVariantCanonicalOptions,
   upgradeProductVariantOptions
 } from "../product-variant/product-variant.migration.js";
+import {
+  migrateProductAttributeModule,
+  upgradeProductAttributeRevision
+} from "../product-attribute/product-attribute.migration.js";
+import {
+  migrateProductSpecificationModule,
+  upgradeProductSpecificationRevision
+} from "../product-specification/product-specification.migration.js";
+import { migrateProductCollectionModule } from "../product-collection/product-collection.migration.js";
+import { migrateCatalogActivityModule } from "../catalog-activity/catalog-activity.migration.js";
 import { migrateProductImageModule } from "../product-image/product-image.migration.js";
 import { migrateStorefrontSliderModule } from "../storefront-slider/storefront-slider.migration.js";
 import {
@@ -51,6 +61,8 @@ import {
 import { standardizeStorefrontSchema } from "../storefront/storefront-schema.migration.js";
 import { upgradeStorefrontReadPerformance } from "../storefront/storefront-performance.migration.js";
 
+// Versions 1-34 are the committed 27135c9a ledger. They are immutable: tenants may already
+// have recorded them, so new forward steps are appended at 35 and above without renumbering.
 const steps = [
   ["product-information", migrateProductInformationModule],
   ["product-information-details", upgradeProductInformationDetails],
@@ -85,9 +97,14 @@ const steps = [
   ["storefront-performance", upgradeStorefrontReadPerformance],
   ["legacy-cleanup", preserveLegacyEcommerceTables],
   ["storefront-organisation", migrateStorefrontOrganisation],
-  ["storefront-organisation-branding", upgradeStorefrontOrganisationBranding]
+  ["storefront-organisation-branding", upgradeStorefrontOrganisationBranding],
+  ["product-attribute", migrateProductAttributeModule],
+  ["product-attribute-revision", upgradeProductAttributeRevision],
+  ["product-specification", migrateProductSpecificationModule],
+  ["product-specification-revision", upgradeProductSpecificationRevision],
+  ["product-collection", migrateProductCollectionModule],
+  ["catalog-activity", migrateCatalogActivityModule]
 ] as const;
-
 const versionedSteps = steps.map(([name, up], index) => ({
   name: `ecommerce.modules.${name}`,
   description: `Migrate ecommerce ${name}.`,
@@ -117,6 +134,10 @@ export const ecommerceTenantMigrations = batch.steps.map(({ name, description })
   name,
   description
 }));
+
+export const ecommerceTenantMigrationVersions: Readonly<Record<string, number>> = Object.freeze(
+  Object.fromEntries(batch.steps.map(({ name, version }) => [name, version]))
+);
 
 export async function migrateEcommerceTenantDatabase(database: Kysely<EcommerceDatabase>) {
   return runMigrationBatch(database, batch);

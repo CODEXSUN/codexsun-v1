@@ -28,16 +28,46 @@ import {
 } from "./modules/campaign/index.js";
 import { captureModule, migrateCapture, seedCapture } from "./modules/capture/index.js";
 import { connectionModule, migrateConnection, seedConnection } from "./modules/connection/index.js";
+import { leadModule, migrateLead, seedLead, lookupLead } from "./modules/lead/index.js";
+import {
+  qualificationModule,
+  migrateQualification,
+  seedQualification
+} from "./modules/qualification/index.js";
+import {
+  conversionModule,
+  migrateConversion,
+  seedConversion
+} from "./modules/conversion/index.js";
+import {
+  outcomeModule,
+  migrateOutcome,
+  seedOutcome
+} from "./modules/outcome/index.js";
+import {
+  followUpModule,
+  migrateFollowUp,
+  seedFollowUp
+} from "./modules/follow-up/index.js";
+
 export type { MarketingDatabase, MarketingDependencies, MarketingContext } from "./context.js";
+
 export const marketingApiModuleKeys = [
   brandModule.key,
   campaignModule.key,
   captureModule.key,
   connectionModule.key,
   submissionModule.key,
-  consentModule.key
+  consentModule.key,
+  leadModule.key,
+  qualificationModule.key,
+  conversionModule.key,
+  outcomeModule.key,
+  followUpModule.key
 ] as const;
+
 export { BrandService } from "./modules/brand/index.js";
+
 export const marketingMigrationBatch = {
   batch: 1,
   scope: "marketing",
@@ -95,12 +125,49 @@ export const marketingMigrationBatch = {
       description: "Append-only promotional consent evidence.",
       version: 6,
       up: migrateConsent
+    },
+    {
+      name: "marketing.lead.v1",
+      checksum: "marketing.lead.v1",
+      description: "Marketing lead intake, assignment and status.",
+      version: 7,
+      up: migrateLead
+    },
+    {
+      name: "marketing.qualification.v1",
+      checksum: "marketing.qualification.v1",
+      description: "Marketing qualification review and decisions.",
+      version: 8,
+      up: migrateQualification
+    },
+    {
+      name: "marketing.conversion.v1",
+      checksum: "marketing.conversion.v1",
+      description: "Marketing sales conversion and reversal.",
+      version: 9,
+      up: migrateConversion
+    },
+    {
+      name: "marketing.outcome.v1",
+      checksum: "marketing.outcome.v1",
+      description: "Marketing terminal outcomes and corrections.",
+      version: 10,
+      up: migrateOutcome
+    },
+    {
+      name: "marketing.follow-up.v1",
+      checksum: "marketing.follow-up.v1",
+      description: "Marketing follow-ups and reminders.",
+      version: 11,
+      up: migrateFollowUp
     }
   ]
 };
+
 export function migrateMarketing(database: Kysely<MarketingDatabase>) {
   return runMigrationBatch(database, marketingMigrationBatch);
 }
+
 export async function seedMarketing(database: Kysely<MarketingDatabase>) {
   await seedBrand(database);
   await seedCampaign(database);
@@ -108,10 +175,17 @@ export async function seedMarketing(database: Kysely<MarketingDatabase>) {
   await seedConnection(database);
   await seedSubmission(database);
   await seedConsent(database);
+  await seedLead(database);
+  await seedQualification(database);
+  await seedConversion(database);
+  await seedOutcome(database);
+  await seedFollowUp(database);
 }
+
 export async function marketingBrandScope(context: MarketingContext) {
   return (await new BrandService(context).list("", 100000, 0)).map((row) => row.uuid);
 }
+
 export async function registerMarketing(
   app: FastifyInstance,
   deps: MarketingDependencies,
@@ -132,6 +206,31 @@ export async function registerMarketing(
     const campaign = await lookupCampaign(context, input.campaignUuid);
     if (campaign.status !== "active" || campaign.brandUuid !== input.brandUuid)
       throw AppError.validation("Select an active campaign from this brand.");
+  });
+  leadModule.register(app, deps, parent);
+  qualificationModule.register(app, deps, async (context, input) => {
+    await parent(context, input);
+    const lead = await lookupLead(context, input.leadUuid);
+    if (lead.brandUuid !== input.brandUuid)
+      throw AppError.validation("Selected lead does not belong to this brand.");
+  });
+  conversionModule.register(app, deps, async (context, input) => {
+    await parent(context, input);
+    const lead = await lookupLead(context, input.leadUuid);
+    if (lead.brandUuid !== input.brandUuid)
+      throw AppError.validation("Selected lead does not belong to this brand.");
+  });
+  outcomeModule.register(app, deps, async (context, input) => {
+    await parent(context, input);
+    const lead = await lookupLead(context, input.leadUuid);
+    if (lead.brandUuid !== input.brandUuid)
+      throw AppError.validation("Selected lead does not belong to this brand.");
+  });
+  followUpModule.register(app, deps, async (context, input) => {
+    await parent(context, input);
+    const lead = await lookupLead(context, input.leadUuid);
+    if (lead.brandUuid !== input.brandUuid)
+      throw AppError.validation("Selected lead does not belong to this brand.");
   });
 }
 
@@ -168,12 +267,100 @@ export {
   migrateConsent,
   seedConsent,
   consentInputSchema,
-  eligibilityInputSchema
+  eligibilityInputSchema,
+  contactRestrictionSchema,
+  contactRestrictionChannelSchema
 } from "./modules/consent/index.js";
 export type {
   ConsentDependencies,
   ConsentInput,
   ConsentRecord,
   EligibilityInput,
-  EligibilityResult
+  EligibilityResult,
+  ContactRestrictionChannel,
+  ContactRestrictionInput,
+  ContactRestrictionRecord,
+  PolicyResult
 } from "./modules/consent/index.js";
+
+export {
+  LeadService,
+  lookupLead,
+  migrateLead,
+  seedLead,
+  leadInputSchema,
+  leadRecordSchema,
+  leadStatusSchema
+} from "./modules/lead/index.js";
+export type {
+  LeadInput,
+  LeadRecord,
+  LeadActivity,
+  LeadStatus
+} from "./modules/lead/index.js";
+
+export {
+  QualificationService,
+  lookupQualification,
+  migrateQualification,
+  seedQualification,
+  qualificationInputSchema,
+  qualificationRecordSchema,
+  qualificationDecisionSchema
+} from "./modules/qualification/index.js";
+export type {
+  QualificationInput,
+  QualificationRecord,
+  QualificationActivity,
+  QualificationDecision
+} from "./modules/qualification/index.js";
+
+export {
+  ConversionService,
+  lookupConversion,
+  migrateConversion,
+  seedConversion,
+  conversionInputSchema,
+  conversionRecordSchema,
+  conversionStatusSchema
+} from "./modules/conversion/index.js";
+export type {
+  ConversionInput,
+  ConversionRecord,
+  ConversionActivity,
+  ConversionStatus
+} from "./modules/conversion/index.js";
+
+export {
+  OutcomeService,
+  lookupOutcome,
+  migrateOutcome,
+  seedOutcome,
+  outcomeInputSchema,
+  outcomeRecordSchema,
+  outcomeDispositionSchema
+} from "./modules/outcome/index.js";
+export type {
+  OutcomeInput,
+  OutcomeRecord,
+  OutcomeActivity,
+  OutcomeDisposition
+} from "./modules/outcome/index.js";
+
+export {
+  FollowUpService,
+  lookupFollowUp,
+  migrateFollowUp,
+  seedFollowUp,
+  followUpInputSchema,
+  followUpRecordSchema,
+  followUpActionTypeSchema,
+  followUpStatusSchema
+} from "./modules/follow-up/index.js";
+export type {
+  FollowUpInput,
+  FollowUpRecord,
+  FollowUpActivity,
+  FollowUpActionType,
+  FollowUpStatus
+} from "./modules/follow-up/index.js";

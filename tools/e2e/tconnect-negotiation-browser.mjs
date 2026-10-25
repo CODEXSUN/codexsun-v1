@@ -49,8 +49,8 @@ export class BrowserPage {
       throw new Error(response.exceptionDetails.exception?.description ?? "Browser script failed.");
     return response.result.value;
   }
-  async waitFor(expression, label) {
-    for (let attempt = 0; attempt < 120; attempt++) {
+  async waitFor(expression, label, attempts = 120) {
+    for (let attempt = 0; attempt < attempts; attempt++) {
       if (await this.evaluate(expression)) return;
       await delay(200);
     }

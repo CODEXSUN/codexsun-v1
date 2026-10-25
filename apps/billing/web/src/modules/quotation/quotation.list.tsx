@@ -76,6 +76,20 @@ export function QuotationList({
   totalsView: BillingDocumentTotalsViewMode;
   visibleColumns: Record<string, boolean>;
 }) {
+  const headings = [
+    "Quotation",
+    "Date",
+    ...(visibleColumns.customer ? ["Customer"] : []),
+    ...(visibleColumns.items ? ["QTY"] : []),
+    ...(visibleColumns.taxable ? ["Taxable"] : []),
+    ...(visibleColumns.gst ? ["GST"] : []),
+    ...(visibleColumns.total ? ["Total"] : []),
+    ...(visibleColumns.status ? ["Status"] : []),
+    ...(visibleColumns.invoice ? ["Invoice"] : []),
+    "Print",
+    ...(visibleColumns.action ? ["Action"] : [])
+  ];
+
   return (
     <WorkspaceTablePanel>
       <div className="overflow-x-auto">
@@ -94,19 +108,7 @@ export function QuotationList({
                       type="checkbox"
                     />
                   </th>
-                  {[
-                    "Quotation",
-                    "Date",
-                    ...(visibleColumns.customer ? ["Customer"] : []),
-                    ...(visibleColumns.items ? ["QTY"] : []),
-                    ...(visibleColumns.taxable ? ["Taxable"] : []),
-                    ...(visibleColumns.gst ? ["GST"] : []),
-                    ...(visibleColumns.total ? ["Total"] : []),
-                    ...(visibleColumns.status ? ["Status"] : []),
-                    ...(visibleColumns.invoice ? ["Invoice"] : []),
-                    "Print",
-                    ...(visibleColumns.action ? ["Action"] : [])
-                  ].map((heading) => (
+                  {headings.map((heading) => (
                     <th
                       key={heading}
                       className={cn(
@@ -119,16 +121,23 @@ export function QuotationList({
                       )}
                     >
                       {heading}
-                      {listTools.showFilters ? (
-                        <div className="mt-2 font-normal normal-case tracking-normal">
-                          {listTools.filterRow(columnIds[heading] ?? "")}
-                        </div>
-                      ) : null}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
+                {listTools.showFilters ? (
+                  <tr className="border-b border-border/70 bg-white">
+                    <td className="px-4 py-2.5" />
+                    {headings.map((heading) => (
+                      <td key={heading} className="px-4 py-2.5 text-foreground">
+                        {heading === "Action" || heading === "Print"
+                          ? null
+                          : listTools.filterRow(columnIds[heading] ?? "")}
+                      </td>
+                    ))}
+                  </tr>
+                ) : null}
                 {entries.map((quotation, _index) => (
                   <tr
                     key={quotation.id}

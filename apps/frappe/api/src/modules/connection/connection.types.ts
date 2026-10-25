@@ -82,6 +82,20 @@ export type FrappeDatabase = EnquiryDatabase & {
   frappe_connection_settings: FrappeConnectionRow;
   frappe_data_sources: FrappeDataSourceRow;
   frappe_enquiry_sync: FrappeSyncRow;
+  frappe_availability_settings: {
+    id: number;
+    schedule_enabled: number | boolean;
+    timezone: string;
+    opens_at: string;
+    closes_at: string;
+    connection_status: "unknown" | "online" | "offline";
+    checked_base_url: string | null;
+    last_checked_at: Date | string | null;
+    next_check_at: Date | string | null;
+    last_error: string | null;
+    updated_by: string;
+    updated_at: Date | string;
+  };
   frappe_live_sync_settings: {
     id: number;
     enabled: number | boolean;

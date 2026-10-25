@@ -51,3 +51,22 @@ export async function processQueueManagerJob(
   await run(job.id);
   return { jobId: job.id, processed: true };
 }
+
+export type QueueReadiness = { ready: boolean; retryAt: string; reason: string | null };
+type QueueReadinessCheck = (job: QueueJobRecord, error?: unknown, result?: Record<string, unknown>) => Promise<QueueReadiness>;
+const readinessChecks = new Map<string, QueueReadinessCheck>();
+export function registerQueueJobReadiness(jobName: string, check: QueueReadinessCheck) {
+  readinessChecks.set(jobName, check);
+}
+export function queueJobReadiness(
+  job: QueueJobRecord,
+  error?: unknown,
+  result?: Record<string, unknown>
+) {
+  return readinessChecks.get(job.jobName)?.(job, error, result);
+}
+export class QueueJobHeld extends Error {
+  constructor(readonly retryAt: string) {
+    super("Queue job is waiting for its availability window.");
+  }
+}

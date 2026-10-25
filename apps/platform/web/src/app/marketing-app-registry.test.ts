@@ -41,6 +41,11 @@ test("Marketing loader entry is tenant activated and reaches every implemented w
     "marketing.campaigns",
     "marketing.captures",
     "marketing.submissions",
+    "marketing.leads",
+    "marketing.qualifications",
+    "marketing.conversions",
+    "marketing.outcomes",
+    "marketing.followups",
     "marketing.connections",
     "marketing.consents"
   ]);

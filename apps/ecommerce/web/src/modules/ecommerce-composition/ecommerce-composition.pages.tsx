@@ -3,6 +3,9 @@ import { StorefrontOrganisationWorkspace } from "../storefront-organisation";
 import { CatalogOverviewWorkspace } from "../catalog-overview";
 import { CatalogDataSourceWorkspace } from "../catalog-data-source";
 import { ProductInformationWorkspace } from "../product-information";
+import { ProductAttributeWorkspace } from "../product-attribute";
+import { ProductSpecificationWorkspace } from "../product-specification";
+import { ProductCollectionWorkspace } from "../product-collection";
 import { ProductVariantWorkspace } from "../product-variant";
 import { ProductImageWorkspace } from "../product-image";
 import { StorefrontProfileWorkspace } from "../storefront-profile";
@@ -16,6 +19,9 @@ export type EcommerceModulePage =
   | "ecommerce.organisation"
   | "ecommerce.catalog"
   | "ecommerce.product-information"
+  | "ecommerce.product-attributes"
+  | "ecommerce.product-specifications"
+  | "ecommerce.product-collections"
   | "ecommerce.product-variants"
   | "ecommerce.product-images"
   | "ecommerce.catalog-data-source"
@@ -32,6 +38,9 @@ export const ecommerceModulePages: readonly EcommerceModulePage[] = [
   "ecommerce.organisation",
   "ecommerce.catalog",
   "ecommerce.product-information",
+  "ecommerce.product-attributes",
+  "ecommerce.product-specifications",
+  "ecommerce.product-collections",
   "ecommerce.product-variants",
   "ecommerce.product-images",
   "ecommerce.catalog-data-source",
@@ -60,6 +69,12 @@ export function EcommerceModuleWorkspace({
       return <CatalogOverviewWorkspace onOpenStore={onOpenStore} />;
     case "ecommerce.product-information":
       return <ProductInformationWorkspace onOpenAi={copyAiDraft} />;
+    case "ecommerce.product-attributes":
+      return <ProductAttributeWorkspace />;
+    case "ecommerce.product-specifications":
+      return <ProductSpecificationWorkspace />;
+    case "ecommerce.product-collections":
+      return <ProductCollectionWorkspace />;
     case "ecommerce.product-variants":
       return <ProductVariantWorkspace />;
     case "ecommerce.product-images":

@@ -61,3 +61,8 @@ export {
   rollbackFrappeUserMappingDatabase
 } from "./modules/user-mapping/index.js";
 export type { FrappeUserMappingDatabase } from "./modules/user-mapping/index.js";
+
+export { FrappeAvailabilityService, isFrappeUnavailable } from "./modules/live-sync/index.js";
+export type { FrappeReadiness } from "./modules/live-sync/index.js";
+
+export { registerFrappeAvailabilityRoutes } from "./modules/live-sync/live-sync.availability.routes.js";

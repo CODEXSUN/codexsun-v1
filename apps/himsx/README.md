@@ -37,6 +37,26 @@ This read-only foundation creates **no new business tables or migrations**. It u
 
 ## Planned modules
 
+### Active Front Office delivery contract
+
+The client Word document now defines the Front Office delivery scope.
+The planning package maps all 22 source steps to shared-owner reuse, HIMSX business leaves, dependencies, and acceptance gates.
+No Front Office business feature has been implemented by this planning update.
+
+- [Requirements analysis and reuse map](agent/REQUIREMENTS-ANALYSIS.md)
+- [Delivery plan](agent/PLAN.md) and [task and evidence ledger](agent/TASK.md)
+- [Supervisor implementation prompt](agent/SUPERVISOR-PROMPT.md)
+- [Worker assignments and review prompts](agent/WORKER-TASKS.md)
+- [Audit and repair register](agent/AUDIT.md)
+
+Core retains contacts, locations, and companies. Platform retains users and access control.
+Reuse existing HRMS department/designation, Billing finance, and CRM enquiry contracts.
+Hospital-specific fields extend shared IDs through HIMSX-owned tables, including `himsx_contacts`.
+All hospital screens use shared CODEXSUN UI, managed themes, and the CRM Enquiry list/Show/upsert interaction pattern.
+
+The roadmap paragraph below remains a broader future direction.
+Clinical treatment, beds, diagnostics, and pharmacy are outside the active Front Office handoff.
+
 Patient registration and identity; appointments and queues; encounters and clinical records; admissions, beds and discharge; diagnostics/pharmacy; hospital charge capture and billing integrations.
 
 These are planned workflows, not implemented screens. The side menu exposes only working overview and onboarding pages. No employee, documentation-page, patient, payroll or clinical records are fabricated or seeded.

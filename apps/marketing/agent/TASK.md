@@ -1,26 +1,30 @@
 # Marketing Delivery Tasks
 
-## Tracking rules
+## Current assignment and authority
 
-Baseline: 2026-10-23. Phase 0 created planning documents. The user subsequently authorized local Phase 1 implementation.
-All implementation tasks remain unchecked until exact acceptance evidence exists.
-Do not mark a feature complete because its directory, button, route, or mocked response exists.
-Record source checks, automated checks, database behavior, browser behavior, provider behavior, and deployment separately.
+Planning review: 25-10-2026. Current assignment: rewrite PLAN/TASK only.
+These documents authorize no implementation, agent dispatch, database/activation change, external send, commit, push, version bump, or deployment.
+The receiving supervisor must derive implementation scope from the user's actual follow-up request.
+Preserve existing staged, unstaged, untracked, and concurrent changes.
 
-## Documentation baseline
+[PLAN](PLAN.md) defines current gaps, owners, CRM visual rules, phases, and E01-E23 acceptance scenarios.
+Phase 1 remains open. Source presence does not close a task.
+Separate historical checks, current local checks, authenticated browser behavior, provider pilots, and deployment.
+Historical completed items below retain their original scope. They do not claim fresh verification on 25-10-2026.
+
+## Current ownership correction
+
+Marketing owns Lead -> Qualification -> Sales Conversion -> Outcome, including its follow-up and recipient restriction policy.
+CRM is a visual reference only. No agent may change CRM code, migrations, seeds, settings, permissions, routes or jobs.
+No new Marketing lifecycle operation may call CRM intake, qualification, conversion, task or scheduler services.
+This instruction supersedes earlier ownership plans and historical completed checkpoints. Runtime cutover still requires implementation authorization.
+
+## Historical completed checkpoints
 
 - [x] Create README, PLAN, TASK, and SKILLS under `apps/marketing`.
 - [x] Define a shared client dashboard with a separate tenant database for each client.
 - [x] Define app ownership, isolated connections, CRM-style screens, email campaigns, phases, and exit gates.
 - [x] Exclude TikTok and reserve cross-client administration for a separate future app.
-
-Evidence: the four Markdown files contain the planning baseline. They do not implement a runtime capability.
-
-## Phase 0: Ownership and readiness
-
-Status: planning complete on 2026-10-23. Contract implementation and live account readiness remain open.
-See [Phase 0 decisions and contract review](PLAN.md#phase-0-decisions-and-contract-review).
-
 - [x] 0.1 Review app documentation and relevant source/public contracts. Record G01-G14 and owner backlog links.
 - [x] 0.2 Reconcile CRM Campaign and promotional/service Consent ownership across Marketing and CRM documents.
 - [x] 0.3 Specify canonical CRM Lead intake, duplicate review, assignment, conversion linkage, and outcome contract proposals.
@@ -31,46 +35,205 @@ See [Phase 0 decisions and contract review](PLAN.md#phase-0-decisions-and-contra
 - [x] 0.8 Specify OAuth/callback mapping, account collision handling, shared routing metadata, rotation, and future transfer policy.
 - [x] 0.9 Specify public form, unsubscribe, tracking, preview, media, and existing Sites/domain-app forwarding boundaries.
 - [x] 0.10 Specify disposable two-tenant fixtures and replay, callback confusion, suppression, activation, and queue failure scenarios.
+- [x] 1.14a Implement and locally verify the promotional email evidence/check slice across Marketing, CRM, Core identity lookup, and Mail safety.
 
-Exit evidence: PLAN contains ownership decisions, G01-G14 source/gap register, logical contract schemas, dependency order, readiness gates, and fixture specification.
-The related owner PLAN/TASK files contain mirrored responsibilities and unchecked implementation tasks.
-Fixtures and contracts are specified, not created or executed. No provider connection or approval is claimed.
+## Supervisor dispatch and file leases
 
-### Account and client rollout prerequisites
+SUP supervises and owns shared Platform integration edits.
+UI owns Marketing web. MKT owns Marketing API. INT owns Marketing-side adapters and permitted non-CRM public contracts. CRM/Frappe files are excluded. QA owns leased verification files.
+Use at most SUP plus three workers. QA replaces a completed/idle developer slot.
 
-- [ ] R01 Obtain actual client account/brand identifiers and ownership evidence through an authorized tenant setup flow.
-- [ ] R02 Validate current official capabilities, scopes, limits, access reviews, costs, and availability per selected account.
-- [ ] R03 Complete authorized provider applications, consent/privacy/deletion pages, callbacks, and domain verification.
-- [ ] R04 Select and verify the tenant bulk email provider, sender, feedback events, quotas, and cost allowance.
-- [ ] R05 Approve client consent notices, sender details, retention periods, brand/controller scope, and import provenance.
-- [ ] R06 After implementation, run authorized capability pilots and record per-tenant results.
+### Active File Leases (Waves 1A-1C)
+- **SUP (Supervisor)**:
+  - `apps/marketing/agent/TASK.md`
+  - `apps/marketing/agent/LOCAL-ACCEPTANCE.md`
+  - `apps/platform/api/src/marketing-host.ts`
+  - `apps/platform/web/src/modules/marketing/marketing-navigation.ts`
+  - `apps/platform/web/src/modules/marketing/marketing-host.tsx`
+  - `apps/platform/web/src/app/app-registry.ts`
+  - `apps/platform/web/src/desks/tenant/AppDesk.tsx`
+- **MKT (Marketing Backend Worker)**:
+  - `apps/marketing/api/src/context.ts`
+  - `apps/marketing/api/src/index.ts`
+  - `apps/marketing/api/src/modules/lead/**`
+  - `apps/marketing/api/src/modules/qualification/**`
+  - `apps/marketing/api/src/modules/conversion/**`
+  - `apps/marketing/api/src/modules/outcome/**`
+  - `apps/marketing/api/src/modules/follow-up/**`
+  - `apps/marketing/api/src/modules/submission/**`
+  - `apps/marketing/api/src/modules/brand/**`
+  - `apps/marketing/api/src/modules/campaign/**`
+  - `apps/marketing/api/src/modules/capture/**`
+  - `apps/marketing/api/src/modules/consent/**`
+- **UI (Marketing Frontend Worker)**:
+  - `apps/marketing/web/src/index.ts`
+  - `apps/marketing/web/src/modules/brand/**`
+  - `apps/marketing/web/src/modules/campaign/**`
+  - `apps/marketing/web/src/modules/capture/**`
+  - `apps/marketing/web/src/modules/submission/**`
+  - `apps/marketing/web/src/modules/connection/**`
+  - `apps/marketing/web/src/modules/consent/**`
+  - `apps/marketing/web/src/modules/lead/**`
+  - `apps/marketing/web/src/modules/qualification/**`
+  - `apps/marketing/web/src/modules/conversion/**`
+  - `apps/marketing/web/src/modules/outcome/**`
+  - `apps/marketing/web/src/modules/follow-up/**`
+- **INT (Integration Worker)**:
+  - `apps/marketing/api/src/modules/connection/connection.google.ts`
+  - `apps/marketing/api/src/modules/connection/connection.types.ts`
+  - Marketing adapter files and provider mock connectors
+- **QA (Independent QA Worker)**:
+  - `tools/e2e/marketing-isolation.e2e.ts`
+  - `tools/e2e/marketing-lifecycle.e2e.ts`
+  - `tools/e2e/marketing-browser.mjs`
 
-These are live readiness gates, not completed planning evidence. They cannot be inferred from a document or a developer token.
+### S00 Frozen Contracts & Specifications
+- **State Transition Matrix**:
+  - `Submission`: pending -> delivered (storing Marketing `lead_uuid`).
+  - `Marketing Lead`: new -> contacted -> qualified | disqualified | deferred.
+  - `Marketing Qualification`: qualified, disqualified, deferred decisions with criteria, reason, reviewer, and revision.
+  - `Marketing Sales Conversion`: from qualified Lead only. Statuses: converted, cancelled, reversed with declared value/currency and cancellation reason.
+  - `Marketing Outcome`: terminal disposition (won, lost, nurture, unresponsive, withdrawn). Explicit reopen/correction references previous outcome record.
+  - `Marketing Follow-up / Reminders`: call, email, meeting, review with pending, completed, cancelled status.
+  - `Marketing Contact Restrictions`: restricted, released with channel (email, phone, all) and immutable evidence. Mail suppressions checked in tandem; neither clears the other.
+- **Canonical Web Routes**:
+  - `/app/marketing/brands`
+  - `/app/marketing/campaigns`
+  - `/app/marketing/captures`
+  - `/app/marketing/submissions`
+  - `/app/marketing/leads`
+  - `/app/marketing/qualifications`
+  - `/app/marketing/conversions`
+  - `/app/marketing/outcomes`
+  - `/app/marketing/follow-ups`
+  - `/app/marketing/connections`
+  - `/app/marketing/consents`
+- **UI Interaction & Layout Standard**:
+  - One toolbar containing: Search input, `WorkspaceDateRangePicker`, Column-search toggle button (`SlidersHorizontal` with badge count), active filter badge, Filters dropdown, Columns dropdown.
+  - Column search inputs rendered in first white `tbody` row using `WorkspaceColumnFilter`.
+  - Separate page rendering: List, Show (`show=<uuid>`), and Upsert New (`new`) / Edit (`edit=<uuid>`). No list behind Show or Upsert.
+  - Forms: `WorkspaceUpsertPage`, `WorkspaceFormSurface`, `WorkspaceFormBody`, `WorkspaceFormActions`, `WorkspaceFormGrid` (2 columns desktop, 1 mobile), `WorkspaceFormField` (with `required` red asterisk), `WorkspaceSwitchCard` for status, themed selects/lookups/dates, error banner displayed only after failed save attempt.
+
+### S01 Recorded Baseline
+- Timestamp: 2026-10-25T14:12:20+05:30
+- Branch: `main` (commit head aligned with origin/main)
+- Pre-existing working tree state:
+  - Modified outside Marketing: `apps/billing/*`, `apps/crm/*`, `apps/platform/*`, `assist/*`, `devkits/*`, `packages/ui/src/styles.css`, `packages/ui/src/workspace/table.tsx`, `tools/*`
+  - Untracked directories: `.container/agent/`, `apps/chatb/`, `apps/cxmobile/`, `apps/ecommerce/`, `apps/frappe/`, `apps/worker/`, `tools/container-testing/`, etc.
+  - Marketing files modified: `apps/marketing/agent/PLAN.md`, `apps/marketing/agent/TASK.md`
+  - Marketing files untracked: `apps/marketing/agent/ANTIGRAVITY-HANDOFF.md`, `apps/marketing/agent/ANTIGRAVITY-WORKERS.md`
+- Preservation rule: Zero resets, stashes, commits, pushes, version bumps, or cloud deployments. Every pre-existing modification is strictly preserved.
+
+| Order      | Assignment                                                                                                                              | Prerequisite                        | Acceptance and return                                                              |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------- |
+| S00        | SUP freezes routes/query state, list/filter/date/count, relationship labels, lifecycle, scope, migrations and errors                    | Actual implementation authorization | Written contract decisions, fixture actors, exact file leases, exclusions, E2E IDs |
+| S01        | SUP records current branch/dirty paths, confirms source baseline, and allocates UI/MKT/INT files                                        | S00                                 | Existing changes preserved. No shared-file collisions or assumed external access   |
+| Wave A     | UI handles 1.3/1.4, MKT supplies list/1.6 contracts, MKT owns 1.10 lifecycle contracts; INT reviews Marketing-side cutover requirements | S00/S01                             | Reviewed owner work and checks. Platform requirements return to SUP                |
+| Wave B     | MKT handles 1.7-1.9, MKT owns 1.10; INT handles 1.12/1.13 without CRM edits, QA starts stable E01-E07                                   | Accepted Wave A contracts           | One writer per file. Failed acceptance returns to its owner                        |
+| Wave C     | INT/MKT close 1.5/1.14 regressions, QA verifies E08-E15, SUP integrates                                                                 | Waves A/B                           | Current signed-session flow, isolation/recovery proof, concrete remaining blockers |
+| Phase gate | SUP reviews diffs and repeats the composed journey                                                                                      | Applicable E01-E15                  | Accept or reject Phase 1 from evidence, not worker summaries                       |
+
+Each dispatch includes IDs, exact paths, public contracts, permitted/prohibited actions, fixtures, checks and expected evidence.
+Request another lease before editing Platform, shared UI, root tooling, catalog generation, or another business owner.
+No two agents write the same file. Do not reset another agent's changes or assume its output is verified.
 
 ## Phase 1: Tenant foundation and capture MVP
 
-Status: in progress locally. The broad exit gate remains open.
-The implementation log below separates source, automated database tests, browser checks, and live readiness.
+Broad tasks remain open under the revised acceptance gate. Existing code is the starting point.
+Do not rebuild working features merely because broader acceptance is unchecked.
 
-- [ ] 1.1 Register tenant Marketing activation, permissions, routes, migrations, seeds, and menu through public composition points.
-- [ ] 1.2 Implement tenant/company/brand-scoped context for requests, storage, caches, reports, exports, and jobs.
-- [ ] 1.3 Build shared CRM-style list, Show, and upsert surfaces for brands, campaigns, connections, and submissions.
-- [ ] 1.4 Implement required normal lifecycle actions, validation banners, statuses, row actions, and activity history.
-- [ ] 1.5 Implement secure OAuth initiation/callback, account selection, encrypted grants, capability status, and disconnect.
-- [ ] 1.6 Build campaigns, channel links, tracking identity, and safe duplication as draft.
-- [ ] 1.7 Build Marketing capture definitions with Sites-owned public rendering and verified tenant host mapping.
-- [ ] 1.8 Build controlled imports with preview, mapping, consent review, errors, and duplicate review.
-- [ ] 1.9 Persist submissions and durable CRM handoff intent with stable retry identities.
-- [ ] 1.10 Implement canonical CRM Lead creation/linking, contact ambiguity review, assignment, and follow-up task request.
-- [ ] 1.11 Verify tenant A cannot read, mutate, export, preview, or enqueue work for tenant B.
-- [ ] 1.12 Add source-aware CRM/Frappe export policy so Marketing-origin intake cannot trigger an unapproved remote transfer.
-- [ ] 1.13 Add Sites-owned durable forwarding for existing SQLite/D1 enquiries without transferring their owner or promising remote inbox sync.
-- [ ] 1.14 Implement effective promotional eligibility across Marketing consent, CRM restrictions, and transport safety with fail-closed behavior.
-- [x] 1.14a Implement and locally verify the promotional email evidence/check slice across Marketing, CRM, Core identity lookup, and Mail safety.
-- [ ] 1.14b Add other channel authorities and bind future promotional dispatch to repeated execution checks when those transports are implemented.
+| Task  | Worker and boundary                           | Deliverable                                                                                                             | E2E gate                                 |
+| ----- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 1.1   | SUP, Platform composition                     | Signed login, launcher, enabled/disabled desk, grants, setup and migration ordering                                     | E01/E11/E14                              |
+| 1.2   | MKT + SUP + INT, separate owners              | Trusted tenant/company/Brand scope across requests, caches, lookups, files, exports and jobs                            | E10-E14                                  |
+| 1.3   | UI, Marketing web                             | Existing and new lifecycle list/Show/upsert surfaces follow current CRM Enquiry design                                  | E02-E05                                  |
+| 1.4   | UI + MKT, leased web/API files                | Required actions, errors/revisions, lifecycle/activity, retention/export rules                                          | E03/E04/E15                              |
+| 1.5   | MKT + INT, connection owner and SUP adapter   | Capability-specific OAuth, selection, encryption, refresh/revocation, collision and key policy                          | E12/E13, applicable E16 foundation cases |
+| 1.6   | MKT + UI                                      | Campaign relationships/tracking, frozen lifecycle, duplication without inherited execution authority                    | E03/E04/E11/E15                          |
+| 1.7   | MKT + INT Sites                               | Versioned Capture/notice, verified publication/origin, preview/unpublish, protected bindings                            | E06/E09/E11                              |
+| 1.8   | MKT + UI                                      | CSV/JSON mapping, preview, provenance, errors, duplicate decisions and stable resume                                    | E07/E11/E15                              |
+| 1.9   | MKT + SUP queue                               | Durable source receipt/outbox, bounded retry/recovery, handoff status and permitted links                               | E06/E08/E13                              |
+| 1.10  | MKT + UI, Marketing-owned lifecycle leaves    | Marketing Lead, Qualification, Sales Conversion, Outcome, assignment and follow-up with idempotent transitions          | E06/E07/E08/E11                          |
+| 1.11  | QA independent acceptance                     | Two signed local tenants, scope/header swaps, denied API/export/preview/media and cache tests                           | E01/E05/E11/E13                          |
+| 1.12  | MKT + SUP, Marketing-side cutover only        | New flow calls/writes Marketing only. Preserve legacy CRM-linked receipts/jobs without replay, migration or CRM changes | E09/E13                                  |
+| 1.13  | INT Sites                                     | Existing SQLite/D1 source ownership, durable forwarding/replay and outage behavior                                      | E06/E08/E09                              |
+| 1.14  | MKT Marketing policy + permitted Mail adapter | Marketing-owned consent/restrictions plus Mail safety. Review legacy policy disposition without bypassing restrictions  | E10/E11/E13                              |
+| 1.14b | Later channel/transport owner                 | Repeat eligibility/approval at enqueue and execution when dispatch exists                                               | E18-E20, deferred to the owning phase    |
 
-Exit evidence: identical client screens on separate databases, permitted form-to-CRM flow, and duplicate-safe retry after restart.
-CRM canonical Lead readiness is a dependency, not permission to hide a second Lead implementation inside Marketing.
+- [x] S00 Freeze receiving-agent contracts and implementation scope.
+- [x] S01 Allocate files and preserve the shared-checkout baseline.
+- [ ] 1.1 Revalidate activation, app loader, setup and public composition.
+- [ ] 1.2 Close request/cache/file/export/job isolation acceptance.
+- [ ] 1.3 Complete all existing six and new lifecycle CRM-tone list/Show/upsert surfaces.
+- [ ] 1.4 Complete relevant lifecycle/actions/activity and explicit retention/deletion exceptions.
+- [ ] 1.5 Close connector foundation security and honest capability states.
+- [ ] 1.6 Complete Campaign relationships/tracking/duplication under the frozen lifecycle.
+- [ ] 1.7 Close verified Sites-managed Capture publication and intake.
+- [ ] 1.8 Complete mapping, duplicate/provenance review, errors and resumable imports.
+- [ ] 1.9 Close durable handoff/restart/replay and status acceptance.
+- [ ] 1.10 Complete Marketing Lead, Qualification, Sales Conversion, Outcome, assignee and follow-up acceptance.
+- [ ] 1.11 Pass authenticated two-tenant isolation and cache/export/preview denial cases.
+- [ ] 1.12 Pass Marketing-only lifecycle/cutover tests with zero CRM/Frappe calls or writes.
+- [ ] 1.13 Pass existing Sites SQLite/D1 intake and forwarding.
+- [ ] 1.14 Revalidate the email check slice and carry later execution requirements forward.
+- [ ] 1.14b Pass other channel and dispatch-bound policy gates in their later phases.
+
+1.14a remains historically complete for the earlier CRM-linked email slice, not the revised Marketing-only policy. It does not establish a campaign sender or close 1.14b.
+Do not require Phase 3 delivery to close Phase 1. Accept the Phase 1 email check contract and carry execution checks forward.
+
+### Marketing lifecycle implementation breakdown
+
+- [ ] M01 Define Marketing-owned Lead, Qualification, Sales Conversion and Outcome API/Web leaves and their schema/permissions in S00.
+- [ ] M02 Implement stable Submission-to-Lead intake, explicit duplicate/identity decisions, assignment and activity inside Marketing.
+- [ ] M03 Implement versioned Qualification evidence, reviewer/decision/reason and allowed qualified/disqualified/deferred transitions.
+- [ ] M04 Implement idempotent Sales Conversion from a qualified Marketing Lead, with explicit evidence, cancellation/reversal and revision checks.
+- [ ] M05 Implement coherent Outcome decisions, reason/date, deliberate reopen/correction and permitted source drill-down.
+- [ ] M06 Add Marketing-owned follow-up/reminders and do-not-contact/release policy. Do not delegate either to CRM.
+- [ ] M07 Inventory existing CRM-linked jobs/receipts. Plan Marketing-side cutover without rewriting, replaying or deleting legacy records.
+- [ ] M08 Replace new-flow CRM integration only inside Marketing and necessary Platform composition. Make no CRM/Frappe edits or automatic migrations.
+- [ ] M09 Keep consent/transport safety fail-closed until Marketing policy and unresolved legacy restriction disposition are verified.
+- [ ] M10 Run E06/E08/E09/E10/E11/E13 with zero CRM/Frappe calls/writes and unchanged legacy data.
+
+Sales Conversion is a Marketing business outcome, not an invoice, payment or verified revenue claim.
+Core identity references and Billing references remain optional public integrations. They do not own the Marketing lifecycle.
+Every new lifecycle module needs the same list/Show/upsert design-system and tenant-isolation acceptance as the existing screens.
+
+### UI breakdown: list, Show, upsert
+
+- [ ] U01 Put breadcrumb/New in the App Header. Remove duplicate canvas title/description and routine Refresh.
+- [ ] U02 Keep search, shared date range, column-search toggle, accurate selected-filter badge, Filters and Columns in one toolbar.
+- [ ] U03 Add the shared white column-search row below headings. Verify alignment, hiding/clear, Escape and paging.
+- [ ] U04 Add contracted page sizes and scoped counts. Persist all list state in the URL.
+- [ ] U05 Freeze canonical list/new/Show/edit routes with SUP and preserve existing query bookmarks.
+- [ ] U06 Render one page view only. No list behind an upsert or Show. Handle missing/foreign/revoked records.
+- [ ] U07 Use shared surface/body/actions, date/date-time controls, themed select/lookup, status switch cards and footer.
+- [ ] U08 Preserve Save/Update, required markers, delayed banner/border/helper validation, pending/error states and dirty navigation.
+- [ ] U09 Use dedicated compact Show/context/activity cards and contextual actions with permitted parent labels.
+- [ ] U10 Preserve immutable Consent behavior. Distinguish evidence action from current eligibility.
+- [ ] U11 Compare every screen with current CRM Enquiries in the real shell at desktop/mobile widths and supported themes.
+
+Return E02-E05 evidence for each page. One Brand screenshot does not cover all entities.
+Mutable records need Edit/revision tests. Consent needs append/replay checks and no forbidden Edit/Delete.
+Every domain-specific button needs its own working authorized operation.
+
+## Account and client rollout prerequisites
+
+These previously open gates remain open. Keep credentials outside repository documents.
+
+- [ ] R01 Verify client-selected Brands/accounts, ownership evidence and authorized operators.
+- [ ] R02 Verify current official capabilities, scopes/reviews, limits, availability, quotas and costs.
+- [ ] R03 Verify provider/privacy/deletion setup, domains/callbacks and credential handling.
+- [ ] R04 Verify the tenant bulk sender/provider, feedback, volume allowance and cost cap.
+- [ ] R05 Obtain business approval for notice, sender details, controller scope, provenance and retention.
+- [ ] R06 Run only separately authorized pilots and retain per-tenant capability evidence.
+
+## Later phases: retained scope and assignment
+
+Earlier Phase 2-6 tasks remain open with stable IDs below.
+UI owns Marketing screens. MKT owns Marketing business records. INT owns permitted transport/source adapters. CRM/Frappe edits and new dependencies are excluded.
+SUP freezes shared contracts and integrates Platform. QA independently executes the phase gate.
+Phase 2 uses E16/E17. Phase 3 uses E18/E19. Phase 4 uses E20. Phase 5 uses the applicable connector/inbox gates.
+Phase 6 uses E21-E23 and operational cases from E11/E13/E14/E22.
 
 ## Phase 2: Social lead capture and publishing
 
@@ -109,9 +272,9 @@ SMTP acceptance, open pixels, and scanned links must not appear as proven inbox 
 
 - [ ] 4.1 Implement tenant-owned WhatsApp Business connection using Cloud API or an authorized provider.
 - [ ] 4.2 Enforce consent, approved templates, service windows, limits, and escalation.
-- [ ] 4.3 Build permitted inbox threads, assignment, replies, drafts, resolve/reopen, and CRM record links.
+- [ ] 4.3 Build permitted inbox threads, assignment, replies, drafts, resolve/reopen, and Marketing Lead/conversion/outcome links.
 - [ ] 4.4 Add bounded automation templates with versioned triggers, conditions, delays, caps, and approved actions.
-- [ ] 4.5 Request CRM tasks and schedules through public contracts. Preserve CRM record visibility.
+- [ ] 4.5 Build Marketing-owned follow-up actions and reminders linked to its Leads/conversions. Do not call CRM tasks or schedules.
 - [ ] 4.6 Stop or pause relevant enrollment on reply, opt-out, conversion, complaint, suspension, or human takeover.
 - [ ] 4.7 Prevent integration event loops and duplicate cross-app actions.
 - [ ] 4.8 Verify current authorization, consent, account rights, and approval again before every external action.
@@ -136,7 +299,7 @@ TikTok remains excluded. No channel is complete merely because its connector set
 ## Phase 6: Attribution and operational readiness
 
 - [ ] 6.1 Add consent-aware touchpoints, source mapping, spend imports, windows, and currency/timezone rules.
-- [ ] 6.2 Reconcile provider conversions, CRM qualification/outcomes, and permitted Billing references.
+- [ ] 6.2 Reconcile provider reports with Marketing Qualification/Sales Conversion/Outcome and optional permitted Billing references.
 - [ ] 6.3 Report cost per Lead/qualified Lead, response time, overdue follow-up, stale data, and attribution coverage.
 - [ ] 6.4 Add permitted conversion feedback with deduplication and explicit tenant approval.
 - [ ] 6.5 Complete tenant quotas, queue fairness, health, dead-letter review, and operational alerts.
@@ -154,6 +317,57 @@ Exit evidence: reconciled reports, tenant recovery drill, operational review, an
 - Advanced visual workflow builder after bounded templates prove useful.
 - AI assistance through Zetro with explicit grants and action confirmation.
 - Full advertisement creation and automatic budget/optimization actions after separate planning.
+
+## Verification procedure for receiving agents
+
+For this planning revision: format PLAN/TASK, check component documents, and validate local links and task/E2E references.
+Do not run application E2E, builds, migrations, setup, browser actions or provider calls for this no-code request.
+
+After implementation authorization:
+
+1. SUP records fixtures, grants, trusted setup, before-counts and expected source receipts.
+2. Workers run the smallest relevant owner checks. Contract/data changes also need applicable boundaries and database tests.
+3. QA runs `node --import tsx --test tools/e2e/marketing-isolation.e2e.ts`.
+4. For the existing fixture browser, set `CODEXSUN_MARKETING_BROWSER=1` in that command's process.
+5. Treat `marketing-consent.e2e.ts` as the isolation suite's helper. The existing browser fixture covers Brand/Consent only.
+6. Add or extend actual signed-Platform E01-E15 coverage. Do not invent a command for a suite that does not exist.
+7. Verify changed-owner typecheck/lint, applicable boundaries/builds and migration upgrades when their boundary changed.
+8. Keep full root checks/builds as explicit release/repository-wide gates under Fast Work Default.
+9. Run provider tests only with separate live-action authorization. Mocks cannot close R06/E23.
+10. SUP reviews the diff, repeats the composed flow, and records failures before accepting a phase.
+
+| Evidence field        | Required entry                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| Assignment            | Task/E2E IDs, owner, scope and file lease                                                         |
+| Baseline              | Date/time, branch/HEAD, pre-existing dirty paths, contract revision                               |
+| Fixtures              | Disposable tenant/company/Brand/principal IDs, synthetic sources, no secrets                      |
+| Operation             | Exact command or signed-browser steps, expected/actual result and exit status                     |
+| Persistence/isolation | Correct database receipt/count, denied foreign effect, stable retry, preserved unrelated data     |
+| UI artifacts          | CRM comparison plus list/Show/upsert screenshots at named widths/themes under ignored root `dist` |
+| Limitations           | Untested behavior, missing dependencies/readiness, concrete failure and next owner                |
+| Acceptance            | Independent SUP/QA evidence or explicit rejection/blocker                                         |
+
+## Phase completion decision
+
+- [ ] SUP confirms applicable E01-E15 evidence or a documented domain-specific exception for every Phase 1 task.
+- [ ] QA passes the signed journey: tenant -> Brand -> Campaign -> source -> Submission -> Marketing Lead -> Qualification -> Sales Conversion -> Outcome.
+- [ ] QA repeats tenant B and denies cross-tenant/company/Brand operations and stale browser caches.
+- [ ] UI parity, validation/navigation, persistence, identity, consent, restart/revocation, export and retention boundaries pass.
+- [ ] SUP records pending live/account gates and keeps unsupported execution disabled.
+- [ ] No commit, push, version bump, deployment or external action occurred without its own user authorization.
+
+## 25-10-2026 planning review
+
+Reviewed current Assist, Design System Helper, CRM Enquiry UI, Marketing contracts and existing test harnesses.
+The subsequent user correction assigns the entire Lead-to-Outcome lifecycle to Marketing and freezes CRM edits/integration.
+Rewrote the active handoff with supervisor/sub-agent leases, contract dependencies and E01-E23 acceptance.
+Historical states and evidence below remain historical. No code, schema, runtime setting or customer record changed in this planning revision.
+No application E2E, live provider check, activation or deployment was performed.
+
+## Local implementation and verification log
+
+Earlier records are retained verbatim below. Their CRM ownership/integration wording is superseded by the current Marketing-owned scope. They are not fresh acceptance of the revised plan.
+Earlier Phase 0 references describe the original checkpoint. The current source/gap map is in PLAN.
 
 ## Evidence log
 
@@ -184,7 +398,7 @@ Exit evidence: reconciled reports, tenant recovery drill, operational review, an
 For later work, record phase/task, command or live scenario, tenant fixtures, date, result, and remaining limitation.
 Never store credentials, recipient lists, or private message content in this evidence log.
 
-## Local implementation and verification log
+### Earlier local implementation and verification log
 
 ### 23-10-2026: Phase 1 foundation, local work only
 

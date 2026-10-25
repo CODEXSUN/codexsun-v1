@@ -1,5 +1,21 @@
 # CRM Delivery Tasks
 
+## Tenant sync version follow-up - 2026-10-25
+
+- [x] Update repository version and changelog to 1.1.61. CRM mobile metadata is 1.1.61+161. No APK build ran.
+- [x] Move the stale nested Codeit npm cache into root dist and restore missing root workspace links with an offline install.
+- Commit, push, deployment, and remote verification remain outside this follow-up.
+
+## Tenant Frappe switch audit - 2026-10-25
+
+- [x] Hide CRM Frappe columns, detail indicators, and verification actions when tenant live sync is off.
+- [x] Check app activation before reading optional Frappe settings. Scope web capability caching by tenant and database.
+- [x] Gate immediate jobs, relays, manual requests, and queued worker execution. Preserve pending events and source identities.
+- [x] Give deferred deliveries a fresh generation so re-enabling sync can resume pending work.
+- [x] Verify disposable-database switch and queue behavior, tenant-scoped table rendering, and existing duty persistence/retry behavior.
+- [ ] Live browser and remote Frappe verification: intentionally not performed in this local-only task.
+- No version change, commit, push, or deployment is authorized for this task.
+
 ## CRM timestamp correction and TechMedia/Rainbow release — 2026-10-24
 
 - [x] Build signed TechMedia (`techmedia-v1.1.57.apk`) and Rainbow (`rainbow-v1.1.57.apk`) APKs as version 1.1.57, build 157, using their tenant IDs and the live Platform API URL.

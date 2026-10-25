@@ -406,8 +406,8 @@ export function ExportSalesWorkspace({
         onShowAllColumns={listTools.onShowAllColumns}
         toolbarAction={
           <>
-            {listTools.toolbarAction}{" "}
             <BillingDocumentListControls
+              columnSearchAction={listTools.toolbarAction}
               dateFrom={dateFrom}
               dateTo={dateTo}
               onDateFromChange={(value) => {

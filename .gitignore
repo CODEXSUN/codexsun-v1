@@ -112,7 +112,8 @@ web_modules/
 .env.*
 !.env.example
 .container/deploy.env
-.container/demo/deploy.env
+.container/local-deploy.private.json
+.container/**/deploy.env
 **/__pycache__/
 *.pyc
 .container/backups/

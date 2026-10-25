@@ -12,7 +12,6 @@ import {
   getDefaultCompanyForDatabase,
   registerCoreTenantDatabaseConnection
 } from "@codexsun/core-api";
-import { acceptMarketingLead, leadModule } from "@codexsun/crm-api";
 import {
   registerMarketing,
   marketingBrandScope,
@@ -22,6 +21,7 @@ import {
   createSubmissionHandoffJob,
   pendingSubmissionHandoffs,
   processSubmissionHandoff,
+  LeadService,
   type MarketingContext,
   type SubmissionDependencies,
   submissionRouting,
@@ -180,18 +180,6 @@ export async function registerMarketingHost(app: FastifyInstance, queue: QueueMa
         releaseProviderAccount(provider, account, ctx.tenantId, connection)
     };
   });
-  await leadModule.register(app, async (request) => {
-    const access = tenantAccessContext(request);
-    const identity = await tenantIdentity(access.tenantId, access.actorEmail, "crm");
-    const companyId = (await getDefaultCompanyForDatabase(identity.tenant.dbName))?.companyId;
-    if (!companyId) throw AppError.validation("Select an application default company.");
-    return {
-      database: identity.database as never,
-      companyId,
-      actorEmail: identity.actorEmail,
-      authorize: identity.authorize
-    };
-  });
   registerQueueJobProcessor("marketing.submission.handoff", async (job) => {
     if (
       !job.tenantId ||
@@ -210,25 +198,7 @@ export async function registerMarketingHost(app: FastifyInstance, queue: QueueMa
       const campaign = await lookupCampaign(context, row.campaignUuid);
       if (capture.status !== "active" || brand.status !== "active" || campaign.status !== "active")
         throw AppError.conflict("The capture source is inactive.");
-      const crm = await tenantIdentity(context.tenantId, context.actorEmail, "crm");
-      return acceptMarketingLead(
-        {
-          database: crm.database as never,
-          companyId: context.companyId,
-          actorEmail: context.actorEmail,
-          authorize: crm.authorize
-        },
-        {
-          submissionUuid: row.uuid,
-          campaignUuid: row.campaignUuid,
-          campaignLabel: row.campaignLabel,
-          name: row.name,
-          email: row.email,
-          phone: row.phone,
-          message: row.message,
-          source: "marketing:" + row.captureUuid
-        }
-      );
+      return new LeadService(context).intake(row);
     });
   });
   if (env.CODEXSUN_QUEUE_WORKER_ENABLED !== "1") return;

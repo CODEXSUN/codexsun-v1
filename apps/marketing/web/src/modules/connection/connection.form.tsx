@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { Button } from "@codexsun/ui/components/button";
 import { Input } from "@codexsun/ui/components/input";
 import {
   Select,
@@ -8,17 +8,33 @@ import {
   SelectTrigger,
   SelectValue
 } from "@codexsun/ui/components/select";
-import { WorkspaceLookup } from "@codexsun/ui/workspace/lookup";
 import {
+  WorkspaceFormActions,
   WorkspaceFormBanner,
+  WorkspaceFormBody,
   WorkspaceFormField,
-  WorkspaceFormFooter,
   WorkspaceFormGrid,
-  WorkspaceFormPanel
+  WorkspaceFormSurface,
+  WorkspaceUpsertPage
 } from "@codexsun/ui/workspace/upsert";
-import { useMarketingTransport } from "../../transport";
+import { WorkspaceSwitchCard } from "@codexsun/ui/workspace/status";
 import { connectionSchema } from "./connection.schema";
+import { useConnectionBrandOptions } from "./connection.hooks";
 import type { ConnectionInput, ConnectionRecord } from "./connection.types";
+
+const providerOptions = [
+  { value: "google", label: "Google / YouTube" },
+  { value: "facebook", label: "Facebook" },
+  { value: "instagram", label: "Instagram" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "email", label: "Email Transport" },
+  { value: "threads", label: "Threads" },
+  { value: "pinterest", label: "Pinterest" },
+  { value: "x", label: "X" },
+  { value: "telegram", label: "Telegram" }
+];
+
 export function ConnectionForm({
   record,
   onCancel,
@@ -32,141 +48,160 @@ export function ConnectionForm({
   pending: boolean;
   error: string;
 }) {
-  const api = useMarketingTransport();
+  const brands = useConnectionBrandOptions();
   const [value, setValue] = useState<ConnectionInput>({
     brandUuid: record?.brandUuid ?? "",
     name: record?.name ?? "",
-    provider: record?.provider ?? "facebook",
+    provider: record?.provider ?? "google",
     externalAccountId: record?.externalAccountId ?? "",
     status: record?.status ?? "active"
   });
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const [issues, setIssues] = useState<Record<string, string>>({});
-  const brands = useQuery({
-    queryKey: ["marketing", api.scopeKey, "brand-options"],
-    queryFn: () => api.get<{ uuid: string; name: string }[]>("/marketing/brands?limit=100")
-  });
 
-  const close = () => {
-    if (pending) return;
-    if (
-      JSON.stringify(value) !==
-        JSON.stringify({
-          brandUuid: record?.brandUuid ?? "",
-          name: record?.name ?? "",
-          provider: record?.provider ?? "facebook",
-          externalAccountId: record?.externalAccountId ?? "",
-          status: record?.status ?? "active"
-        }) &&
-      !window.confirm("Discard unsaved changes?")
-    )
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    setHasSubmitted(true);
+    const result = connectionSchema.safeParse(value);
+    if (!result.success) {
+      const nextIssues: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const field = String(issue.path[0]);
+        if (!nextIssues[field]) {
+          nextIssues[field] = issue.message;
+        }
+      }
+      setIssues(nextIssues);
       return;
-    onCancel();
+    }
+    setIssues({});
+    onSubmit(result.data);
   };
+
+  const hasErrors = hasSubmitted && (Boolean(error) || Object.keys(issues).length > 0);
+
   return (
-    <WorkspaceFormPanel title="" description="Marketing details for the current company.">
-      <form
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          const result = connectionSchema.safeParse(value);
-          if (!result.success) {
-            setIssues(
-              Object.fromEntries(
-                result.error.issues.map((issue) => [String(issue.path[0]), issue.message])
-              )
-            );
-            return;
-          }
-          setIssues({});
-          onSubmit(result.data);
-        }}
-      >
-        {error || Object.keys(issues).length ? (
-          <WorkspaceFormBanner title="Unable to save" tone="error">
-            {error || "Check the required fields."}
-          </WorkspaceFormBanner>
-        ) : null}
-        <WorkspaceFormGrid>
-          <WorkspaceFormField label="Brand" required>
-            <WorkspaceLookup
-              ariaLabel="Brand"
-              allowTextValue={false}
-              invalid={Boolean(issues.brandUuid)}
-              value={value.brandUuid}
-              options={(brands.data ?? []).map((row) => ({ value: row.uuid, label: row.name }))}
-              onValueChange={(next) => setValue({ ...value, brandUuid: next })}
-            />
-            {issues.brandUuid ? (
-              <p className="text-xs text-destructive">{issues.brandUuid}</p>
+    <WorkspaceUpsertPage
+      title={record ? "Edit Connection" : "New Connection"}
+      description="Connect third-party marketing channels, social accounts, and advertising credentials."
+      onBack={onCancel}
+    >
+      <form noValidate onSubmit={handleSubmit}>
+        <WorkspaceFormSurface>
+          <WorkspaceFormBody>
+            {hasErrors ? (
+              <WorkspaceFormBanner title="Unable to save" tone="error">
+                {error || "Check the required fields below and try again."}
+              </WorkspaceFormBanner>
             ) : null}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Name" required={true}>
-            <Input
-              aria-label="Name"
-              value={value.name}
-              aria-invalid={Boolean(issues.name)}
-              className={issues.name ? "border-destructive" : ""}
-              onChange={(event) => setValue({ ...value, name: event.target.value })}
-            />
-            {issues.name ? <p className="text-xs text-destructive">{issues.name}</p> : null}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Provider" required>
-            <Select
-              value={value.provider}
-              onValueChange={(next) => setValue({ ...value, provider: next })}
-            >
-              <SelectTrigger aria-label="Provider">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="facebook">facebook</SelectItem>
-                <SelectItem value="instagram">instagram</SelectItem>
-                <SelectItem value="whatsapp">whatsapp</SelectItem>
-                <SelectItem value="linkedin">linkedin</SelectItem>
-                <SelectItem value="google">google</SelectItem>
-                <SelectItem value="threads">threads</SelectItem>
-                <SelectItem value="pinterest">pinterest</SelectItem>
-                <SelectItem value="x">x</SelectItem>
-                <SelectItem value="telegram">telegram</SelectItem>
-                <SelectItem value="email">email</SelectItem>
-              </SelectContent>
-            </Select>
-          </WorkspaceFormField>
-          <WorkspaceFormField label="External Account Id" required={false}>
-            <Input
-              aria-label="External Account Id"
-              value={value.externalAccountId}
-              aria-invalid={Boolean(issues.externalAccountId)}
-              className={issues.externalAccountId ? "border-destructive" : ""}
-              onChange={(event) => setValue({ ...value, externalAccountId: event.target.value })}
-            />
-            {issues.externalAccountId ? (
-              <p className="text-xs text-destructive">{issues.externalAccountId}</p>
-            ) : null}
-          </WorkspaceFormField>
-          <WorkspaceFormField label="Status">
-            <Select
-              value={value.status}
-              onValueChange={(next) =>
-                setValue({ ...value, status: next === "active" ? "active" : "inactive" })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </WorkspaceFormField>
-        </WorkspaceFormGrid>
-        <WorkspaceFormFooter
-          onCancel={close}
-          primaryLabel={record ? "Update" : "Save"}
-          primaryLoading={pending}
-        />
+
+            <WorkspaceFormGrid columns={2}>
+              <WorkspaceFormField label="Brand" required>
+                <Select
+                  value={value.brandUuid}
+                  onValueChange={(val) => {
+                    setValue((prev) => ({ ...prev, brandUuid: val }));
+                    if (issues.brandUuid) setIssues((prev) => ({ ...prev, brandUuid: "" }));
+                  }}
+                >
+                  <SelectTrigger
+                    aria-label="Brand"
+                    aria-invalid={Boolean(issues.brandUuid)}
+                    className={issues.brandUuid ? "border-destructive" : ""}
+                  >
+                    <SelectValue placeholder="Select Brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(brands.data ?? []).map((b) => (
+                      <SelectItem key={b.uuid} value={b.uuid}>
+                        {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {issues.brandUuid ? (
+                  <p className="text-xs text-destructive">{issues.brandUuid}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Connection name" required>
+                <Input
+                  aria-label="Connection name"
+                  value={value.name}
+                  aria-invalid={Boolean(issues.name)}
+                  className={issues.name ? "border-destructive" : ""}
+                  placeholder="e.g. Brand YouTube Channel"
+                  onChange={(event) => {
+                    setValue((prev) => ({ ...prev, name: event.target.value }));
+                    if (issues.name) setIssues((prev) => ({ ...prev, name: "" }));
+                  }}
+                />
+                {issues.name ? <p className="text-xs text-destructive">{issues.name}</p> : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="Provider" required>
+                <Select
+                  value={value.provider}
+                  onValueChange={(val) => {
+                    setValue((prev) => ({ ...prev, provider: val }));
+                    if (issues.provider) setIssues((prev) => ({ ...prev, provider: "" }));
+                  }}
+                >
+                  <SelectTrigger
+                    aria-label="Provider"
+                    aria-invalid={Boolean(issues.provider)}
+                    className={issues.provider ? "border-destructive" : ""}
+                  >
+                    <SelectValue placeholder="Select provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {providerOptions.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {issues.provider ? (
+                  <p className="text-xs text-destructive">{issues.provider}</p>
+                ) : null}
+              </WorkspaceFormField>
+
+              <WorkspaceFormField label="External account ID">
+                <Input
+                  aria-label="External account ID"
+                  value={value.externalAccountId}
+                  placeholder="e.g. UCxxxxxx or act_12345"
+                  onChange={(event) =>
+                    setValue((prev) => ({ ...prev, externalAccountId: event.target.value }))
+                  }
+                />
+              </WorkspaceFormField>
+
+              <div className="md:col-span-2">
+                <WorkspaceFormField label="Status">
+                  <WorkspaceSwitchCard
+                    fieldLabel="Status"
+                    checked={value.status === "active"}
+                    onCheckedChange={(checked) =>
+                      setValue((prev) => ({ ...prev, status: checked ? "active" : "inactive" }))
+                    }
+                  />
+                </WorkspaceFormField>
+              </div>
+            </WorkspaceFormGrid>
+          </WorkspaceFormBody>
+
+          <WorkspaceFormActions>
+            <Button type="submit" disabled={pending}>
+              {pending ? "Saving..." : record ? "Update" : "Save"}
+            </Button>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
+              Cancel
+            </Button>
+          </WorkspaceFormActions>
+        </WorkspaceFormSurface>
       </form>
-    </WorkspaceFormPanel>
+    </WorkspaceUpsertPage>
   );
 }

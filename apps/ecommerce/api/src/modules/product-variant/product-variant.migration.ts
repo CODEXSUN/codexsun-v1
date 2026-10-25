@@ -41,48 +41,17 @@ export async function migrateProductVariantModule(database: Kysely<EcommerceData
 }
 
 export const productVariantOptionsMigration = {
-  description: "Add option-combination uniqueness and optimistic revision to variants.",
+  description: "Add optimistic revision and option-signature storage before canonical identity.",
   key: "ecommerce.catalog.product-variant-options"
 } as const;
 
 export async function upgradeProductVariantOptions(database: Kysely<EcommerceDatabase>) {
   const statements = [
     "ADD COLUMN IF NOT EXISTS revision INT NOT NULL DEFAULT 1",
-    "ADD COLUMN IF NOT EXISTS option_signature VARCHAR(191) NOT NULL DEFAULT 'default'"
+    `ADD COLUMN IF NOT EXISTS option_signature CHAR(${PRODUCT_VARIANT_OPTION_SIGNATURE_LENGTH}) NOT NULL DEFAULT ''`
   ];
   for (const statement of statements) {
     await sql.raw(`ALTER TABLE ecommerce_product_variants ${statement}`).execute(database);
-  }
-  await sql
-    .raw(
-      `UPDATE ecommerce_product_variants SET option_signature=COALESCE(NULLIF(CONCAT_WS('|',
-        IF(option_1_name<>'' OR option_1_value<>'', CONCAT(LOWER(TRIM(option_1_name)),'=',LOWER(TRIM(option_1_value))), NULL),
-        IF(option_2_name<>'' OR option_2_value<>'', CONCAT(LOWER(TRIM(option_2_name)),'=',LOWER(TRIM(option_2_value))), NULL),
-        IF(option_3_name<>'' OR option_3_value<>'', CONCAT(LOWER(TRIM(option_3_name)),'=',LOWER(TRIM(option_3_value))), NULL)
-      ), ''), 'default')
-      WHERE option_signature='default' AND (option_1_name<>'' OR option_1_value<>'' OR option_2_name<>'' OR option_2_value<>'' OR option_3_name<>'' OR option_3_value<>'')`
-    )
-    .execute(database);
-  const duplicates = await sql<{ total: number | string }>`SELECT COUNT(*) AS total FROM (
-    SELECT product_information_id,option_signature FROM ecommerce_product_variants
-    GROUP BY product_information_id,option_signature HAVING COUNT(*)>1
-  ) duplicated`.execute(database);
-  if (Number(duplicates.rows[0]?.total ?? 0) > 0) {
-    throw new Error(
-      "Duplicate product option combinations exist. Resolve them before applying ecommerce.catalog.product-variant-options."
-    );
-  }
-  const indexes = await sql<{
-    total: number | string;
-  }>`SELECT COUNT(*) AS total FROM information_schema.STATISTICS
-    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ecommerce_product_variants'
-    AND INDEX_NAME='ecommerce_product_variants_option_unique'`.execute(database);
-  if (Number(indexes.rows[0]?.total ?? 0) === 0) {
-    await sql
-      .raw(
-        "ALTER TABLE ecommerce_product_variants ADD UNIQUE KEY ecommerce_product_variants_option_unique (product_information_id,option_signature)"
-      )
-      .execute(database);
   }
 }
 
@@ -126,17 +95,29 @@ export async function upgradeProductVariantCanonicalOptions(database: Kysely<Eco
     }
   }
 
-  const indexes = await sql<{
-    total: number | string;
-  }>`SELECT COUNT(*) AS total FROM information_schema.STATISTICS
+  const indexColumns = await sql<{
+    column_name: string;
+    non_unique: number | string;
+    seq_in_index: number | string;
+  }>`SELECT COLUMN_NAME AS column_name, NON_UNIQUE AS non_unique, SEQ_IN_INDEX AS seq_in_index
+    FROM information_schema.STATISTICS
     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='ecommerce_product_variants'
-      AND INDEX_NAME=${OPTION_UNIQUE_INDEX}`.execute(database);
-  if (Number(indexes.rows[0]?.total ?? 0) > 0) {
+      AND INDEX_NAME=${OPTION_UNIQUE_INDEX}
+    ORDER BY SEQ_IN_INDEX`.execute(database);
+  const hasCanonicalIndex =
+    indexColumns.rows.length === 2 &&
+    Number(indexColumns.rows[0]?.non_unique ?? 1) === 0 &&
+    String(indexColumns.rows[0]?.column_name) === "product_information_id" &&
+    String(indexColumns.rows[1]?.column_name) === "option_signature";
+  if (indexColumns.rows.length > 0 && !hasCanonicalIndex) {
     await sql
       .raw(`ALTER TABLE ecommerce_product_variants DROP INDEX ${OPTION_UNIQUE_INDEX}`)
       .execute(database);
   }
 
+  // Rewriting under the existing (product, signature) unique index keeps the table protected
+  // throughout. The canonical preflight above proves the new signatures cannot collide, so the
+  // index does not need a constraint-free window.
   for (const row of rows.rows) {
     const optionSignature = canonicalStoredOptionSignature(row);
     await sql`UPDATE ecommerce_product_variants SET option_signature=${optionSignature}
@@ -149,11 +130,13 @@ export async function upgradeProductVariantCanonicalOptions(database: Kysely<Eco
     )
     .execute(database);
 
-  await sql
-    .raw(
-      `ALTER TABLE ecommerce_product_variants ADD UNIQUE KEY ${OPTION_UNIQUE_INDEX} (product_information_id,option_signature)`
-    )
-    .execute(database);
+  if (!hasCanonicalIndex) {
+    await sql
+      .raw(
+        `ALTER TABLE ecommerce_product_variants ADD UNIQUE KEY ${OPTION_UNIQUE_INDEX} (product_information_id,option_signature)`
+      )
+      .execute(database);
+  }
 }
 
 function canonicalDuplicateError(groups: readonly CanonicalOptionDuplicateGroup[]): Error {

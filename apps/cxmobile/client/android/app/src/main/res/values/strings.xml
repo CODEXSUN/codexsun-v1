@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CODEXSUN</string>
+    <string name="title_activity_main">CODEXSUN</string>
+    <string name="package_name">in.codexsun.cxmobile</string>
+    <string name="custom_url_scheme">in.codexsun.cxmobile</string>
+</resources>

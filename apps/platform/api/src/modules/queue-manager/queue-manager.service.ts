@@ -12,7 +12,7 @@ import type {
 } from "./queue-manager.types.js";
 import { processMailJob } from "@codexsun/mail-api";
 import { getTenantDatabaseByName } from "../../database/tenant-database.js";
-import { queueJobProcessor } from "./queue-manager.worker.js";
+import { queueJobProcessor, queueJobReadiness, QueueJobHeld } from "./queue-manager.worker.js";
 import { verifyQueueDelivery } from "./queue-manager.delivery.js";
 
 export class QueueManagerService {
@@ -85,6 +85,14 @@ export class QueueManagerService {
       verifyQueueDelivery(options.expectedUuid, job);
     }
     if (!job) return null;
+    if (job.status === "pending" || job.status === "failed") {
+      const readiness = await queueJobReadiness(job);
+      if (readiness && !readiness.ready) {
+        const held = await this.repository.hold(id, readiness.retryAt, readiness.reason);
+        if (options.fromWorker) throw new QueueJobHeld(readiness.retryAt);
+        return held;
+      }
+    }
     if (
       (await this.repository.backend()) === "bullmq-redis" &&
       job.status === "pending" &&
@@ -101,6 +109,12 @@ export class QueueManagerService {
     if (!claimed) return this.repository.find(id);
     try {
       const result = await this.dispatch(job);
+      const readiness = await queueJobReadiness(job, undefined, result);
+      if (readiness && !readiness.ready) {
+        const held = await this.repository.hold(id, readiness.retryAt, readiness.reason, true);
+        if (options.fromWorker) throw new QueueJobHeld(readiness.retryAt);
+        return held;
+      }
       const completed = await this.repository.markCompleted(id, result);
       await this.activity.recordActivity({
         action: "queue.job.completed",
@@ -112,6 +126,13 @@ export class QueueManagerService {
       });
       return completed;
     } catch (error) {
+      if (error instanceof QueueJobHeld) throw error;
+      const readiness = await queueJobReadiness(job, error);
+      if (readiness && !readiness.ready) {
+        const held = await this.repository.hold(id, readiness.retryAt, readiness.reason, true);
+        if (options.fromWorker) throw new QueueJobHeld(readiness.retryAt);
+        return held;
+      }
       const message = error instanceof Error ? error.message : "Queue job failed.";
       const progress = await this.repository.find(id);
       const failed = await this.repository.markFailed(id, message, progress?.result ?? {});

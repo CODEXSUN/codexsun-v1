@@ -7,6 +7,7 @@ export type CampaignInput = {
   landingUrl: string;
   status: "active" | "inactive";
 };
+
 export type CampaignRecord = CampaignInput & {
   revision: number;
   uuid: string;
@@ -15,4 +16,13 @@ export type CampaignRecord = CampaignInput & {
   updatedBy: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type CampaignColumnFilters = {
+  name?: string | undefined;
+  brandUuid?: string | undefined;
+  objective?: string | undefined;
+  channel?: string | undefined;
+  updatedBy?: string | undefined;
+  status?: string | undefined;
 };

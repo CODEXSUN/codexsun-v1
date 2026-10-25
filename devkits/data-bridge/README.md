@@ -55,6 +55,8 @@ Read [the SUKRAA proof](agent/CLOUD-SUKRAA-2026-10-24.md), [the ALTEX proof](age
 
 ## Reference material
 
+- [CXApp migration pattern](agent/cxapp-v2.md): schema, column rules, source collections, target identity, and safe replay.
+- [Older THIRUMURUGAN preparation](agent/thirumurugan-legacy.md): renamed tables, split records, local Docker rehearsal, and unresolved mappings.
 - [Reusable operating skills](agent/SKILLS.md): discovery, mapping, source collections, rehearsal, queue execution, verification, and automation rules.
 - [Handoff](agent/HANDOFF.md): current state, public entry points, checks, and remaining limits.
 - [Current release log](agent/RELEASE-1.1.52.md).
@@ -131,3 +133,10 @@ Verify the completed transfer session belongs to the exact source and target pai
 Require one active singleton, translated positive company/year IDs, source-mode identity fields, and matching remaining mapped values.
 Changed source data, ambiguous settings, cross-tenant sessions, or other differences keep user copying blocked.
 Platform still rechecks active Super Admin authority and active target context before copying supported credentials and User-role grants.
+
+## Older CXApp preparation
+
+The local-only `legacy-cxapp` owner prepares uppercase legacy keys, split party addresses, company/year candidates, and invoice aggregates.
+Run the guarded preparation harness in Core → Masters → Billing order. It writes only disposable staging collections.
+Review all source keys, prepared references, amount differences, and required decisions before using normal Data Bridge import confirmation.
+Read [the legacy preparation guide](agent/thirumurugan-legacy.md). The adapter does not expose a new live import route.

@@ -73,10 +73,10 @@ export function statusIcon(code: string) {
 export function CrmStatusBadge({ code, label }: { code: string; label: string }) {
   return (
     <span
-      className={`inline-flex h-6 items-center gap-1 rounded-md border px-2 text-[11px] font-medium ${statusBadges[code] ?? "border-slate-600 bg-slate-600 text-white"}`}
+      className={`inline-flex min-h-6 max-w-full items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-medium leading-4 ${statusBadges[code] ?? "border-slate-600 bg-slate-600 text-white"}`}
     >
-      <CircleCheck aria-hidden="true" className="size-3" />
-      {label}
+      <CircleCheck aria-hidden="true" className="size-3 shrink-0" />
+      <span className="min-w-0 whitespace-normal text-left">{label}</span>
     </span>
   );
 }

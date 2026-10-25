@@ -1,3 +1,4 @@
+import { addFrappeAvailability } from "../live-sync/index.js";
 import { sql, type Kysely } from "kysely";
 import {
   ensureStandardTableColumns,
@@ -82,9 +83,20 @@ export const frappeTenantMigrationBatch: MigrationBatch<FrappeDatabase> = {
       description: "Recover contact exports created or edited after this feature starts.",
       version: 10,
       up: async (database) => {
-        await sql`ALTER TABLE frappe_live_sync_settings ADD COLUMN IF NOT EXISTS contact_export_started_at DATETIME(3) NULL`.execute(database);
-        await sql`UPDATE frappe_live_sync_settings SET contact_export_started_at=UTC_TIMESTAMP(3) WHERE id=1 AND contact_export_started_at IS NULL`.execute(database);
+        await sql`ALTER TABLE frappe_live_sync_settings ADD COLUMN IF NOT EXISTS contact_export_started_at DATETIME(3) NULL`.execute(
+          database
+        );
+        await sql`UPDATE frappe_live_sync_settings SET contact_export_started_at=UTC_TIMESTAMP(3) WHERE id=1 AND contact_export_started_at IS NULL`.execute(
+          database
+        );
       }
+    },
+    {
+      name: "frappe.connection.availability-v11",
+      checksum: "frappe.connection.availability-v11",
+      description: "Hold sync outside tenant server hours and cache live connectivity.",
+      version: 11,
+      up: addFrappeAvailability
     }
   ]
 };

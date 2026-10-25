@@ -1,21 +1,21 @@
 import { useNavigate } from "@tanstack/react-router";
-import { AuthLayout } from "@codexsun/ui/layouts/auth-layout";
-import { Button } from "@codexsun/ui/components/button";
-import { Field } from "@codexsun/ui/components/Field";
-import { LogIn } from "lucide-react";
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   developmentTenantLogin,
   type Desk,
   getTenantLoginContext,
   login
-} from "../../shared/api/platform-api";
-import { requiredClientEnv } from "../../shared/env/client-env";
+} from "../../shared/api/platform-api.js";
+import { requiredClientEnv } from "../../shared/env/client-env.js";
 import {
   hasSessionExpiredReason,
   hasSessionRefreshedReason
-} from "../../shared/auth/session-expiry";
-import { setPlatformDocumentTitle } from "../../shared/document/PageTitle";
+} from "../../shared/auth/session-expiry.js";
+import { setPlatformDocumentTitle } from "../../shared/document/PageTitle.js";
+import {
+  LoginPagePresentation,
+  type TenantLoginContext
+} from "./login-page-presentation.js";
 
 type LoginPageProps = {
   desk: Desk;
@@ -40,12 +40,7 @@ export function LoginPage({ desk, title }: LoginPageProps) {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [tenantContext, setTenantContext] = useState<{
-    brandName: string | null;
-    corporateIdRequired: boolean;
-    mode: "custom_domain" | "shared_domain" | "unknown";
-    tenantName: string | null;
-  } | null>(null);
+  const [tenantContext, setTenantContext] = useState<TenantLoginContext | null>(null);
   const autoLoginStarted = useRef(false);
   const sessionExpired = hasSessionExpiredReason(window.location.search);
   const sessionRefreshed = hasSessionRefreshedReason(window.location.search);
@@ -110,8 +105,12 @@ export function LoginPage({ desk, title }: LoginPageProps) {
       .finally(() => setLoading(false));
   }, [desk, navigate, targetPath, tconnectLogin, sportsclubLogin, tconnectBuyer, sessionExpired]);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleLoginSubmit(credentials: {
+    corporateId?: string | undefined;
+    desk: Desk;
+    identifier: string;
+    password: string;
+  }) {
     if (desk === "tenant") {
       if (!tenantContext) {
         setMessage("Unable to verify this application domain.");
@@ -121,7 +120,7 @@ export function LoginPage({ desk, title }: LoginPageProps) {
         setMessage("This domain is not mapped to an active tenant.");
         return;
       }
-      if (tenantContext.corporateIdRequired && !corporateId.trim()) {
+      if (tenantContext.corporateIdRequired && !credentials.corporateId) {
         setMessage("Corporate ID is required to select your workspace.");
         return;
       }
@@ -131,12 +130,10 @@ export function LoginPage({ desk, title }: LoginPageProps) {
 
     try {
       const result = await login({
-        ...(desk === "tenant" && tenantContext?.corporateIdRequired
-          ? { corporateId: corporateId.trim() }
-          : {}),
-        desk,
-        ...(desk === "tenant" ? { identifier: email.trim() } : { email }),
-        password
+        ...(credentials.corporateId ? { corporateId: credentials.corporateId } : {}),
+        desk: credentials.desk,
+        ...(desk === "tenant" ? { identifier: credentials.identifier } : { email: credentials.identifier }),
+        password: credentials.password
       });
 
       if (!result.success) {
@@ -145,8 +142,6 @@ export function LoginPage({ desk, title }: LoginPageProps) {
       }
 
       if (desk === "tenant") {
-        // A tenant switch must start with a fresh query cache so records and
-        // runtime metadata from the previous tenant cannot survive navigation.
         window.location.assign(
           sportsclubLogin
             ? "/app/sportsclub/student"
@@ -167,88 +162,31 @@ export function LoginPage({ desk, title }: LoginPageProps) {
     }
   }
 
+  const resolvedTitle = sportsclubLogin
+    ? "Tenkasi Sports Student Login"
+    : tconnectLogin
+      ? tconnectBuyer
+        ? "TConnect Buyer Login"
+        : "TConnect Seller / Member Login"
+      : title;
+
   return (
-    <AuthLayout
-      afterCard={
-        sessionExpired || sessionRefreshed ? (
-          <p className="auth-session-badge" role="status">
-            {sessionRefreshed
-              ? "Session data was cleared. Sign in again."
-              : "Session expired. Please sign in again."}
-          </p>
-        ) : null
-      }
-      surface={desk}
-      title={
-        sportsclubLogin
-          ? "Tenkasi Sports Student Login"
-          : tconnectLogin
-            ? tconnectBuyer
-              ? "TConnect Buyer Login"
-              : "TConnect Seller / Member Login"
-            : title
-      }
-    >
-      <form className="auth-form" onSubmit={submit}>
-        {desk === "tenant" && tenantContext?.brandName ? (
-          <p className="auth-workspace">{tenantContext.brandName}</p>
-        ) : null}
-        {desk === "tenant" && tenantContext?.corporateIdRequired ? (
-          <Field
-            autoComplete="organization"
-            className="auth-field"
-            label="Corporate ID"
-            name="corporateId"
-            disabled={loading}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => setCorporateId(event.target.value)}
-            required
-            value={corporateId}
-          />
-        ) : null}
-        <Field
-          autoComplete={desk === "tenant" ? "username" : "email"}
-          className="auth-field"
-          label={desk === "tenant" ? "Username or email" : "Email"}
-          name="email"
-          disabled={loading}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => setEmail(event.target.value)}
-          type={desk === "tenant" ? "text" : "email"}
-          value={email}
-        />
-        <Field
-          autoComplete="current-password"
-          className="auth-field"
-          label="Password"
-          name="password"
-          disabled={loading}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => setPassword(event.target.value)}
-          type="password"
-          value={password}
-        />
-        {desk === "tenant" && !tenantContext && !message ? (
-          <p className="auth-context-status" role="status" aria-live="polite">
-            Checking this workspace…
-          </p>
-        ) : null}
-        <Button
-          disabled={loading}
-          type="button"
-          variant="ghost"
-          onClick={() => window.location.assign(`/forgot-password?desk=${desk}`)}
-        >
-          Forgot password?
-        </Button>
-        {message ? <p className="form-error">{message}</p> : null}
-        <Button
-          disabled={
-            loading || (desk === "tenant" && (!tenantContext || tenantContext.mode === "unknown"))
-          }
-          icon={<LogIn size={16} />}
-          type="submit"
-        >
-          {loading ? "Signing in..." : "Sign in"}
-        </Button>
-      </form>
-    </AuthLayout>
+    <LoginPagePresentation
+      corporateId={corporateId}
+      desk={desk}
+      errorMessage={message}
+      identifier={email}
+      loading={loading}
+      onCorporateIdChange={setCorporateId}
+      onForgotPassword={() => window.location.assign(`/forgot-password?desk=${desk}`)}
+      onIdentifierChange={setEmail}
+      onLogin={handleLoginSubmit}
+      onPasswordChange={setPassword}
+      password={password}
+      sessionExpired={sessionExpired}
+      sessionRefreshed={sessionRefreshed}
+      tenantContext={tenantContext}
+      title={resolvedTitle}
+    />
   );
 }

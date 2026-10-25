@@ -4,18 +4,20 @@ import { registerContractRoute } from "@codexsun/framework/http";
 import type { MarketingDependencies } from "../../context.js";
 import { SubmissionService } from "./submission.service.js";
 import type { SubmissionDependencies } from "./submission.types.js";
+
 export const submissionInputSchema = z.strictObject({
   captureUuid: z.string().regex(/^[a-f0-9]{8}$/),
   sourceKey: z.string().trim().min(8).max(191),
   name: z.string().trim().min(1).max(160),
-  email: z.union([z.literal(""), z.email().max(254)]),
+  email: z.union([z.literal(""), z.string().email().max(254)]),
   phone: z.string().trim().max(40),
   message: z.string().max(10000),
   privacyConsent: z.literal(true),
   sourceReference: z.string().max(191).default(""),
-  sourceConsentAt: z.union([z.literal(""), z.iso.datetime()]).default(""),
+  sourceConsentAt: z.union([z.literal(""), z.string().datetime()]).default(""),
   sourceNoticeVersion: z.string().max(80).default("unknown")
 });
+
 export const submissionRecordSchema = submissionInputSchema.extend({
   uuid: z.string(),
   companyId: z.number(),
@@ -29,6 +31,7 @@ export const submissionRecordSchema = submissionInputSchema.extend({
   status: z.enum(["pending", "delivered"]),
   leadUuid: z.string().nullable()
 });
+
 export function registerSubmissionRoutes(
   app: FastifyInstance,
   context: MarketingDependencies["context"],
@@ -51,6 +54,7 @@ export function registerSubmissionRoutes(
       )
     })
   });
+
   registerContractRoute(app, {
     method: "GET",
     url: "/marketing/submissions/:uuid",
@@ -61,6 +65,7 @@ export function registerSubmissionRoutes(
     handler: async ({ request, params }) =>
       new SubmissionService(await context(request), deps).get(params.uuid)
   });
+
   registerContractRoute(app, {
     method: "POST",
     url: "/marketing/submissions",
@@ -68,6 +73,7 @@ export function registerSubmissionRoutes(
     handler: async ({ request, body }) =>
       new SubmissionService(await context(request), deps).accept(body)
   });
+
   registerContractRoute(app, {
     method: "GET",
     url: "/marketing/submissions",
@@ -88,6 +94,7 @@ export function registerSubmissionRoutes(
         query.status
       )
   });
+
   registerContractRoute(app, {
     method: "POST",
     url: "/marketing/submissions/:uuid/retry",
@@ -97,5 +104,20 @@ export function registerSubmissionRoutes(
     },
     handler: async ({ request, params }) =>
       new SubmissionService(await context(request), deps).retry(params.uuid)
+  });
+
+  registerContractRoute(app, {
+    method: "POST",
+    url: "/marketing/submissions/:uuid/handoff",
+    schemas: {
+      params: z.object({ uuid: z.string().regex(/^[a-f0-9]{8}$/) }),
+      response: z.object({
+        uuid: z.string(),
+        leadUuid: z.string().nullable(),
+        status: z.string()
+      })
+    },
+    handler: async ({ request, params }) =>
+      new SubmissionService(await context(request), deps).handoff(params.uuid)
   });
 }

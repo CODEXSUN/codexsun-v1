@@ -1,0 +1,9 @@
+frappe.env
+__pycache__/
+*.pyc
+*.private.json
+.install.lock/
+logs/
+backups/
+reports/
+*.partial

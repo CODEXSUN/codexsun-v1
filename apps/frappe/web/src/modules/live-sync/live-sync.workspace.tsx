@@ -100,7 +100,7 @@ export function FrappeLiveSyncWorkspace() {
           </div>
           <WorkspaceSwitchCard
             label="Live sync enabled"
-            description="Run scheduled enquiry sync in the selected direction."
+            description="Show CRM sync controls and allow Frappe transfers for this tenant."
             checked={draft.enabled}
             disabled={save.isPending}
             onCheckedChange={(enabled) => commit({ ...draft, enabled })}
@@ -317,7 +317,8 @@ export function FrappeLiveSyncQueueWorkspace() {
                   variant="outline"
                   disabled={
                     run.isPending ||
-                    !settings.data ||
+                    !settings.data?.enabled ||
+                    settings.data.paused ||
                     !connection.data?.usable ||
                     !connection.data.backgroundWorkerEnabled
                   }
@@ -333,7 +334,11 @@ export function FrappeLiveSyncQueueWorkspace() {
                       (kind === "contacts" && settings.data?.direction === "bidirectional")
                   )
                   .map((kind) => (
-                    <DropdownMenuItem key={kind} onSelect={() => run.mutate(kind)}>
+                    <DropdownMenuItem
+                      key={kind}
+                      disabled={!settings.data?.modules[kind]}
+                      onSelect={() => run.mutate(kind)}
+                    >
                       {settings.data?.direction === "inbound"
                         ? "Import all enquiry history"
                         : `Export ${labels[kind]}`}

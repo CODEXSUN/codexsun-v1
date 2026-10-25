@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { AppError } from "@codexsun/framework/errors";
 import { registerContractRoute } from "@codexsun/framework/http";
@@ -23,10 +23,30 @@ const payload = z.object({
   warranty: z.string().max(500).default(""),
   returnPolicy: z.string().max(500).default(""),
   shippingClass: z.string().max(120).default("standard"),
-  weight: z.number().min(0).default(0),
-  length: z.number().min(0).default(0),
-  width: z.number().min(0).default(0),
-  height: z.number().min(0).default(0),
+  weight: z
+    .number()
+    .min(0)
+    .nullable()
+    .default(0)
+    .transform((value) => value ?? 0),
+  length: z
+    .number()
+    .min(0)
+    .nullable()
+    .default(0)
+    .transform((value) => value ?? 0),
+  width: z
+    .number()
+    .min(0)
+    .nullable()
+    .default(0)
+    .transform((value) => value ?? 0),
+  height: z
+    .number()
+    .min(0)
+    .nullable()
+    .default(0)
+    .transform((value) => value ?? 0),
   minimumOrderQuantity: z.number().int().positive().default(1),
   maximumOrderQuantity: z.number().int().positive().nullable().default(null),
   seoTitle: z.string().max(191).default(""),
@@ -46,6 +66,16 @@ const record = payload.extend({
   createdAt: z.string(),
   updatedAt: z.string()
 });
+const activity = z.object({
+  id: z.number(),
+  uuid: z.string().length(8),
+  resourceType: z.enum(["attribute", "collection", "product-information", "specification"]),
+  recordId: z.number(),
+  action: z.string(),
+  actorEmail: z.string(),
+  summary: z.string(),
+  createdAt: z.string()
+});
 const page = z.object({
   items: z.array(record),
   page: z.number().int().positive(),
@@ -59,7 +89,10 @@ const page = z.object({
   total: z.number().int().nonnegative()
 });
 
-export async function registerProductInformationRoutes(app: FastifyInstance) {
+export async function registerProductInformationRoutes(
+  app: FastifyInstance,
+  resolveActorEmail: (request: FastifyRequest) => string = () => ""
+) {
   registerContractRoute(app, {
     method: "GET",
     url: base,
@@ -102,6 +135,12 @@ export async function registerProductInformationRoutes(app: FastifyInstance) {
   });
   registerContractRoute(app, {
     method: "GET",
+    url: `${base}/:id/activity`,
+    schemas: { params, response: z.array(activity) },
+    handler: async ({ params }) => service.activityFor(params.id)
+  });
+  registerContractRoute(app, {
+    method: "GET",
     url: `${base}/:id`,
     schemas: { params, response: record },
     handler: async ({ params }) => required(await service.find(params.id))
@@ -110,19 +149,22 @@ export async function registerProductInformationRoutes(app: FastifyInstance) {
     method: "POST",
     url: base,
     schemas: { body: payload, response: record },
-    handler: async ({ body }) => required(await service.create(body))
+    handler: async ({ body, request }) =>
+      required(await service.create(body, resolveActorEmail(request)))
   });
   registerContractRoute(app, {
     method: "PUT",
     url: `${base}/:id`,
     schemas: { body: updatePayload, params, response: record },
-    handler: async ({ body, params }) => required(await service.update(params.id, body))
+    handler: async ({ body, params, request }) =>
+      required(await service.update(params.id, body, resolveActorEmail(request)))
   });
   registerContractRoute(app, {
     method: "POST",
     url: `${base}/:id/archive`,
     schemas: { params, response: record },
-    handler: async ({ params }) => required(await service.archive(params.id))
+    handler: async ({ params, request }) =>
+      required(await service.archive(params.id, resolveActorEmail(request)))
   });
 }
 function required<T>(value: T | null): T {

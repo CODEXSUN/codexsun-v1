@@ -8,9 +8,8 @@ import test from "node:test";
 
 const binary = process.env.CODEXSUN_TEST_NGINX_BINARY;
 const templates = [
-  [".container/codexsun/nginx-web.conf", "/api/platform/probe", "/probe"],
-  [".container/scripts/nginx-spa.conf", "/api/platform/probe", "/probe"],
-  [".container/demo/nginx.conf", "/api/app/probe", "/probe"]
+  [".container/codexsun-v1/nginx-web.conf", "/api/platform/probe", "/probe"],
+  [".container/codexsun-v1/nginx-web.conf", "/api/app/probe", "/probe"]
 ] as const;
 
 test(

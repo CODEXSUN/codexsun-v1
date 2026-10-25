@@ -1,3 +1,4 @@
+import { useCrmFrappeSyncEnabled } from "../frappe-sync/frappe-sync.hooks";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "@tanstack/react-router";
@@ -77,6 +78,7 @@ export function CrmContactWorkspace({
     contact: Pick<ContactRecord, "code" | "name" | "primaryPhone"> | null
   ) => void;
 }) {
+  const frappeSyncEnabled = useCrmFrappeSyncEnabled();
   const client = useQueryClient(),
     [search, setSearch] = useState(""),
     [page, setPage] = useState(1),
@@ -181,7 +183,7 @@ export function CrmContactWorkspace({
   const syncStatuses = useQuery({
     queryKey: ["crm", "frappe-sync", "contacts", syncIds],
     queryFn: () => getFrappeRecordStates("contacts", syncIds),
-    enabled: syncIds.length > 0 && visibleColumns.frappeSync !== false,
+    enabled: frappeSyncEnabled && syncIds.length > 0 && visibleColumns.frappeSync !== false,
     refetchInterval: 1000,
     staleTime: 0
   });
@@ -359,18 +361,20 @@ export function CrmContactWorkspace({
             ) : null}
           </Button>
         }
-        columnOptions={contactColumns.map((column) => ({
-          ...column,
-          checked: visibleColumns[column.id] !== false,
-          disabled: column.id === "contact",
-          onCheckedChange: (checked) => {
-            setVisibleColumns((current) => ({ ...current, [column.id]: checked }));
-            if (!checked) {
-              setColumnFilters((current) => ({ ...current, [column.id]: "" }));
-              setPage(1);
+        columnOptions={contactColumns
+          .filter((column) => column.id !== "frappeSync" || frappeSyncEnabled)
+          .map((column) => ({
+            ...column,
+            checked: visibleColumns[column.id] !== false,
+            disabled: column.id === "contact",
+            onCheckedChange: (checked) => {
+              setVisibleColumns((current) => ({ ...current, [column.id]: checked }));
+              if (!checked) {
+                setColumnFilters((current) => ({ ...current, [column.id]: "" }));
+                setPage(1);
+              }
             }
-          }
-        }))}
+          }))}
         onShowAllColumns={() => setVisibleColumns({})}
         searchPlaceholder="Search code, contact, phone, or email"
         searchValue={search}
@@ -407,7 +411,10 @@ export function CrmContactWorkspace({
         loading={query.isFetching && !query.data}
         records={visibleRecords}
         frappeSyncStatuses={syncStatuses.data ?? {}}
-        visibleColumns={visibleColumns}
+        visibleColumns={{
+          ...visibleColumns,
+          frappeSync: frappeSyncEnabled && visibleColumns.frappeSync !== false
+        }}
         showInlineFilters={showInlineFilters}
         columnFilters={columnFilters}
         onColumnFilterChange={(column, value) => {

@@ -7,6 +7,7 @@ export class RepositoryDocumentation {
     this.root = root;
     this.content = join(root, "apps/docs/content");
     this.excluded = new Set([
+      ".container",
       ".git",
       ".idea",
       ".turbo",

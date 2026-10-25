@@ -1,3 +1,4 @@
+import { useCrmFrappeSyncEnabled } from "../frappe-sync/frappe-sync.hooks";
 import { useMemo, useState, useDeferredValue, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlidersHorizontal } from "lucide-react";
@@ -76,6 +77,7 @@ function EnquiryPage({
   onCloseCreate?: () => void;
   onCancelCreate?: () => void;
 }) {
+  const frappeSyncEnabled = useCrmFrappeSyncEnabled();
   const client = useQueryClient();
   const [editing, setEditing] = useState<EnquiryRecord | null | undefined>(
     initialCreate ? null : undefined
@@ -277,7 +279,8 @@ function EnquiryPage({
           .filter(
             (column) =>
               (column.id !== "frappeSync" ||
-                records.some((record) => record.canViewFrappeSync === true)) &&
+                (frappeSyncEnabled &&
+                  records.some((record) => record.canViewFrappeSync === true))) &&
               (column.id !== "creator" || scope !== "created") &&
               (column.id !== "assignedTo" || scope !== "assigned")
           )
@@ -320,7 +323,9 @@ function EnquiryPage({
       ) : null}
       <EnquiryList
         records={records}
-        showFrappeSync={records.some((record) => record.canViewFrappeSync === true)}
+        showFrappeSync={
+          frappeSyncEnabled && records.some((record) => record.canViewFrappeSync === true)
+        }
         showInlineFilters={showInlineFilters}
         columnFilters={columnFilters}
         onColumnFilterChange={(column, value) => {

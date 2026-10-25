@@ -27,12 +27,14 @@ export function ProductInformationList({
   loading,
   onEdit,
   onArchive,
+  onView,
   records
 }: {
   listTools?: WorkspaceListTools;
   loading: boolean;
   onEdit: (record: ProductInformationRecord) => void;
   onArchive: (record: ProductInformationRecord) => void;
+  onView: (record: ProductInformationRecord) => void;
   records: ProductInformationRecord[];
 }) {
   const columns: ColumnDef<ProductInformationRecord>[] = [
@@ -105,6 +107,9 @@ export function ProductInformationList({
           <>
             {" "}
             <div className="flex justify-end gap-2">
+              <Button size="sm" variant="outline" onClick={() => onView(record)}>
+                View
+              </Button>
               <Button size="sm" variant="outline" onClick={() => onEdit(record)}>
                 Edit
               </Button>

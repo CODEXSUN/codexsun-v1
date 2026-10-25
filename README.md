@@ -221,15 +221,15 @@ See [package.json](package.json) for all commands.
 From the repository root:
 
 ```bash
-bash prepare-env.sh
+bash setup.sh --configure
 bash setup.sh
 ```
 
-The first command prepares private deployment settings. The second validates them and installs the container stack.
-The stack includes the composed API/web runtime, MariaDB, Redis, and Media services.
+The first command explicitly configures private VPS settings. The second installs the versioned v1 deployment.
+The stack includes API, Web, Shop, MariaDB, and Redis. Worker and Chatb are optional. Media and Frappe remain separate.
 A Linux deployment host can use the declared Docker Node image without a host Node.js installation.
 
-On Windows, run these commands through Git Bash when no WSL distribution is installed.
+Deployment commands target a Linux VPS and reject development workstations.
 
 Before applying an existing deployment update:
 
@@ -243,7 +243,7 @@ To apply the reviewed update:
 bash update.sh
 ```
 
-Use the [container deployment guide](.container/README.md) for HTTPS, ports, persistent volumes, backups, migrations, and recovery.
+Use the [internal deployment guide](.container/docs/DEPLOYMENT.md) for ports, persistent volumes, backups, migrations, and recovery.
 Provision unique credentials and verify restore procedures before storing production data.
 
 ## Repository structure
@@ -316,7 +316,7 @@ The [CI workflow](.github/workflows/ci.yml) records the shared automation gates.
 | [Agent and contributor guide](assist/AGENT-GUIDE.md)                   | Repository conventions and required checks.       |
 | [Governance rules](assist/governance/rules.md)                         | Architecture, data, UI, and security constraints. |
 | [Project inventory](assist/documentation/project-inventory.md)         | Application and package context.                  |
-| [Container deployment](.container/README.md)                           | Installation, updates, storage, and recovery.     |
+| [Container deployment](.container/docs/DEPLOYMENT.md)                  | Internal installation, updates, and recovery.     |
 | [Database migrations](assist/operations/database-migration-runbook.md) | Migration preflight, execution, and rollback.     |
 | [Docs application](apps/docs/README.md)                                | Developer Library and documentation authoring.    |
 | [Windows client](apps/platform/windows/README.md)                      | Desktop setup and packaging.                      |
