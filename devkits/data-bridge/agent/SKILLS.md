@@ -255,3 +255,10 @@ Compare source fingerprints throughout and compare saved business/user rows acro
 Verify paginated report drilldowns and distinguish configuration warnings from missing business records.
 Keep observed IDs and database names in evidence logs, not reusable mapping rules.
 Record transport, browser, security, and transaction limits explicitly.
+
+## Billing dashboard projection after import
+
+The Platform host refreshes Billing projections after business, mapped, and common queue processors complete.
+Resolve the target tenant from the registry. Never rebuild or migrate the external source database.
+Check the queue job completion as well as the import report: a failed projection keeps the job retryable.
+Repeat imports repair cached dashboards even when no missing business rows remain.

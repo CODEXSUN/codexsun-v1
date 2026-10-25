@@ -226,3 +226,10 @@ These corrections require no new database migration. They do not modify producti
 - [x] Verify persisted permission grants, stale-grant denial, draft acceptance, finalized rejection, settings/deletion denial, and administrator access locally.
 
 No cloud deployment ran.
+
+### Data Bridge dashboard refresh, 25 October 2026
+
+- [x] Export the Billing-owned projection service for Platform composition.
+- [x] Rebuild target projections after business, mapped, and common queue imports.
+- [x] Test all company/year contexts and propagate projection failures for queue retry.
+- [x] Record deployed assets, live HTTP dashboard totals, queue completion, and source fingerprint proof in the Data Bridge cloud log.

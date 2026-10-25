@@ -34,3 +34,12 @@ Keep company and financial-year scope explicit. Draft reservations do not settle
 
 Check affected consumers and relevant tests. Report skipped or blocked checks explicitly.
 Documentation and prompts never replace backend authorization or deployment approval.
+
+## Data Bridge dashboard refresh, 25 October 2026
+
+Platform calls the public Billing dashboard projection service after each successful Data Bridge queue processor.
+Business, mapped, and common imports rebuild every target company/financial-year context before the queue job completes.
+The host resolves the exact active MariaDB target from the tenant registry.
+A projection failure rejects the job so its queue retry can rebuild again.
+Repeated imports do not require new business rows to repair a stale snapshot.
+Sources and imported document statuses remain unchanged.

@@ -154,3 +154,97 @@ The shared local working tree still contains unrelated implementation work and b
 The deployment used the isolated committed release and preserved previously deployed CRM patches.
 The Web dependency audit reports seven advisories: one low, four moderate, one high, and one critical.
 No dependency upgrade or audit fix is included. Do not claim a clean security audit.
+
+## Billing dashboard follow-up, 25 October 2026
+
+Scope: deploy the Billing reporting-currency changes from e6572eb7 and fix post-import dashboard projections.
+Use the active 1.1.60 development version. This is a scoped API/Web patch over the preserved 1.1.59 runtime.
+Shop remains on 1.1.59. This rollout does not deploy unrelated CRM mobile, Ecommerce, Codeit, or container work.
+
+### Cause and correction
+
+The INR dashboard returned an existing empty snapshot indefinitely.
+The UI Refresh action fetched that snapshot again. Data Bridge did not invalidate or rebuild it.
+Platform now calls the public Billing projection service after business, mapped, and common queue imports.
+Resolve the exact active target registry record and register its saved Billing connection before rebuilding.
+Rebuild every target company/year context. Record event reason billing.dashboard.data-bridge-import.
+A rebuild failure rejects the queue job for retry, including when the business import report is already complete.
+Retrying a completed import can rebuild its derived snapshots without reinserting its business rows.
+
+### Runtime and recovery
+
+Images: codexsun/api:1.1.60-billing-dashboard and codexsun/web:1.1.60-billing-dashboard.
+Preserve the existing API base and live CRM frontend patches. Do not replace shared services or Shop.
+The Web artifact uses the preserved 1.1.59 source plus the requested Billing changes.
+The API artifact overlays only Billing index, projection service, reporting-settings artifacts, and Platform Data Bridge composition.
+
+Private recovery directory: /home/codexsun-releases/billing-dashboard-refresh.
+Before backup: before.sql.gz, SHA-256 b8b43647cbbdeae6dbe4afa62d378059421ecbeef24f5d832b785d7449c6e7c3.
+The full MariaDB backup passes gzip integrity verification. Never restore all databases without a separately reviewed recovery scope.
+
+### Dashboard reconciliation
+
+Company 1 and financial year 1, reporting currency INR:
+
+| Metric                   |        SUKRAA |      ALTEX |
+| ------------------------ | ------------: | ---------: |
+| Confirmed sales count    |           108 |        175 |
+| Confirmed sales total    | 68,324,858.00 | 456,783.50 |
+| Confirmed purchase count |            82 |          0 |
+| Confirmed purchase total | 16,049,778.79 |       0.00 |
+| Posted receipt count     |             0 |         51 |
+| Posted receipt total     |          0.00 | 268,942.00 |
+| Posted payment total     |          0.00 |       0.00 |
+| Recent transactions      |            12 |         12 |
+
+SUKRAA October sales and purchases remain zero because its confirmed documents are dated before October.
+ALTEX October sales are 95,045.00 and receipts are 98,948.00.
+Draft and deleted invoices remain excluded from financial metrics.
+Authenticated public /api/app/billing/dashboard responses return HTTP 200 for both registered tenants.
+
+### Verification limits
+
+Billing API, Platform API, and Billing Web builds pass. The deployed Platform Web production build passes.
+Focused projection tests cover multiple target contexts, event reason, and failure propagation.
+Focused lint and Billing module boundaries pass.
+The repository dependency-layout check remains blocked by unrelated devkits/codeit/dist output. It was not removed.
+Web dependency installation reports seven advisories: one low, four moderate, one high, and one critical.
+This rollout does not claim a clean dependency security audit.
+Browser automation cannot load its private login script because its configured filesystem roots reject the workspace path.
+Dashboard reconciliation uses normal authenticated public HTTP and independent target SQL, not browser interaction proof.
+
+### Final live proof
+
+Final registered-connection jobs both completed in one attempt through BullMQ/Redis:
+
+| Target          | Run                                  | Queue job | Invoice match | Item match |
+| --------------- | ------------------------------------ | --------: | ------------: | ---------: |
+| sukraa_v2_db    | 903ac4d4-f7a6-42be-8b73-f39367b063ea |      3718 |       137/137 |    521/521 |
+| altexlabs_v2_db | 5bdd1733-3700-46fe-afe0-dbf95c56349e |      3719 |       184/184 |    690/690 |
+
+Both repeats have zero business inserts, updates, new users, invoice warnings, and orphan references.
+SUKRAA retains ten e-invoices and nine e-way-bill rows. ALTEX retains five deleted invoices as history.
+Each target retains its existing Billing company-settings difference as one warning.
+
+Both snapshots record billing.dashboard.data-bridge-import after the final queue runs.
+Public HTTP dashboard metrics match independent target SQL for every financial metric, count, and current-month value.
+SUKRAA projection: 2026-10-25T02:43:02.263Z. ALTEX projection: 2026-10-25T02:44:09.565Z.
+The deployed dashboard asset dashboard-CEogreF2.js no longer contains its reporting-currency control.
+
+Before/after source fingerprints match all 96 tables in each source:
+
+- SUKRAA, 4,145 rows: 538b0c7a2d7e1348912448ba35bf0e6894d17671c0db49dddeaaf3dc5c78b54e.
+- ALTEX, 13,566 rows: 05308802692bb6ae40689b0d95511137db5ad78dfdb2c9c0609ca92c286af7ff.
+
+Target business/user fingerprints also match, excluding only dashboard snapshots and derived event/outbox tables:
+
+- SUKRAA, 1,986 rows across 84 tables: 301e9cb247762d694af8ddbd2cd75c2a32e43b7b5cd056e81f2eb4b30084003f.
+- ALTEX, 5,487 rows across 84 tables: d15f3e68d6edf985641d197cc30c39102405e66ec6b5967c2f1e6a4f980ace48.
+
+The source databases remain unchanged. Existing target business data and credentials remain unchanged.
+API/Web health and public Platform readiness pass. Shop and shared service containers retain their identities.
+Private evidence is under /storage/backups/data-bridge/billing-refresh and the release recovery directory.
+
+Workspace-wide version checking also sees unrelated untracked apps/chatb and apps/worker packages at 1.1.59.
+Those packages remain untouched. The staged tracked release snapshot passes the 1.1.60 version check.
+Only the seven affected documentation originals and their generated references are synchronized for this commit.

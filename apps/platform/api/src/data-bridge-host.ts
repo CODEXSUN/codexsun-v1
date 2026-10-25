@@ -4,7 +4,11 @@ import { copyBridgeUsers } from "./modules/tenant-user/index.js";
 import { getTenantDatabase } from "./database/tenant-database.js";
 import { createConnection } from "mysql2/promise";
 import type { Kysely } from "kysely";
-import { seedBillingStandardUserAccess } from "@codexsun/billing-api";
+import {
+  billingDashboardProjection,
+  registerBillingTenantDatabaseConnection,
+  seedBillingStandardUserAccess
+} from "@codexsun/billing-api";
 import { seedCrmUserAccess } from "@codexsun/crm-api";
 import {
   hasActiveTransferCompanyContext,
@@ -37,6 +41,27 @@ export async function registerDataBridgeHost(
   migrationHost: DataMigrationHost
 ) {
   const queue = new QueueManagerService();
+  const refreshDashboard = async (targetTenantId: number) => {
+    const target = await tenants.findByIdOrCode(String(targetTenantId));
+    if (
+      !target ||
+      target.id !== targetTenantId ||
+      target.status !== "active" ||
+      target.dbType !== "mariadb"
+    )
+      throw AppError.validation("The target tenant is unavailable for dashboard refresh.");
+    registerBillingTenantDatabaseConnection({
+      database: target.dbName,
+      host: target.dbHost,
+      port: target.dbPort,
+      user: target.dbUser,
+      password: resolveTenantDatabasePassword(target)
+    });
+    return billingDashboardProjection.rebuildAll(
+      target.dbName,
+      "billing.dashboard.data-bridge-import"
+    );
+  };
   const host: CommonTableImportHost = {
     database: migrationHost.database,
     isCompanySeed: isUntouchedCompanySeed,
@@ -200,6 +225,7 @@ export async function registerDataBridgeHost(
       job.payload.runId,
       job.payload.targetTenantId
     );
+    await refreshDashboard(job.payload.targetTenantId);
     return {
       runId: report.id,
       status: report.status,
@@ -219,11 +245,13 @@ export async function registerDataBridgeHost(
       job.payload.runId,
       job.payload.targetTenantId
     );
+    await refreshDashboard(job.payload.targetTenantId);
     return { runId: result.id, status: result.status, rows: result.rows.length };
   });
   const processBusinessImport = businessImportWorker(host);
   registerQueueJobProcessor("data-bridge.business-import", async (job, progress) => {
     const result = await processBusinessImport(job, progress);
+    await refreshDashboard(Number(job.payload.targetTenantId));
     return {
       runId: result.id,
       status: result.status,

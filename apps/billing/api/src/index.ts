@@ -27,3 +27,4 @@ export {
 } from "./modules/export-sales/index.js";
 
 export { seedBillingStandardUserAccess } from "./auth/tenant-permission.seed.js";
+export { billingDashboardProjection } from "./modules/dashboard/dashboard.service.js";

@@ -22,6 +22,20 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 
 ## v-1.1.60
 
+### [v 1.1.60] 2026-10-25 8:13 am - Refresh Billing dashboards after Data Bridge imports
+
+#### Database Changes
+
+- Rebuild target Billing dashboard snapshots after successful Data Bridge queue imports. No schema or source database changes.
+- Reconcile SUKRAA and ALTEX dashboard metrics with confirmed invoices and posted vouchers. Preserve existing settings differences.
+
+#### App Codebase Changes
+
+- Export the Billing projection service and compose it through the registered target database connection in Platform.
+- Refresh all target company/year contexts before business, mapped, and common import jobs complete. Projection failures remain retryable.
+- Deploy the latest Billing reporting-currency controls with the dashboard fix while preserving existing CRM patches and shared services.
+- Record live queue, invoice, source fingerprint, and dashboard verification in the Data Bridge cloud log.
+
 ### [v 1.1.60] 2026-10-24 11:50 pm - CRM mobile performance audit and refactor
 
 #### Database Changes
@@ -99,7 +113,6 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Verify the local flow with disposable MariaDB integration tests. No cloud deployment, client import, version bump, commit, or push.
 - Details and validation limits: [local repair log](../../devkits/data-bridge/agent/COMPANY-USER-LOCAL-2026-10-24.md).
 
-
 ### [v 1.1.57] 2026-10-24 6:26 pm - Repair unit defaults and safe local upgrades
 
 #### Database Changes
@@ -117,7 +130,6 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Pass Core API build/typecheck/lint, Core web typecheck/lint, Data Bridge API typecheck/lint, owner boundaries, and dependency-layout checks.
 - Root checks pass documentation structure, cleanup, boundaries, and add-on checks, then stop on stale generated repository Docs references. Full root validation is not green.
 - Do not deploy cloud, migrate client databases, bump versions, commit, or push as part of this local repair.
-
 
 ### [v 1.1.57] 2026-10-24 4:21 pm - Finalize Data Bridge cloud migration verification
 
@@ -182,7 +194,6 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Record final split report-tab checks, invoice pagination, deployed revision, source hashes, and audit evidence in owner logs and handoff files.
 - Leave ecommerce, Codeit, and their pending package-version work outside this release.
 
-
 ### [v 1.1.55] 2026-10-24 3:32 pm - Isolate Redis delivery by master database
 
 #### Database Changes
@@ -197,7 +208,6 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Reconcile pending database jobs into Redis after startup while retaining idempotent delivery IDs.
 - Pass real Redis legacy-isolation and duplicate-publication tests on temporary VPS queues. Pass source-copy and migration authorization E2E tests.
 - Record live deployment, fresh SUKRAA Redis verification, and ALTEX acceptance as pending until verified.
-
 
 ### [v 1.1.55] 2026-10-24 3:18 pm - Cloud SUKRAA business migration verified
 
@@ -214,7 +224,6 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Complete the held import through the database queue after a Redis delivery stall. Restore BullMQ + Redis and preserve unrelated failed jobs.
 - Record private recovery artifact locations and sanitized proof in devkits/data-bridge/agent/CLOUD-SUKRAA-2026-10-24.md. Remove only disposable rehearsal databases.
 - Retain the Redis delivery issue as an operational follow-up. This report does not claim fresh Redis job delivery passed.
-
 
 ### [v 1.1.55] 2026-10-24 2:21 pm - Data Migration production API proxy repair
 

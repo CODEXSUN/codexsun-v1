@@ -53,3 +53,9 @@ Source presence is not release evidence. Confirm executable behavior before desc
 Use `npm run check:component-docs` and the relevant root checks.
 Run database, browser, native, and deployment checks when the changed behavior needs them.
 Do not mark an untested phase or planned feature complete.
+
+## Data Bridge derived projections
+
+Data Bridge imports must finish with a target Billing dashboard rebuild through the public Billing service.
+Verify the live scoped dashboard against confirmed sales and posted vouchers, excluding drafts and deleted entries.
+Preserve source data. Verify idempotent repeat imports and their queue status independently of the report status.

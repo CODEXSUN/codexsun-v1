@@ -50,14 +50,14 @@ export class DashboardService {
     return this.worker.process(databaseName, event);
   }
 
-  async rebuildAll(databaseName: string) {
+  async rebuildAll(databaseName: string, reason = "billing.dashboard.bootstrap") {
     const contexts = await this.repository.contexts(databaseName);
     for (const context of contexts) {
       await this.repository.rebuild(
         databaseName,
         Number(context.company_id),
         Number(context.financial_year_id),
-        "billing.dashboard.bootstrap"
+        reason
       );
     }
     return contexts.length;

@@ -259,3 +259,9 @@ The backend checks the actual persisted document status. Users cannot edit final
 Administrators retain their existing authorized finalized-edit and lifecycle paths.
 The access response separates draft-edit capability from finalized-edit capability.
 Lists and forms show draft editing while hiding or disabling administrator-only actions for standard users.
+
+## Import dashboard refresh
+
+Platform rebuilds Billing-owned dashboard projections after Data Bridge queue imports.
+The rebuild uses the registered target and every persisted company/financial-year context.
+A failed rebuild fails the queue job for retry. It does not change imported document statuses or source data.
