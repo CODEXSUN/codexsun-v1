@@ -38,7 +38,7 @@ export function ConversationWorkspace() {
   const deferredSearch = useDeferredValue(search);
 
   // 1. List data
-  const { threads, totalCount, loading } = useConversationList(page, pageSize, {
+  const { threads, totalCount } = useConversationList(page, pageSize, {
     search: deferredSearch.trim(),
     status,
     channel,
