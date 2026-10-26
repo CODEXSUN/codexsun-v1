@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/data-bridge-api",
-  "version": "1.1.69",
+  "version": "1.1.70",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,8 +12,8 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/data-migration-api": "^1.1.69",
-    "@codexsun/framework": "^1.1.69",
+    "@codexsun/data-migration-api": "^1.1.70",
+    "@codexsun/framework": "^1.1.70",
     "fastify": "^5.12.5",
     "kysely": "^0.29.6",
     "mysql2": "^3.24.5",

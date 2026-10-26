@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.69
+Current version: 1.1.70
 
-Release tag: v-1.1.69
+Release tag: v-1.1.70
 
-Changelog label: v 1.1.69
+Changelog label: v 1.1.70
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,24 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.70
+
+### [v 1.1.70] 2026-10-26 10:29 am - Preserve historical Ecommerce migration lineages
+
+#### Database Changes
+
+- Database update: Yes (manual).
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.70.
+- Preserve exact Ecommerce migration identities for the proven 31-step `8433a8ff` and 34-step `27135c9a` lineages. Append missing upgrades without rewriting applied records.
+- Resolve owner steps from immutable scope metadata inside the framework migration lock. Keep version and checksum validation unchanged.
+- Add historical fixtures, real-callback in-memory migration tests, repeated-run checks, invalid-history rejection, and populated-variant collision coverage.
+- Expose a lineage-aware metadata planner. Offline supplied ledgers for 13 reachable active tenants select the older lineage without applied-record mismatches.
+- Exclude ignored local runtime handoffs from generated Docs. Preserve unrelated runtime files and media.
+- Record source validation and migration/recovery limits in `.container/docs/RELEASE-1.1.70.md`. No live database operation, restore, new backup, image build, tag, or deployment.
 
 ## v-1.1.69
 
