@@ -5,7 +5,7 @@ import {
   canDispatchCrmFrappeSync,
   crmFrappeAvailability
 } from "./crm-frappe-sync-access.js";
-import { registerCrmFrappeSyncCapabilities } from "@codexsun/crm-api";
+import { authorizeEnquiryWrite, registerCrmFrappeSyncCapabilities } from "@codexsun/crm-api";
 import { registerMarketingHost } from "./marketing-host.js";
 import { marketingApiModuleKeys } from "@codexsun/marketing-api";
 import { sitesDeliveryHost } from "./sites-delivery-host.js";
@@ -644,6 +644,11 @@ export async function createApp() {
     } else {
       await context.authorize(`crm.${resource}.${action}`);
     }
+    if (resource === "enquiry")
+      await authorizeEnquiryWrite(request.method, path, {
+        ...context,
+        database: context.database as unknown as import("kysely").Kysely<EnquiryDatabase>
+      });
     return context;
   };
   await listInModule.register(app, async (request) => {

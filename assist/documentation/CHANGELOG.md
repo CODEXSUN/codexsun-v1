@@ -35,6 +35,7 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Honor granted enquiry Edit permissions for assigned mobile users instead of applying an additional administrator-only rule.
 - Allow assigned users to pin locations, check in/out, comment, and open a new call with the dedicated work permission.
 - Keep creator-only writes, cross-assignee writes, assignment changes, and tenant-wide reads restricted.
+- Apply the owner assignment guard to every composed enquiry write route, including job start/stop and child records.
 - Support API/Web-only immutable promotion with excluded service identity checks and scoped rollback.
 - Do not create further database backups for this rollout, as instructed by the user.
 

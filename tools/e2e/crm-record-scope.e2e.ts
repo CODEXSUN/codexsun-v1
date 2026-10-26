@@ -22,6 +22,7 @@ import { taskModule, seedTaskPermissions } from "../../apps/crm/api/src/modules/
 import { activitiesModule } from "../../apps/crm/api/src/modules/activities/index.js";
 import { closureModule } from "../../apps/crm/api/src/modules/closure/index.js";
 import { seedCoreTenantPermissions } from "../../apps/core/api/src/auth/tenant-permission.seed.js";
+import { authorizeEnquiryWrite } from "../../apps/crm/api/src/modules/enquiry/enquiry.write-access.js";
 import { seedStatusMaster } from "../../apps/crm/api/src/modules/status/index.js";
 import { seedPriorityMaster } from "../../apps/crm/api/src/modules/priority/index.js";
 import { enquiryLocationModule } from "../../apps/crm/api/src/modules/enquiry-location/index.js";
@@ -169,6 +170,15 @@ test(
     );
     await authorizeTenantUser(database as never, "scope2@example.test", "crm.enquiry.work");
     await authorizeTenantUser(database as never, "scope2@example.test", "crm.enquiry.update");
+    const ordinaryScope = await scope("scope2@example.test", "enquiry");
+    for (const suffix of ["jobs/start", "jobs/1/stop", "properties", "comments", "locations"]) {
+      await authorizeEnquiryWrite("POST", `/crm/enquiries/1/${suffix}`, ordinaryScope);
+      for (const id of [2, 3, 4])
+        await assert.rejects(
+          authorizeEnquiryWrite("POST", `/crm/enquiries/${id}/${suffix}`, ordinaryScope),
+          /Only the assignee/
+        );
+    }
     for (const [actor, expected] of [
       [1, 4],
       [2, 2],
