@@ -234,7 +234,7 @@ export class EnquiryService {
   }
 
   async update(id: number, input: EnquiryInput, actor: string, importedContactId?: number | null) {
-    const current = await this.get(id);
+    const current = await this.requireAssignedWork(id);
     const prepared = await this.prepare(input, current);
     const record = await this.repository.update(
       id,
@@ -262,7 +262,7 @@ export class EnquiryService {
     },
     actor: string
   ) {
-    const current = await this.get(id);
+    const current = await this.requireAssignedWork(id);
     const changes = Object.entries(patch).filter(
       ([key, value]) => value !== undefined && current[key as keyof EnquiryRecord] !== value
     );
@@ -316,7 +316,7 @@ export class EnquiryService {
   }
 
   async openNewCall(id: number, actor: string) {
-    await this.get(id);
+    await this.requireAssignedWork(id);
     const record = await this.repository.openNewCall(id, actor);
     if (!record) throw AppError.notFound("Enquiry was not found.");
     return this.withContact(record);
@@ -330,7 +330,7 @@ export class EnquiryService {
     bodyFormat: "plain" | "html" = "plain",
     requestId?: string
   ) {
-    await this.get(id);
+    await this.requireAssignedWork(id);
     const text = bodyFormat === "html" ? sanitizeCommentHtml(body) : body.trim();
     if (!(bodyFormat === "html" ? commentPlainText(text) : text)) {
       throw AppError.validation("Enter a comment.");
@@ -342,6 +342,13 @@ export class EnquiryService {
       }
     }
     return this.repository.addComment(id, parentId, text, bodyFormat, actor, requestId);
+  }
+
+  private async requireAssignedWork(id: number) {
+    const record = await this.get(id);
+    if (!this.viewer.canViewAll && record.assignedUserId !== this.viewer.actorUserId)
+      throw AppError.forbidden("Only the assignee or an enquiry manager can post work actions.");
+    return record;
   }
 
   private async prepare(

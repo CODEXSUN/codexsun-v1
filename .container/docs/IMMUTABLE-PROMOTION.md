@@ -1,6 +1,7 @@
-# Immutable five-service promotion
+# Immutable application promotion
 
 `codexsun-v1/promote.py` promotes locally available API, Web, Shop, Worker, and Chatb repository digests.
+It also supports an explicitly authorized API/Web-only promotion.
 It never fetches source, builds images, pulls images, runs migrations, creates backups, or provisions infrastructure.
 The existing `update.sh` remains a separate source-building updater. Do not use it as image promotion.
 
@@ -29,7 +30,11 @@ Use `promotion.sample.json` as the field guide. Keep completed records outside G
 Every evidence reference has `path` and a lowercase SHA-256. Relative paths resolve beside the release manifest.
 Paths can contain secrets. The command does not print Compose contents, environment values, or raw Docker stderr.
 
-The `images` mapping contains exactly the five production service names and immutable repository digests.
+The `images` mapping contains all five production services or exactly `codexsun-api` and `codexsun-web`, with immutable repository digests.
+For API/Web-only promotion, `preservedServices` records the existing container ID and immutable image ID for Shop, Worker, and Chatb.
+The staging, adoption, and production authorization receipts must bind the same excluded service inventory.
+The operator verifies excluded container identities and health before and after replacement. Compose uses `--no-deps`.
+The production and rollback models cannot include excluded services. Recovery retains the same checksummed backup and restore gates.
 Every evidence receipt identifies actual operations and reviewed facts. Never create a passing receipt to substitute for missing verification.
 Checksums establish integrity, not reviewer authority or truthful acceptance.
 

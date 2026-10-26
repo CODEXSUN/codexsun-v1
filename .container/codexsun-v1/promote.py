@@ -29,7 +29,8 @@ class ImagePromotion:
                         "Local image labels differ from reviewed source")
         names = self.docker("ps", "-a", "--format", "{{.Names}}").splitlines()
         self.current = {}
-        for name in sorted(SERVICES & set(names)):
+        self.verify_preserved()
+        for name in sorted(p.services & set(names)):
             item = json.loads(self.docker("inspect", name))[0]
             labels = item["Config"].get("Labels") or {}
             require(labels.get("com.docker.compose.project") == "codexsun" and
@@ -68,8 +69,8 @@ class ImagePromotion:
                 self.policy.consume_exception()
             self.save_status("promoting")
             try:
-                self.compose("production", "up", "-d", "--no-build", "--pull", "never",
-                             "--wait", "--wait-timeout", "180", *sorted(SERVICES))
+                self.compose("production", "up", "-d", "--no-deps", "--no-build", "--pull", "never",
+                             "--wait", "--wait-timeout", "180", *sorted(self.policy.services))
                 self.verify()
                 self.save_status("promoted")
             except (OSError, ValueError, subprocess.SubprocessError):
@@ -123,6 +124,7 @@ class ImagePromotion:
                     "Application writer state changed after the final backup")
 
     def verify(self):
+        self.verify_preserved()
         for name, digest in self.policy.images.items():
             item = json.loads(self.docker("inspect", name))[0]
             image = json.loads(self.docker("image", "inspect", digest))[0]
@@ -131,12 +133,22 @@ class ImagePromotion:
         self.docker("exec", "codexsun-api", "node", "-e",
                     "fetch('http://127.0.0.1:'+process.env.PLATFORM_API_PORT+'/ready').then(r=>process.exit(r.ok?0:1))")
         for name, path in [("codexsun-web", "/api/app/ready"), ("codexsun-shop", "/health")]:
+            if name not in self.policy.services:
+                continue
             self.docker("exec", name, "wget", "-qO", "/dev/null", "http://127.0.0.1" + path)
+
+    def verify_preserved(self):
+        for name, expected in self.policy.preserved.items():
+            item = json.loads(self.docker("inspect", name))[0]
+            require(item["Id"] == expected["id"] and item["Image"] == expected["image"],
+                    "Excluded service changed after staging and adoption")
+            require(item["State"].get("Health", {}).get("Status") == "healthy",
+                    "Excluded service is not healthy")
 
     def recover(self):
         self.policy.read_reference(self.policy.record["rollback"])
         previous = self.policy.rollback["services"]
-        existing = set(self.docker("ps", "-a", "--format", "{{.Names}}").splitlines()) & SERVICES
+        existing = set(self.docker("ps", "-a", "--format", "{{.Names}}").splitlines()) & self.policy.services
         for name in sorted(existing):
             item = json.loads(self.docker("inspect", name))[0]
             labels = item["Config"].get("Labels") or {}

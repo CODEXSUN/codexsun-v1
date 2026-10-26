@@ -24,6 +24,8 @@ import { closureModule } from "../../apps/crm/api/src/modules/closure/index.js";
 import { seedCoreTenantPermissions } from "../../apps/core/api/src/auth/tenant-permission.seed.js";
 import { seedStatusMaster } from "../../apps/crm/api/src/modules/status/index.js";
 import { seedPriorityMaster } from "../../apps/crm/api/src/modules/priority/index.js";
+import { enquiryLocationModule } from "../../apps/crm/api/src/modules/enquiry-location/index.js";
+import { workReportModule } from "../../apps/crm/api/src/modules/work-report/index.js";
 
 test(
   "CRM record scope uses live roles, protects direct actions, and reconciles legacy grants",
@@ -157,6 +159,16 @@ test(
         url: path,
         headers: { "x-test-actor": `scope${actor}@example.test` }
       });
+    await enquiryLocationModule.register(app, async (request) => {
+      const context = await scope(emailFor(request.headers), "enquiry");
+      if (request.method === "POST") await context.authorize("crm.enquiry.work");
+      return context;
+    });
+    await workReportModule.register(app, async (request) =>
+      scope(emailFor(request.headers), "enquiry")
+    );
+    await authorizeTenantUser(database as never, "scope2@example.test", "crm.enquiry.work");
+    await authorizeTenantUser(database as never, "scope2@example.test", "crm.enquiry.update");
     for (const [actor, expected] of [
       [1, 4],
       [2, 2],
@@ -318,6 +330,86 @@ test(
       ),
       false
     );
+    const gps = {
+      latitude: 13.0827,
+      longitude: 80.2707,
+      accuracyMeters: 8,
+      capturedAt: new Date().toISOString()
+    };
+    for (const path of ["comments", "open-new-call"] as const) {
+      for (const [record, expected] of [[1, 200], [2, 403], [3, 403]] as const) {
+        const response = await app.inject({
+          method: "POST",
+          url: `/crm/enquiries/${record}/${path}`,
+          ...(path === "comments" ? { payload: { body: "Assigned work comment", parentId: null } } : {})
+        });
+        assert.equal(response.statusCode, expected, response.body);
+      }
+    }
+    for (const [record, expected] of [
+      [1, 200],
+      [2, 403],
+      [3, 403]
+    ] as const) {
+      const response = await app.inject({
+        method: "POST",
+        url: `/crm/enquiries/${record}/locations`,
+        payload: gps
+      });
+      assert.equal(response.statusCode, expected, response.body);
+    }
+    for (const action of ["check-in", "check-out"] as const) {
+      const payload = {
+        ...gps,
+        capturedAt: new Date(Date.now() + (action === "check-out" ? 1000 : 0)).toISOString(),
+        enquiryId: 1,
+        taskId: null,
+        action,
+        body: "Assigned user checkpoint",
+        amount: null,
+        requestId: randomUUID()
+      };
+      const response = await app.inject({ method: "POST", url: "/crm/work-reports", payload });
+      assert.equal(response.statusCode, 200, response.body);
+      const denied = await app.inject({
+        method: "POST",
+        url: "/crm/work-reports",
+        payload: { ...payload, enquiryId: 2, requestId: randomUUID() }
+      });
+      assert.equal(denied.statusCode, 403, denied.body);
+    }
+    const assignedCharge = await app.inject({
+      method: "POST",
+      url: "/crm/work-reports",
+      payload: {
+        enquiryId: 1,
+        taskId: null,
+        action: "charge",
+        body: "Assigned user charge",
+        amount: 10,
+        requestId: randomUUID(),
+        latitude: null,
+        longitude: null,
+        accuracyMeters: null,
+        capturedAt: null
+      }
+    });
+    assert.equal(assignedCharge.statusCode, 200, assignedCharge.body);
+    const forbiddenCharge = await app.inject({
+      method: "POST", url: "/crm/work-reports",
+      payload: { enquiryId: 2, taskId: null, action: "charge",
+        body: "Creator cannot charge another assignee", amount: 10, requestId: randomUUID(),
+        latitude: null, longitude: null, accuracyMeters: null, capturedAt: null }
+    });
+    assert.equal(forbiddenCharge.statusCode, 403, forbiddenCharge.body);
+    await sql`UPDATE app_role_permissions rp JOIN app_roles r ON r.id=rp.role_id
+      JOIN app_permissions p ON p.id=rp.permission_id SET rp.status='inactive'
+      WHERE r.\`key\`='user' AND p.\`key\`='crm.enquiry.update'`.execute(database);
+    await assert.rejects(
+      authorizeTenantUser(database as never, "scope2@example.test", "crm.enquiry.update"),
+      /Permission .* is required/
+    );
+    await seedEnquiryModule(database as never);
     await sql`UPDATE app_user_roles ur JOIN app_roles r ON r.id=ur.role_id SET ur.status='inactive' WHERE ur.user_id=1 AND r.\`key\`='admin'`.execute(
       database
     );

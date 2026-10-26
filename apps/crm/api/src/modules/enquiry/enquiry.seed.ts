@@ -8,6 +8,7 @@ export async function seedEnquiryModule(database: Kysely<EnquiryDatabase>) {
     { action: "view-all", roles: ["admin", "super-admin"] },
     { action: "create", roles: ["admin", "super-admin", "manager", "team-head", "user"] },
     { action: "update", roles: ["admin", "super-admin", "manager", "team-head", "user"] },
+    { action: "work", roles: ["admin", "super-admin", "manager", "team-head", "user"] },
     { action: "frappe-sync.view", roles: ["admin", "super-admin"] }
   ] as const;
   for (const { action, roles } of permissions) {

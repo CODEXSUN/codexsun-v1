@@ -28,6 +28,7 @@ Source checks require matching HEAD, clean tracked/untracked source, and matchin
 Dirty proposed fixes must fail until the supervisor prepares reviewed source.
 
 Staging checks require API, Web, and Shop repository digests plus saved image inspections.
+An API/Web-only candidate may exclude Shop, Worker, and Chatb when it records compatibility for all three excluded services.
 For the reviewed realtime profile, include both `worker` and `chatb` in `services` with the same image evidence.
 Remove them from `excludedServices`. Partial or contradictory service selection fails preparation.
 Set realtime to 1 only for that five-service candidate. Keep the default three-service sample disabled.
