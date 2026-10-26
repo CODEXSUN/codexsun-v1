@@ -126,7 +126,7 @@ function toRecord(row: {
   user_uuid: string;
   uuid: string;
 }): AuthSessionRecord | null {
-  const authority=parseSessionAuthority(row.user_type,row.tenant_access_mode);
+  const authority = parseSessionAuthority(row.user_type, row.tenant_access_mode);
   if (!authority) return null;
   return {
     context: parseContext(row.context_json),

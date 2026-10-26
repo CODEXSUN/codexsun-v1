@@ -7,9 +7,9 @@ export function isGlobalPlatformAdminRoute(path: string) {
 }
 
 export function registerGlobalPlatformAdminAuthorization(app: FastifyInstance) {
-  app.addHook("onRequest", async (request,reply) => {
-    const path=request.routeOptions.url ?? request.url.split("?")[0] ?? "";
-    if (isGlobalPlatformAdminRoute(path)) return requireSuperAdmin(request,reply);
+  app.addHook("onRequest", async (request, reply) => {
+    const path = request.routeOptions.url ?? request.url.split("?")[0] ?? "";
+    if (isGlobalPlatformAdminRoute(path)) return requireSuperAdmin(request, reply);
   });
 }
 

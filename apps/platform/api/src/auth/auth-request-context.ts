@@ -16,7 +16,11 @@ import { isSingleTenantMode } from "../tenancy-mode.js";
 import { env } from "../env.js";
 import { requestHost } from "./request-host.js";
 import { claimsMatchSession } from "./auth-session-authority.js";
-import { isGlobalPlatformAdminRoute, registerGlobalPlatformAdminAuthorization, requireSuperAdmin } from "./super-admin.guard.js";
+import {
+  isGlobalPlatformAdminRoute,
+  registerGlobalPlatformAdminAuthorization,
+  requireSuperAdmin
+} from "./super-admin.guard.js";
 
 export { claimsMatchSession } from "./auth-session-authority.js";
 
@@ -81,7 +85,7 @@ export function registerAuthRequestContext(app: FastifyInstance) {
     if (isPublicAuthenticationPath(requestPath)) return;
     // Global administration never resolves tenant business context or trusts tenant roles.
     if (isGlobalPlatformAdminRoute(requestPath) && payload.userType !== "super_admin") {
-      return requireSuperAdmin(request,reply);
+      return requireSuperAdmin(request, reply);
     }
 
     if (payload.userType === "tenant") {
