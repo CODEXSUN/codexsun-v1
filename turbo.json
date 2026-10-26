@@ -16,6 +16,7 @@
   ],
   "tasks": {
     "build": {
+      "env": ["CODEXSUN_SITES_TIRUPURCONNECT_SNAPSHOT"],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", "../../../packages/ui/src/styles.css"],
       "outputs": [],
