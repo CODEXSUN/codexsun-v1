@@ -234,7 +234,7 @@ export class EnquiryService {
   }
 
   async update(id: number, input: EnquiryInput, actor: string, importedContactId?: number | null) {
-    const current = await this.get(id);
+    const current = await this.requireAssignedWork(id);
     const prepared = await this.prepare(input, current);
     const record = await this.repository.update(
       id,
@@ -262,7 +262,7 @@ export class EnquiryService {
     },
     actor: string
   ) {
-    const current = await this.get(id);
+    const current = await this.requireAssignedWork(id);
     const changes = Object.entries(patch).filter(
       ([key, value]) => value !== undefined && current[key as keyof EnquiryRecord] !== value
     );
@@ -348,6 +348,7 @@ export class EnquiryService {
     const record = await this.get(id);
     if (!this.viewer.canViewAll && record.assignedUserId !== this.viewer.actorUserId)
       throw AppError.forbidden("Only the assignee or an enquiry manager can post work actions.");
+    return record;
   }
 
   private async prepare(

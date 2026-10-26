@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.73
+Current version: 1.1.74
 
-Release tag: v-1.1.73
+Release tag: v-1.1.74
 
-Changelog label: v 1.1.73
+Changelog label: v 1.1.74
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,24 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.74
+
+### [v 1.1.74] 2026-10-26 4:20 pm - Honor granted CRM mobile action permissions and scope cloud rollout
+
+#### Database Changes
+
+- Database update: Yes (manual).
+- Seed `crm.enquiry.work` for standard CRM roles in existing active CRM tenants. No schema change is required.
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.74.
+- Honor granted enquiry Edit permissions for assigned mobile users instead of applying an additional administrator-only rule.
+- Allow assigned users to pin locations, check in/out, comment, and open a new call with the dedicated work permission.
+- Keep creator-only writes, cross-assignee writes, assignment changes, and tenant-wide reads restricted.
+- Support API/Web-only immutable promotion with excluded service identity checks and scoped rollback.
+- Do not create further database backups for this rollout, as instructed by the user.
 
 ## v-1.1.73
 

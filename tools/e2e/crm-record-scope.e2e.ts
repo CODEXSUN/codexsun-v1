@@ -168,10 +168,7 @@ test(
       scope(emailFor(request.headers), "enquiry")
     );
     await authorizeTenantUser(database as never, "scope2@example.test", "crm.enquiry.work");
-    await assert.rejects(
-      authorizeTenantUser(database as never, "scope2@example.test", "crm.enquiry.update"),
-      /Permission .* is required/
-    );
+    await authorizeTenantUser(database as never, "scope2@example.test", "crm.enquiry.update");
     for (const [actor, expected] of [
       [1, 4],
       [2, 2],
@@ -381,14 +378,14 @@ test(
       });
       assert.equal(denied.statusCode, 403, denied.body);
     }
-    const deniedCharge = await app.inject({
+    const assignedCharge = await app.inject({
       method: "POST",
       url: "/crm/work-reports",
       payload: {
         enquiryId: 1,
         taskId: null,
         action: "charge",
-        body: "Denied",
+        body: "Assigned user charge",
         amount: 10,
         requestId: randomUUID(),
         latitude: null,
@@ -397,7 +394,22 @@ test(
         capturedAt: null
       }
     });
-    assert.equal(deniedCharge.statusCode, 403, deniedCharge.body);
+    assert.equal(assignedCharge.statusCode, 200, assignedCharge.body);
+    const forbiddenCharge = await app.inject({
+      method: "POST", url: "/crm/work-reports",
+      payload: { enquiryId: 2, taskId: null, action: "charge",
+        body: "Creator cannot charge another assignee", amount: 10, requestId: randomUUID(),
+        latitude: null, longitude: null, accuracyMeters: null, capturedAt: null }
+    });
+    assert.equal(forbiddenCharge.statusCode, 403, forbiddenCharge.body);
+    await sql`UPDATE app_role_permissions rp JOIN app_roles r ON r.id=rp.role_id
+      JOIN app_permissions p ON p.id=rp.permission_id SET rp.status='inactive'
+      WHERE r.\`key\`='user' AND p.\`key\`='crm.enquiry.update'`.execute(database);
+    await assert.rejects(
+      authorizeTenantUser(database as never, "scope2@example.test", "crm.enquiry.update"),
+      /Permission .* is required/
+    );
+    await seedEnquiryModule(database as never);
     await sql`UPDATE app_user_roles ur JOIN app_roles r ON r.id=ur.role_id SET ur.status='inactive' WHERE ur.user_id=1 AND r.\`key\`='admin'`.execute(
       database
     );

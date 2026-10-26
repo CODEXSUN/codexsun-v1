@@ -15,6 +15,7 @@ test("ordinary permissions retain their existing permission checks", () => {
   for (const permission of [
     "crm.enquiry.view",
     "crm.enquiry.work",
+    "crm.enquiry.update",
     "crm.task.work",
     "core.application.records.view"
   ])
