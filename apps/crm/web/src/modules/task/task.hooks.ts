@@ -31,8 +31,8 @@ export function useTaskOptions() {
 
 export function useTaskNavigationCount(enabled: boolean) {
   const query = useQuery({
-    queryKey: [...taskQueryKey, "navigation-count"],
-    queryFn: async () => (await listTasks("", 1, 1, "all", {})).total,
+    queryKey: [...taskQueryKey, "navigation-count", "active"],
+    queryFn: async () => (await listTasks("", 1, 1, "active", {})).total,
     enabled
   });
 

@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/codexsun-api",
-  "version": "1.1.75",
+  "version": "1.1.76",
   "private": true,
   "type": "module",
   "exports": {
@@ -13,7 +13,7 @@
     "test": "tsx --test src/modules/**/*.test.ts"
   },
   "dependencies": {
-    "@codexsun/framework": "^1.1.75",
+    "@codexsun/framework": "^1.1.76",
     "fastify": "^5.12.5",
     "kysely": "^0.29.6",
     "socket.io": "^4.8.4",

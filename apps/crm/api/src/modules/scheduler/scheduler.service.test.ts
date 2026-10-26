@@ -11,6 +11,8 @@ function setup(
   const authorized: string[] = [];
   const lookedUp: string[] = [];
   const listed: Array<{ view: string; sourceType?: string; sourceId?: number }> = [];
+  const counted: unknown[] = [];
+  const rescheduled: unknown[] = [];
   const repository = {
     list: async (
       _scope: unknown,
@@ -20,6 +22,14 @@ function setup(
       return [];
     },
     reminders: async () => [],
+    reschedule: async (...args: unknown[]) => {
+      rescheduled.push(args);
+      return { id: 1 };
+    },
+    reminderCount: async (scope: unknown) => {
+      counted.push(scope);
+      return 123;
+    },
     listSources: async (sourceType: string) => {
       lookedUp.push(sourceType);
       return [];
@@ -43,7 +53,14 @@ function setup(
     },
     hasPermission: async (permission: string) => permissions.has(permission)
   } satisfies SchedulerContext;
-  return { service: new SchedulerService(repository, context), authorized, lookedUp, listed };
+  return {
+    service: new SchedulerService(repository, context),
+    authorized,
+    lookedUp,
+    listed,
+    counted,
+    rescheduled
+  };
 }
 
 test("schedule list forwards source filters for a record tab", async () => {
@@ -110,4 +127,41 @@ test("schedule creation requires the linked CRM source to exist in the permitted
     }),
     (error: unknown) => error instanceof AppError && error.code === "NOT_FOUND"
   );
+});
+
+test("reminder count requires view permission before querying", async () => {
+  const { service, counted } = setup();
+  await assert.rejects(service.reminderCount(), /Denied/);
+  assert.deepEqual(counted, []);
+});
+
+test("reminder count preserves own-user scope and view-all authority", async () => {
+  for (const viewAll of [false, true]) {
+    const { service, counted } = setup({
+      permissions: ["crm.schedule.view", ...(viewAll ? ["crm.schedule.view-all"] : [])]
+    });
+    assert.deepEqual(await service.reminderCount(), { total: 123 });
+    assert.deepEqual(counted, [{ email: "user@example.test", userId: 4, viewAll }]);
+  }
+});
+
+test("reschedule denies missing permission and rejects invalid dates before writes", async () => {
+  const denied = setup();
+  await assert.rejects(denied.service.reschedule(1, "2026-11-01T10:00:00Z"), /Denied/);
+  assert.deepEqual(denied.rescheduled, []);
+  const own = setup({ permissions: ["crm.schedule.update-own"] });
+  await assert.rejects(own.service.reschedule(1, "invalid"), /valid date/);
+  assert.deepEqual(own.rescheduled, []);
+});
+
+test("reschedule retains assignee restriction unless manager permission is granted", async () => {
+  for (const manage of [false, true]) {
+    const { service, rescheduled } = setup({
+      permissions: [manage ? "crm.schedule.manage" : "crm.schedule.update-own"]
+    });
+    await service.reschedule(1, "2026-11-01T10:00:00Z");
+    assert.deepEqual(rescheduled, [
+      [1, "2026-11-01T10:00:00Z", { email: "user@example.test", userId: 4, viewAll: manage }]
+    ]);
+  }
 });

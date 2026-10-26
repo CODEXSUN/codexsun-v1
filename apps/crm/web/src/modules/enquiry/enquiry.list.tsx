@@ -8,7 +8,7 @@ import { EnquiryInlineFilter } from "./enquiry.inline-filter";
 import { enquiryTableText } from "./enquiry.table-text";
 import { formatListDueDate } from "./enquiry.view-utils";
 import { formatCrmDateTime } from "../../crm-time.js";
-import { enquiryCreatedAge } from "./enquiry.created-age.js";
+import { diffForHumans } from "./enquiry.created-age.js";
 import type { EnquiryColumnFilters, EnquiryLookup, EnquiryRecord } from "./enquiry.types";
 
 const filterColumns: Record<string, { key: keyof EnquiryColumnFilters; label: string }> = {
@@ -146,19 +146,23 @@ export function EnquiryList({
     {
       id: "dueDate",
       accessorKey: "dueDate",
-      header: "Due date",
-      cell: ({ row }) => formatListDueDate(row.original.dueDate)
+      header: () => <span className="whitespace-nowrap">Due date</span>,
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap">{formatListDueDate(row.original.dueDate)}</span>
+      )
     },
     {
       id: "priority",
       accessorKey: "priority",
       header: "Priority",
       cell: ({ row }) => (
-        <span
-          className={`inline-block size-3 rounded-full ${prioritySwatch(row.original.priority)}`}
-          title={`${row.original.priorityName} priority`}
-        >
-          <span className="sr-only">{row.original.priorityName} priority</span>
+        <span className="flex items-center justify-center">
+          <span
+            className={`block size-3 shrink-0 rounded-full ${prioritySwatch(row.original.priority)}`}
+            title={`${row.original.priorityName} priority`}
+          >
+            <span className="sr-only">{row.original.priorityName} priority</span>
+          </span>
         </span>
       )
     },
@@ -171,10 +175,9 @@ export function EnquiryList({
         <time
           dateTime={row.original.createdAt}
           title={formatCrmDateTime(row.original.createdAt)}
-          className="whitespace-nowrap"
+          className="block whitespace-nowrap text-center"
         >
-          {formatListDueDate(row.original.createdAt)} ·{" "}
-          {enquiryCreatedAge(row.original.createdAt, now)}
+          {formatListDueDate(row.original.createdAt)} · {diffForHumans(row.original.createdAt, now)}
         </time>
       )
     },
@@ -324,7 +327,7 @@ export function EnquiryList({
           </div>
           <p className="truncate text-xs text-muted-foreground">
             Created by {creatorName(record)} · {formatListDueDate(record.createdAt)} ·{" "}
-            {enquiryCreatedAge(record.createdAt, now)}
+            {diffForHumans(record.createdAt, now)}
           </p>
           <div className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 border-t border-border/70 pt-2 text-xs text-muted-foreground">
             <span>List in · {record.listIn || "Unlisted"}</span>

@@ -8,3 +8,5 @@ export {
   type ScheduleRecord,
   type ScheduleSourceType
 } from "./scheduler.services";
+
+export { useReminderNavigationCount } from "./scheduler.hooks";

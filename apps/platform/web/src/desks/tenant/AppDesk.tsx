@@ -1,5 +1,5 @@
 import { CodeitOverview, CodeitSettings } from "@codexsun/codeit";
-import { LeadWorkspace } from "@codexsun/crm-web";
+import { LeadWorkspace, useLeadNavigationCount } from "@codexsun/crm-web";
 import { marketingPageFromPath } from "../../modules/marketing/marketing-navigation";
 import { MarketingHost } from "../../modules/marketing/marketing-host";
 import { tconnectGateway } from "../../modules/tconnect/tconnect-host";
@@ -104,7 +104,10 @@ import {
 import { ZetroLogo } from "@codexsun/zetro-web/logo";
 import { landingAppChoices } from "./landing-app-choices";
 import { CrmContactApplicationHeader } from "./crm-contact-application-header";
-import { SchedulerWorkspace } from "@codexsun/crm-web/modules/scheduler";
+import {
+  SchedulerWorkspace,
+  useReminderNavigationCount
+} from "@codexsun/crm-web/modules/scheduler";
 import { usePlatformNotifications } from "../../modules/notifications/index";
 import { newEnquiryFormId, type EnquiryReportFilters } from "@codexsun/crm-web/modules/enquiry";
 import { TaskWorkspace, useTaskNavigationCount } from "@codexsun/crm-web/modules/task";
@@ -1020,7 +1023,10 @@ export function AppDesk() {
   const navigate = useNavigate();
   const signedInUser = signedInTenantUser();
   const routePage = pageFromUrl(null, location.pathname);
-  const crmCounts = useCrmNavigationCounts(signedInUser.email, routePage.startsWith("crm."));
+  const crmEnquiryCounts = useCrmNavigationCounts(signedInUser.email, routePage.startsWith("crm."));
+  const crmLeadCount = useLeadNavigationCount(routePage.startsWith("crm."));
+  const crmReminderCount = useReminderNavigationCount(routePage.startsWith("crm."));
+  const crmCounts = { ...crmEnquiryCounts, leads: crmLeadCount, reminders: crmReminderCount };
   const crmTaskCount = useTaskNavigationCount(routePage.startsWith("crm."));
   const chatCounts = useChatNavigationCounts(Boolean(signedInUser.email));
   const [pendingListPage, setPendingListPage] = useState<{
@@ -1187,6 +1193,11 @@ export function AppDesk() {
   const safePage = resolveBillingFeaturePage(appSafePage, billingSettingsQuery.data?.features);
   const sportsclubTitle = sportsclubPageTitle(safePage, location.pathname);
   const activePageTitle =
+    (safePage === "crm.leads" && routeSearch.form === "new"
+      ? "New lead"
+      : safePage === "crm.leads" && routeSearch.form === "edit"
+        ? "Edit lead"
+        : undefined) ??
     sportsclubTitle ??
     (safePage === "hrms.employees" && location.pathname.endsWith("/new")
       ? "New employee"
@@ -1603,7 +1614,10 @@ export function AppDesk() {
                 ? "form"
                 : safePage === "crm.tasks" && location.pathname === "/app/crm/tasks/new"
                   ? "form"
-                  : safePage === "crm.enquiries" ||
+                  : safePage === "crm.reminders" ||
+                      safePage === "crm.schedules" ||
+                      safePage === "crm.leads" ||
+                      safePage === "crm.enquiries" ||
                       safePage === "crm.tasks" ||
                       (safePage === "crm.contacts" && location.pathname === "/app/crm/contacts")
                     ? "workspace"

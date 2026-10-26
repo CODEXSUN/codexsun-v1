@@ -54,8 +54,14 @@ Marketing owns Campaign, raw capture submissions, promotional consent, subscript
 CRM owns sales Leads, qualification, enquiries, assignments, follow-up, and sales/service contact restrictions.
 Core owns contacts. Mail owns email delivery-safety suppression.
 Existing Contact Preferences do not establish promotional opt-in.
-CRM Lead intake/review and the email restriction check now have initial local implementations.
-Full qualification, outcome contracts, and other channel policies remain open.
+CRM Leads support a paginated list, details, manual create/edit, review/qualified/lost status, and explicit conversion to an Enquiry.
+The list shows Contact, Mobile, Enquiry details, Campaign, Convert to enquiry, and Status. It uses the Enquiry workspace primitives, responsive cards, filters, column visibility, and pagination.
+The toolbar includes creation-date range filtering, a column-search toggle, and a selected-status badge with the matching count. Active excludes Converted and Lost. Date ranges include the full selected final day in the browser's local timezone; requests use UTC boundaries. Column searches combine with the global search, dates, status, and record scope.
+Campaign labels preserve intake attribution. Manual leads may record a campaign label; this does not create or edit a Marketing Campaign.
+Conversion requires `crm.lead.convert` and `crm.enquiry.create`. It locks the lead, resolves Core contact identity through the existing Enquiry customer contract, creates the Enquiry, and records conversion and audit history in one transaction. Explicit existing-contact selection also requires `crm.contact.view`. A retry returns the same Enquiry. Converted leads cannot be edited.
+Lead reads and writes remain company- and assignee-scoped. `crm.lead.view-all` requires an administrator role. Web caches and request headers include tenant and company context.
+Migration `crm.lead.workspace.v2` adds contact/enquiry links, revision checks, an index, and `crm_lead_activity`. Existing Marketing source receipts and follow-up Task links remain intact. Core migration and normal reference seeds are prerequisites. No direct Frappe call is made; Enquiry creation retains its durable local outbox.
+Run `npm run test:e2e:crm-leads` for disposable local database coverage. The full CRM suite includes this file automatically.
 See [CRM ownership](agent/PLAN.md#marketing-integration-decision--2026-10-23) and [Marketing Phase 0](../marketing/agent/PLAN.md#phase-0-decisions-and-contract-review).
 This decision does not enable Marketing, migrate records, or expand Frappe export scope.
 

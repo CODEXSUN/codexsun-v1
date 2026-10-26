@@ -358,7 +358,7 @@ export class EnquiryRepository {
     resolveContact?: (transaction: Transaction<EnquiryDatabase>) => Promise<EnquiryInput>,
     source?: { enquiryNo: number; createdAt: string; updatedAt: string; createdBy: string }
   ) {
-    const created = await this.database.transaction().execute(async (transaction) => {
+    const create = async (transaction: Transaction<EnquiryDatabase>) => {
       const prepared = resolveContact ? await resolveContact(transaction) : input;
       const enquiryNo = source
         ? await this.reserveImportedNumber(transaction, source.enquiryNo)
@@ -442,7 +442,10 @@ export class EnquiryRepository {
               transaction
             );
       return { enquiryId, syncEventId, commentSyncEventId };
-    });
+    };
+    const created = this.database.isTransaction
+      ? await create(this.database as Transaction<EnquiryDatabase>)
+      : await this.database.transaction().execute(create);
     await this.dispatchSync(created.syncEventId);
     await this.dispatchSync(created.commentSyncEventId);
     return this.get(created.enquiryId);

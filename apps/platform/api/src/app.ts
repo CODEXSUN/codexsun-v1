@@ -61,6 +61,7 @@ import {
   registerCoreApi,
   registerCoreTenantDatabaseConnection,
   getActiveContactForDatabase,
+  lookupActiveContactsForDatabase,
   findContactIdentityForDatabase,
   findContactIdentityByIdForDatabase,
   resolveOrCreateCustomerForDatabase,
@@ -68,6 +69,8 @@ import {
 } from "@codexsun/core-api";
 import {
   enquiryModule,
+  leadModule,
+  type LeadContext,
   taskPermissionForRequest,
   activitiesModule,
   closureModule,
@@ -619,6 +622,9 @@ export async function createApp() {
         : null;
     const action =
       taskAction ??
+      (resource === "lead" && request.method === "POST" && /\/convert$/u.test(path)
+        ? "convert"
+        : null) ??
       enquiryWorkAction ??
       (request.method === "GET" || /^\/crm\/enquiries\/alerts\/\d+\/read$/u.test(path)
         ? "view"
@@ -865,6 +871,50 @@ export async function createApp() {
     const context = tenantAccessContext(request);
     const access = await readCrmFrappeSyncAccess(context.database);
     return { enabled: access.enabled };
+  });
+  await leadModule.register(app, async (request): Promise<LeadContext> => {
+    const context = await crmAccess(request, "lead", "/crm/leads");
+    const companyId = Number(request.headers["x-company-id"]);
+    if (!Number.isSafeInteger(companyId) || companyId < 1)
+      throw AppError.validation("Select a valid company.");
+    const company = await getCompanyForDatabase(context.tenantDatabase, companyId);
+    if (!company || company.status !== "active")
+      throw AppError.validation("Select an active company.");
+    let canViewAll = false;
+    try {
+      await context.authorize("crm.lead.view-all");
+      canViewAll = true;
+    } catch (error) {
+      if (!(error instanceof AppError) || error.code !== "FORBIDDEN") throw error;
+    }
+    return {
+      database: context.database as unknown as LeadContext["database"],
+      companyId,
+      actorEmail: context.actorEmail,
+      authorize: context.authorize,
+      canViewAll,
+      contact: async (id) => {
+        const contact = await getActiveContactForDatabase(context.tenantDatabase, id);
+        return contact ? { id, ...contact } : null;
+      },
+      contacts: async (search) => {
+        await context.authorize("crm.contact.view");
+        return lookupActiveContactsForDatabase(context.tenantDatabase, search);
+      },
+      resolveContact: async (transaction, lead) => {
+        if (lead.contactId) {
+          const contact = await getActiveContactForDatabase(context.tenantDatabase, lead.contactId);
+          if (!contact) throw AppError.validation("The linked contact is no longer active.");
+          return lead.contactId;
+        }
+        const contact = await resolveOrCreateCustomerForDatabase(
+          context.tenantDatabase,
+          { name: lead.name, mobile: lead.phone },
+          transaction as never
+        );
+        return contact.id;
+      }
+    };
   });
   await enquiryModule.register(app, async (request) => {
     const context = await crmAccess(request, "enquiry", "/crm/enquiries");

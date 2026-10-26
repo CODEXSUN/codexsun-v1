@@ -1,6 +1,15 @@
+import { WorkspaceHeaderActions } from "@codexsun/ui/workspace/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "@codexsun/ui/components/dialog";
+import { ScheduleCard } from "./scheduler.card";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BellIcon, CalendarClockIcon, CircleCheckIcon, Clock3Icon, PlusIcon } from "lucide-react";
+import { BellIcon, CalendarClockIcon, PlusIcon } from "lucide-react";
 import { Button } from "@codexsun/ui/components/button";
 import { Card } from "@codexsun/ui/components/card";
 import { Input } from "@codexsun/ui/components/input";
@@ -14,12 +23,12 @@ import {
   searchScheduleSources,
   sourceLabels,
   updateScheduleStatus,
-  type ScheduleRecord,
   type ScheduleSourceType
 } from "./scheduler.services";
 
 export function SchedulerWorkspace({ view = "schedules" }: { view?: "schedules" | "reminders" }) {
   const queryClient = useQueryClient();
+  const [createOpen, setCreateOpen] = useState(false);
   const [sourceType, setSourceType] = useState<ScheduleSourceType>("enquiry");
   const [sourceSearch, setSourceSearch] = useState("");
   const [sourceId, setSourceId] = useState("");
@@ -32,7 +41,7 @@ export function SchedulerWorkspace({ view = "schedules" }: { view?: "schedules" 
   const sources = useQuery({
     queryKey: ["crm-schedule-sources", sourceType, sourceSearch],
     queryFn: () => searchScheduleSources(sourceType, sourceSearch),
-    enabled: sourceSearch.trim().length > 0
+    enabled: createOpen && sourceSearch.trim().length > 0
   });
   const refresh = async () =>
     Promise.all([
@@ -43,6 +52,7 @@ export function SchedulerWorkspace({ view = "schedules" }: { view?: "schedules" 
     mutationFn: createSchedule,
     onSuccess: async () => {
       toast.success("Schedule saved");
+      setCreateOpen(false);
       setNotes("");
       setSourceId("");
       setSourceSearch("");
@@ -91,6 +101,18 @@ export function SchedulerWorkspace({ view = "schedules" }: { view?: "schedules" 
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5 px-4 py-5 sm:px-6">
+      <WorkspaceHeaderActions>
+        <Button
+          size="sm"
+          className="h-7 px-3"
+          onClick={() => {
+            create.reset();
+            setCreateOpen(true);
+          }}
+        >
+          <PlusIcon className="size-4" /> New reminder
+        </Button>
+      </WorkspaceHeaderActions>
       <header className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-violet-200 bg-gradient-to-r from-violet-50 to-white px-5 py-4 shadow-sm">
         <div className="flex items-center gap-3">
           <span className="grid size-11 place-items-center rounded-lg bg-violet-100 text-violet-700">
@@ -110,12 +132,13 @@ export function SchedulerWorkspace({ view = "schedules" }: { view?: "schedules" 
         </div>
       </header>
 
-      {view === "schedules" && (
-        <Card className="p-5">
-          <div className="mb-4 flex items-center gap-2 font-semibold">
-            <PlusIcon className="size-4 text-violet-700" /> New schedule
-          </div>
-          <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" onSubmit={submit}>
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>New reminder</DialogTitle>
+            <DialogDescription>Schedule a follow-up linked to a CRM record.</DialogDescription>
+          </DialogHeader>
+          <form className="grid gap-4 sm:grid-cols-2" onSubmit={submit}>
             <div className="space-y-1.5">
               <Label htmlFor="schedule-at">Scheduled for</Label>
               <Input
@@ -204,9 +227,17 @@ export function SchedulerWorkspace({ view = "schedules" }: { view?: "schedules" 
                 {create.isPending ? "Saving…" : "Save schedule"}
               </Button>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={create.isPending}
+              onClick={() => setCreateOpen(false)}
+            >
+              Cancel
+            </Button>
           </form>
-        </Card>
-      )}
+        </DialogContent>
+      </Dialog>
 
       <section className="space-y-3">
         {schedules.isLoading ? (
@@ -228,6 +259,7 @@ export function SchedulerWorkspace({ view = "schedules" }: { view?: "schedules" 
             <ScheduleCard
               key={item.id}
               item={item}
+              onRescheduled={refresh}
               onStatus={(status) => changeStatus.mutate({ id: item.id, status })}
               onAcknowledge={() => acknowledge.mutate(item.id)}
             />
@@ -235,71 +267,5 @@ export function SchedulerWorkspace({ view = "schedules" }: { view?: "schedules" 
         )}
       </section>
     </div>
-  );
-}
-
-function ScheduleCard({
-  item,
-  onStatus,
-  onAcknowledge
-}: {
-  item: ScheduleRecord;
-  onStatus: (status: "completed" | "cancelled") => void;
-  onAcknowledge: () => void;
-}) {
-  const due = new Date(item.scheduledAt);
-  const href =
-    item.sourceType === "enquiry"
-      ? `/app/crm/enquiries/${item.sourceId}`
-      : item.sourceType === "task"
-        ? `/app/crm/tasks/${item.sourceId}`
-        : item.sourceType === "call-log"
-          ? "/app/crm/call-logs"
-          : item.sourceType === "duty"
-            ? "/app/crm/duties"
-            : "/app/crm/sops";
-  return (
-    <Card className="border-slate-200 p-4 shadow-sm transition-shadow hover:shadow-md">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="whitespace-pre-wrap font-semibold text-slate-900">{item.notes}</h2>
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs ${item.status === "scheduled" ? "bg-violet-100 text-violet-800" : item.status === "completed" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}
-            >
-              {item.status}
-            </span>
-            {item.acknowledgedAt && (
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-                Reminder dismissed
-              </span>
-            )}
-          </div>
-          <a className="mt-1 inline-block text-sm text-violet-700 hover:underline" href={href}>
-            {sourceLabels[item.sourceType]} · {item.sourceLabel}
-          </a>
-          <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
-            <Clock3Icon className="size-3.5" />
-            {due.toLocaleString()}
-          </p>
-        </div>
-        {item.status === "scheduled" && (
-          <div className="flex gap-2">
-            {!item.acknowledgedAt && (
-              <Button size="sm" variant="ghost" onClick={onAcknowledge}>
-                Dismiss reminder
-              </Button>
-            )}
-            <Button size="sm" variant="outline" onClick={() => onStatus("completed")}>
-              <CircleCheckIcon className="mr-1 size-4" />
-              Done
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => onStatus("cancelled")}>
-              Cancel
-            </Button>
-          </div>
-        )}
-      </div>
-    </Card>
   );
 }

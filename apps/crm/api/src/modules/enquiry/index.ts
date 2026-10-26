@@ -1,4 +1,5 @@
 export { enquiryModule } from "./enquiry.module.js";
+export { createEnquiryFromLead } from "./enquiry.lead-conversion.js";
 export { authorizeEnquiryWrite } from "./enquiry.write-access.js";
 export { recordEnquiryPin } from "./enquiry.pin-location.js";
 export {

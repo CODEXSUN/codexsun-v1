@@ -1,5 +1,9 @@
 import {
   Code2Icon,
+  UserRoundPlusIcon,
+  ListTodoIcon,
+  BookOpenCheckIcon,
+  BriefcaseBusinessIcon,
   AlertTriangleIcon,
   ArchiveIcon,
   BadgePercentIcon,
@@ -144,7 +148,13 @@ export type BillingNavigationFeatures = {
   quotation: boolean;
 };
 
-export type CrmNavigationCounts = { assigned: number; created: number; all: number };
+export type CrmNavigationCounts = {
+  assigned: number;
+  created: number;
+  all: number;
+  leads?: number;
+  reminders?: number;
+};
 
 export type ChatNavigationCounts = {
   direct?: number;
@@ -928,6 +938,7 @@ export function appMenuFor(
         },
         {
           title: "Leads",
+          count: crmCounts?.leads,
           isActive: activePage === "crm.leads",
           onSelect: () => onSelect("crm.leads")
         },
@@ -943,20 +954,10 @@ export function appMenuFor(
           onSelect: () => onSelect("crm.tasks")
         },
         {
-          title: "Scheduling",
-          isActive: activePage === "crm.schedules" || activePage === "crm.reminders",
-          items: [
-            {
-              title: "Schedules",
-              isActive: activePage === "crm.schedules",
-              onSelect: () => onSelect("crm.schedules")
-            },
-            {
-              title: "Reminders",
-              isActive: activePage === "crm.reminders",
-              onSelect: () => onSelect("crm.reminders")
-            }
-          ]
+          title: "Reminder",
+          count: crmCounts?.reminders,
+          isActive: activePage === "crm.reminders",
+          onSelect: () => onSelect("crm.reminders")
         },
         {
           title: "Call Logs",
@@ -1345,14 +1346,27 @@ export function appMenuItemsFor(
   crmTaskCount = 0
 ): SidemenuItem[] {
   if (appId === "marketing")
-    return ["brands", "campaigns", "email-campaigns", "conversations", "captures", "submissions", "leads", "qualifications", "conversions", "outcomes", "followups", "connections", "consents", "contents"].map(
-      (key) => ({
-        icon: Globe2Icon,
-        title: key[0]!.toUpperCase() + key.slice(1),
-        isActive: activePage === `marketing.${key}`,
-        onSelect: () => onSelect(`marketing.${key}`)
-      })
-    );
+    return [
+      "brands",
+      "campaigns",
+      "email-campaigns",
+      "conversations",
+      "captures",
+      "submissions",
+      "leads",
+      "qualifications",
+      "conversions",
+      "outcomes",
+      "followups",
+      "connections",
+      "consents",
+      "contents"
+    ].map((key) => ({
+      icon: Globe2Icon,
+      title: key[0]!.toUpperCase() + key.slice(1),
+      isActive: activePage === `marketing.${key}`,
+      onSelect: () => onSelect(`marketing.${key}`)
+    }));
   if (appId === "codeit") return codeitMenuItems(activePage, onSelect);
   if (appId === "codexsun") return codexsunMenuItems(activePage, onSelect);
   if (appId === "hrms")
@@ -1732,8 +1746,9 @@ export function appMenuItemsFor(
         title: "Contact"
       },
       {
-        icon: ClipboardListIcon,
+        icon: UserRoundPlusIcon,
         title: "Leads",
+        count: crmCounts?.leads,
         isActive: activePage === "crm.leads",
         onSelect: () => onSelect("crm.leads")
       },
@@ -1745,7 +1760,7 @@ export function appMenuItemsFor(
         count: crmCounts?.all
       },
       {
-        icon: ClipboardListIcon,
+        icon: ListTodoIcon,
         isActive: activePage === "crm.tasks",
         onSelect: () => onSelect("crm.tasks"),
         title: "Tasks",
@@ -1753,21 +1768,10 @@ export function appMenuItemsFor(
       },
       {
         icon: BellIcon,
-        isActive: activePage === "crm.schedules" || activePage === "crm.reminders",
-        onSelect: () => onSelect("crm.schedules"),
-        title: "Scheduling",
-        items: [
-          {
-            title: "Schedules",
-            isActive: activePage === "crm.schedules",
-            onSelect: () => onSelect("crm.schedules")
-          },
-          {
-            title: "Reminders",
-            isActive: activePage === "crm.reminders",
-            onSelect: () => onSelect("crm.reminders")
-          }
-        ]
+        isActive: activePage === "crm.reminders",
+        onSelect: () => onSelect("crm.reminders"),
+        title: "Reminder",
+        count: crmCounts?.reminders
       },
       {
         icon: PhoneCallIcon,
@@ -1788,13 +1792,13 @@ export function appMenuItemsFor(
         title: "Activities"
       },
       {
-        icon: ClipboardListIcon,
+        icon: BookOpenCheckIcon,
         isActive: activePage === "crm.sops",
         onSelect: () => onSelect("crm.sops"),
         title: "SOPs"
       },
       {
-        icon: ClipboardListIcon,
+        icon: BriefcaseBusinessIcon,
         isActive: activePage === "crm.duties",
         onSelect: () => onSelect("crm.duties"),
         title: "Duties"

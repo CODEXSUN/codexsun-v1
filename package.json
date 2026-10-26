@@ -1,6 +1,6 @@
 {
   "name": "codexsun",
-  "version": "1.1.75",
+  "version": "1.1.76",
   "private": true,
   "packageManager": "npm@12.2.0",
   "description": "CODEXSUN",
@@ -84,6 +84,7 @@
     "test:e2e:crm-task-contact": "npm run build -w @codexsun/framework && tsx --test tools/e2e/crm-task-contact.e2e.ts",
     "test:e2e:crm-closure": "tsx --test tools/e2e/crm-closure.e2e.ts",
     "test:e2e:crm-record-scope": "npm run build -w @codexsun/crm-api && tsx --test tools/e2e/crm-record-scope.e2e.ts",
+    "test:e2e:crm-leads": "npm run build -w @codexsun/crm-api && node --import ./tools/register-root-package-resolution.mjs --import tsx --test tools/e2e/crm-leads.e2e.ts",
     "test:e2e:auth-domain-login": "tsx --test tools/e2e/auth-domain-login.e2e.ts",
     "test:crm-frappe": "npm run build -w @codexsun/framework && tsx --test apps/crm/api/src/**/*.test.ts apps/crm/web/src/**/*.test.ts apps/frappe/api/src/**/*.test.ts && npm run test:e2e:crm-duties && npm run test:e2e:frappe-mobile-customers && npm run test:e2e:crm-contact-upsert",
     "test:e2e:crm-duties-live": "npm run build -w @codexsun/framework && tsx --test tools/e2e/crm-duties-live.e2e.ts",
