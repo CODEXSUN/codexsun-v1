@@ -21,3 +21,14 @@ Use exact decimal arithmetic and hold an entire invoice when any header/child re
 Save private full row lists and mapping reports under root `dist/verification`.
 Verify unchanged source and destination fingerprints after every phase.
 Preparation lists are not completed import reports. Business import requires separate reviewed confirmation and the normal queue.
+
+## Preparation lifecycle contract
+
+The owner now supplies explicit module, service, routes, events, migration, seed, worker, and synchronization roles.
+The existing local harness uses the service and snapshot hydration. Core precedes Masters, then Billing.
+`GET /api/data-bridge/legacy-preparation/capabilities` requires host authorization and exposes capabilities only.
+There is no HTTP preparation or import endpoint. The explicit local worker does not register a queue job.
+The repository delegates stage-only schema creation and immutable context binding to owner lifecycle files.
+Hydration replaces prior snapshots and rejects execution-authorized rows. Worker failure rolls back stage writes.
+Source and target fingerprints and read-only target transactions remain mandatory in the local harness.
+These files neither authorize live access nor waive recovery requirements.

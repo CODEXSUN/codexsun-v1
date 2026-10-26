@@ -1,3 +1,4 @@
+import { legacyPreparationModule } from "../legacy-cxapp/index.js";
 import { registerBusinessImport } from "../business-import/business-import.module.js";
 import { registerDatabaseConnection } from "../database-connection/database-connection.module.js";
 import { registerCommonTables } from "../common-tables/common-tables.module.js";
@@ -12,6 +13,7 @@ import type { CommonTableImportHost } from "../import-review/index.js";
 export const dataBridgeModule = {
   key: "data-bridge.common-table-import",
   register(app: FastifyInstance, host: CommonTableImportHost) {
+    legacyPreparationModule.register(app, host);
     importReviewModule.register(app, host);
     transferSessionModule.register(app, host);
     registerDatabaseConnection(app, host);

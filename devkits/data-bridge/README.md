@@ -140,3 +140,10 @@ The local-only `legacy-cxapp` owner prepares uppercase legacy keys, split party 
 Run the guarded preparation harness in Core → Masters → Billing order. It writes only disposable staging collections.
 Review all source keys, prepared references, amount differences, and required decisions before using normal Data Bridge import confirmation.
 Read [the legacy preparation guide](agent/thirumurugan-legacy.md). The adapter does not expose a new live import route.
+
+## Legacy preparation ownership
+
+Legacy CXApp preparation has explicit owner lifecycle files and a phase-order service.
+The local harness restores saved preparation snapshots through the owner synchronization contract.
+The authenticated capabilities endpoint exposes no customer records and cannot start preparation or imports.
+Read [the owner contract](api/src/modules/legacy-cxapp/SKILLS.md) before local preparation.

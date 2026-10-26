@@ -1,3 +1,5 @@
+import { migrateLegacyPreparation } from "./legacy-cxapp.migration.js";
+import { bindLegacyPreparationContext } from "./legacy-cxapp.seed.js";
 import { createHash } from "node:crypto";
 import type { Connection, RowDataPacket } from "mysql2/promise";
 import { identifier } from "../transfer-session/index.js";
@@ -19,45 +21,11 @@ export class LegacyPreparationRepository {
   ) {}
 
   async bindContext(sourceDatabase: string, targetDatabase: string) {
-    if (sourceDatabase === targetDatabase) throw new Error("Source and target must differ.");
-    await this.stage.query(`CREATE TABLE IF NOT EXISTS bridge_legacy_context (
-      singleton_key TINYINT NOT NULL PRIMARY KEY, source_database VARCHAR(120) NOT NULL,
-      target_database VARCHAR(120) NOT NULL, execution_authorized TINYINT NOT NULL DEFAULT 0,
-      CHECK (singleton_key=1), CHECK (execution_authorized=0)
-    ) ENGINE=InnoDB`);
-    const [rows] = await this.stage.query<RowDataPacket[]>(
-      "SELECT * FROM bridge_legacy_context WHERE singleton_key=1"
-    );
-    if (
-      rows.length &&
-      (rows[0]!.source_database !== sourceDatabase ||
-        rows[0]!.target_database !== targetDatabase ||
-        rows[0]!.execution_authorized !== 0)
-    )
-      throw new Error("Preparation routing changed; refuse to reuse this staging context.");
-    if (!rows.length)
-      await this.stage.execute(
-        "INSERT INTO bridge_legacy_context(singleton_key,source_database,target_database) VALUES(1,?,?)",
-        [sourceDatabase, targetDatabase]
-      );
+    await bindLegacyPreparationContext(this.stage,sourceDatabase,targetDatabase);
   }
 
   async initialize() {
-    await this.stage.query(`CREATE TABLE bridge_legacy_prepared_rows (
-      id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-      phase VARCHAR(16) NOT NULL, source_table VARCHAR(80) NOT NULL,
-      source_key VARCHAR(120) NOT NULL, target_table VARCHAR(80) NOT NULL,
-      source_json JSON NOT NULL, prepared_json JSON NOT NULL, issues_json JSON NOT NULL,
-      stage_id INT NULL, existing_target_id INT NULL,
-      status VARCHAR(24) NOT NULL, execution_authorized TINYINT NOT NULL DEFAULT 0,
-      UNIQUE KEY legacy_row_identity(source_table,source_key,target_table)
-    ) ENGINE=InnoDB`);
-    await this.stage.query(`CREATE TABLE bridge_legacy_mappings (
-      id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-      phase VARCHAR(16) NOT NULL, source_table VARCHAR(80) NOT NULL,
-      source_key VARCHAR(80) NOT NULL, target_table VARCHAR(80) NOT NULL,
-      columns_json JSON NOT NULL, UNIQUE KEY legacy_mapping(source_table,target_table)
-    ) ENGINE=InnoDB`);
+    await migrateLegacyPreparation(this.stage);
   }
 
   async read(table: string): Promise<LegacyRecord[]> {

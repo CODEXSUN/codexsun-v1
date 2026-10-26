@@ -18,11 +18,8 @@ import { migrateTenantRuntimeModule } from "../../apps/platform/api/src/modules/
 import type { TenantDatabase } from "../../apps/platform/api/src/database/schema.js";
 import {
   LegacyPreparationRepository,
-  LegacyCorePreparation,
-  LegacyMasterPreparation,
-  LegacyBillingPreparation,
-  type LegacyPrepared,
-  type LegacyMapping
+  LegacyPreparationService,
+  hydrateLegacyPreparation
 } from "../../devkits/data-bridge/api/src/modules/legacy-cxapp/index.js";
 import { legacyPreparationReport } from "../../devkits/data-bridge/api/src/modules/legacy-cxapp/legacy-cxapp.report.js";
 import {
@@ -121,41 +118,10 @@ try {
         );
         await stage.query("DELETE FROM bridge_legacy_mappings WHERE phase='billing'");
       }
-      const [saved] = await stage.query<RowDataPacket[]>(
-        "SELECT * FROM bridge_legacy_prepared_rows ORDER BY id"
-      );
-      for (const row of saved)
-        repository.rows.push({
-          phase: row.phase,
-          sourceTable: row.source_table,
-          sourceKey: row.source_key,
-          targetTable: row.target_table,
-          source:
-            typeof row.source_json === "string" ? JSON.parse(row.source_json) : row.source_json,
-          data:
-            typeof row.prepared_json === "string"
-              ? JSON.parse(row.prepared_json)
-              : row.prepared_json,
-          issues:
-            typeof row.issues_json === "string" ? JSON.parse(row.issues_json) : row.issues_json,
-          stageId: row.stage_id,
-          targetId: row.existing_target_id
-        } as LegacyPrepared);
-      const [mapped] = await stage.query<RowDataPacket[]>(
-        "SELECT * FROM bridge_legacy_mappings ORDER BY id"
-      );
-      for (const row of mapped)
-        repository.mappings.push({
-          phase: row.phase,
-          sourceTable: row.source_table,
-          sourceKey: row.source_key,
-          targetTable: row.target_table,
-          columns:
-            typeof row.columns_json === "string" ? JSON.parse(row.columns_json) : row.columns_json
-        } as LegacyMapping);
-      if (phase.startsWith("core")) await new LegacyCorePreparation(repository).run();
-      if (phase === "masters") await new LegacyMasterPreparation(repository).run();
-      if (phase.startsWith("billing")) await new LegacyBillingPreparation(repository).run();
+      await hydrateLegacyPreparation(repository);
+      if (phase !== "report") {
+        await new LegacyPreparationService(repository).prepare(phase.replace("-refresh", "") as "core" | "masters" | "billing");
+      }
       await stage.commit();
     } catch (error) {
       await stage.rollback();
