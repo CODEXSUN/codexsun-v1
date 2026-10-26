@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/marketing-api",
-  "version": "1.1.69",
+  "version": "1.1.72",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,7 +12,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/framework": "^1.1.69",
+    "@codexsun/framework": "^1.1.72",
     "fastify": "^5.12.5",
     "kysely": "^0.29.6",
     "zod": "^4.6.5"

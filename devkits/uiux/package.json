@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/uiux",
-  "version": "1.1.69",
+  "version": "1.1.72",
   "private": true,
   "type": "module",
   "exports": {
@@ -13,7 +13,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/ui": "^1.1.69",
+    "@codexsun/ui": "^1.1.72",
     "lucide-react": "^1.52.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

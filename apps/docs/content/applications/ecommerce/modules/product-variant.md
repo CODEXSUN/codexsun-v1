@@ -37,6 +37,24 @@ Trace this module's concrete entry points below before changing its behavior. It
 
 - `ecommerce_product_variants`
 
+## Legacy writer compatibility
+
+Forward Ecommerce migration 41 adds deterministic normalization, JSON encoding, and signature functions in the tenant schema.
+Insert and update triggers compute the canonical signature for both old and new writers.
+The existing product/signature unique index remains active. Distinct variants do not share a constant default identity.
+The default sentinel only admits omitted legacy fields before the insert trigger computes their signature.
+Update triggers also increment revision for legacy writers. Existing application validation remains in force.
+
+Frozen Unicode 17 data, final-sigma context, ECMAScript trimming, JSON escaping, and UTF-16 pair sorting preserve application signatures.
+The migration rejects canonical duplicates and runs parity probes before it installs triggers or changes business rows.
+It also compares actual existing-row SQL signatures with the application implementation.
+All first-40 migration identities remain unchanged across both historical lineages.
+
+`product-variant.writer-verification.ts` supplies explicit disposable-staging tests with a synthetic product.
+It checks actual SQL parity, old/new inserts, multiple variants, duplicate rejection, updates, and revision changes inside a rolled-back transaction.
+Source tests do not establish MariaDB acceptance. Required routine/trigger privileges must already exist.
+Never change server privileges or configuration to bypass a failed migration.
+
 ## Permission declarations
 
 No permission literal was detected. Check injected authorisation and app/host guards in the public composition contract.

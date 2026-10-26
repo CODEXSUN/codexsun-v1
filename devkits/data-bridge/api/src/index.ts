@@ -9,6 +9,7 @@ export { CommonBulkService } from "./modules/report/report.bulk.service.js";
 export type { CommonTableImportHost } from "./modules/import-review/import-review.types.js";
 export const dataBridgeApiModuleKeys = [
   dataBridgeModule.key,
+  "data-bridge.legacy-preparation",
   "data-bridge.database-connection",
   "data-bridge.common-tables",
   "data-bridge.master-tables",

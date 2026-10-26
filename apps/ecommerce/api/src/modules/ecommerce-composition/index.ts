@@ -5,6 +5,7 @@ export {
 } from "./ecommerce-composition.module.js";
 export {
   ecommerceTenantMigrations,
+  planEcommerceTenantMigrations,
   migrateEcommerceTenantDatabase,
   rollbackEcommerceTenantDatabase
 } from "./ecommerce-composition.migration.js";

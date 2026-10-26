@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.69
+Current version: 1.1.72
 
-Release tag: v-1.1.69
+Release tag: v-1.1.72
 
-Changelog label: v 1.1.69
+Changelog label: v 1.1.72
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,57 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.72
+
+### [v 1.1.72] 2026-10-26 12:43 pm - Enforce trusted global Platform administration
+
+#### Database Changes
+
+- Database update: No (manual).
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.72.
+- Require a verified, active server-backed Super Admin session for every global Platform admin read and write. Deny tenant administrator, tenant user, staff, and anonymous authority at the backend.
+- Reject unknown session identity/access-mode metadata rather than defaulting to privileged authority. Preserve public and tenant owner checks.
+- Add actual route-registration, encrypted-cookie, bearer/session mismatch, forged-authority, adjacent-route, and positive operator regressions.
+- Record staging and recovery limits in `.container/docs/RELEASE-1.1.72.md`. No production, SQL, backup, restore, install, tag, or deployment operation.
+
+## v-1.1.71
+
+### [v 1.1.71] 2026-10-26 11:20 am - Preserve legacy variant writes and Data Bridge ownership
+
+#### Database Changes
+
+- Database update: Yes (manual).
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.71.
+- Remove the unused Marketing conversation-list binding that blocked repository lint. Keep its unfinished app worktree unchanged.
+- Append Ecommerce migration 41 for old/new writer canonical signatures, guarded SQL parity, collision refusal, and revision updates. Preserve all historical migration identities.
+- Restore Data Bridge preparation ownership with real lifecycle roles, ordered service, snapshot hydration, transaction worker, authenticated capabilities, and execution denial.
+- Add focused compatibility tests, Unicode/escape parity vectors, and a staging-only SQL verification helper.
+- Record unchanged recovery requirements and remaining staging/production gates in `.container/docs/RELEASE-1.1.71.md`. No new backups, restores, server changes, or deployment.
+
+## v-1.1.70
+
+### [v 1.1.70] 2026-10-26 10:29 am - Preserve historical Ecommerce migration lineages
+
+#### Database Changes
+
+- Database update: Yes (manual).
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.70.
+- Preserve exact Ecommerce migration identities for the proven 31-step `8433a8ff` and 34-step `27135c9a` lineages. Append missing upgrades without rewriting applied records.
+- Resolve owner steps from immutable scope metadata inside the framework migration lock. Keep version and checksum validation unchanged.
+- Add historical fixtures, real-callback in-memory migration tests, repeated-run checks, invalid-history rejection, and populated-variant collision coverage.
+- Expose a lineage-aware metadata planner. Offline supplied ledgers for 13 reachable active tenants select the older lineage without applied-record mismatches.
+- Exclude ignored local runtime handoffs from generated Docs. Preserve unrelated runtime files and media.
+- Record source validation and migration/recovery limits in `.container/docs/RELEASE-1.1.70.md`. No live database operation, restore, new backup, image build, tag, or deployment.
 
 ## v-1.1.69
 
@@ -37,6 +88,10 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Consolidate identical app and deploy entry-point edits on main, and synchronize available registered worktrees after publication.
 - Record checks, preservation evidence, and the unavailable retained Platform checkout in `.container/docs/RELEASE-1.1.69.md`.
 - Update lockstep package versions, internal ranges, lockfile metadata, Windows manifests, and deployment sample without installation. No tag or deployment.
+- Candidate preparation, 26-10-2026: require the exact reviewed SHA for VPS updates and add read-only source, image, isolation, and evidence checks.
+- Add staging-only input templates and synthetic deployment tests. Candidate images, staging acceptance, recovery, migration review, and production promotion remain unexecuted.
+- Five-service review, 26-10-2026: extend staging input checks to API, Web, Shop, Worker, and Chatb, with complete realtime selection, isolated configuration, and queue/WebSocket evidence.
+- Keep new tenant backups limited to Techmedia and Rainbow. Wider migration recovery coverage and immutable-image promotion remain blocking gates.
 
 ## v-1.1.68
 

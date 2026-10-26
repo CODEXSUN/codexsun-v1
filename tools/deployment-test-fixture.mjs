@@ -119,6 +119,7 @@ export function createVpsFixture(state) {
   Object.assign(env, {
     CODEXSUN_MOCK_DRIVER: join(root, "tools/deployment-mock-driver.mjs"),
     CODEXSUN_MOCK_STATE: join(directory, "state.json"),
+    CODEXSUN_EXPECTED_REVISION: state.targetVersion ? "b".repeat(40) : state.commit,
     TMPDIR: shellPath(directory)
   });
   for (const [name, body] of [

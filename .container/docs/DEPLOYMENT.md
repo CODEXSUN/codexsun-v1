@@ -84,10 +84,19 @@ This approval confirms expand-contract compatibility with the running release. I
 
 ```bash
 bash update.sh --check
-bash update.sh
+bash update.sh --expected-revision=<full-reviewed-SHA>
 ```
 
 `--check` validates current VPS configuration and source without fetching, building, migrating, or replacing containers.
+It does not verify a future fetched target. Mutating updates require the full reviewed SHA
+through `--expected-revision=<SHA>` or the process environment variable `CODEXSUN_EXPECTED_REVISION`.
+This per-operation value is not read from the private deployment environment file.
+The fetched SHA must match before a source merge, build, migration, or replacement.
+Missing or malformed expected SHAs fail before configuration loading or backup creation.
+This guard does not convert the updater into immutable image promotion.
+
+Use [Staging preparation](STAGING-PREPARATION.md) for read-only candidate input checks.
+Use [Immutable promotion](IMMUTABLE-PROMOTION.md) for the separate five-service digest-only executor and its mandatory recovery gates.
 The update acquires a host lock shared with setup and cleanup.
 It creates and verifies database, application-storage, configuration, and rollback backups before pulling source or building images.
 After building, it stops selected application writers gracefully and creates a second verified backup before migrations.

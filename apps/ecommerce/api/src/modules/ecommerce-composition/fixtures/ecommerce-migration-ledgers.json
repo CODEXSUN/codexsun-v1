@@ -1,0 +1,526 @@
+{
+  "legacy31": [
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 1,
+      "name": "ecommerce.modules.product-information",
+      "checksum": "ff9b4054e75dbd9650cec36238a9ef0dfc4e44c0cd831e1c6d361e7bf50fcb3f",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 2,
+      "name": "ecommerce.modules.product-information-details",
+      "checksum": "06912c44cd48f921687d5e81fd507596cac78cc7710eac84d6a6eee693476159",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 3,
+      "name": "ecommerce.modules.product-variant",
+      "checksum": "196a7f8fb57124078af694b8ee70d55a00a3c7dbed8ca10cbfa2895dd7bcc475",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 4,
+      "name": "ecommerce.modules.product-image",
+      "checksum": "e7b7c11eb80a2f3c427a190c4cfe165e3379842d33568c89e08cce670864ab2f",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 5,
+      "name": "ecommerce.modules.storefront-slider",
+      "checksum": "9b66b36061ac90d05404b82fbbb51e07d47a7b1d00fbfbe749b9e2c9325d8f98",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 6,
+      "name": "ecommerce.modules.promotion-card",
+      "checksum": "76d056bd08e906e531ff19ee00a209f1b3c5b64b716ea9dc710fc6d24d55ea91",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 7,
+      "name": "ecommerce.modules.promotion-card-badge",
+      "checksum": "7cb16d144a63b9f994d811128ed70108b17915cf1c7cbe5ab4a063f58c8c7837",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 8,
+      "name": "ecommerce.modules.featured-card",
+      "checksum": "c4b821d6674ca080e54aa69fdf8baeeb11591f59ceb5f8ed306c6919dcd64799",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 9,
+      "name": "ecommerce.modules.season-strip",
+      "checksum": "1b846241f00a8cded68a5cde0846b2435c9569d3b6b9a9066037aeceaa67a668",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 10,
+      "name": "ecommerce.modules.storefront-announcement",
+      "checksum": "2de22f13932e65ed6014240f21ae28e7d2feee6ee60ad455207a16f60d65804f",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 11,
+      "name": "ecommerce.modules.storefront-profile",
+      "checksum": "d9460e4526926a4f87528766281736abdd73f0a427499ffd89129471ac73e2e4",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 12,
+      "name": "ecommerce.modules.storefront-profile-social",
+      "checksum": "192324f27253a4af90c29bad245ca4e43f6c01daaa2b43b4e0141aadc66cb1c4",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 13,
+      "name": "ecommerce.modules.storefront-profile-content",
+      "checksum": "2b9e6e5b4ae64e82745702976854ddf2a4e818368daa33fbf442de76eb219c28",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 14,
+      "name": "ecommerce.modules.storefront-profile-payments",
+      "checksum": "512844cff91bb7881c47137ba8e5e1e77516ccc0fb0ff56d932893daf476bdb7",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 15,
+      "name": "ecommerce.modules.catalog-matching",
+      "checksum": "c9b4e8d7758bb2b2472c4a98230f07a91f76441dd9adae95848be575ee13a3d7",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 16,
+      "name": "ecommerce.modules.catalog-matching-uuid",
+      "checksum": "7ab0a5795b3690a01efd856700e2a7d2561e5033cf682ba8efc7d6692e4d8424",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 17,
+      "name": "ecommerce.modules.catalog-data-source",
+      "checksum": "24793f0ac27b40b24170e9497c7af235841b6d71f9e1a252b8fba252bf6e3b5a",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 18,
+      "name": "ecommerce.modules.catalog-data-source-audit",
+      "checksum": "20256a9d2ed6c90fb05974acf15d68cd48374371c724adf952aaf47c2fddce99",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 19,
+      "name": "ecommerce.modules.catalog-module-sources",
+      "checksum": "908f2fa6a8926716ed134a82e8b1b3886954fc8c0160a60b014c179745d364a1",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 20,
+      "name": "ecommerce.modules.catalog-source-compatibility",
+      "checksum": "09d3d01827e0f80733a06b26cda03b6a04ab62a5c4f224ac0955e45b93992ec5",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 21,
+      "name": "ecommerce.modules.catalog-ux-sources",
+      "checksum": "7fcf74c67cc7f3cf04002650efa5fcf1f72c4d27cdb01afcc910ed4b5e66258d",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 22,
+      "name": "ecommerce.modules.catalog-erpnext-links",
+      "checksum": "fc8b67b33d0a208182727931f1188d50632745c4bfecc37790a57686f67c59aa",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 23,
+      "name": "ecommerce.modules.catalog-cache-compatibility",
+      "checksum": "c205b16d342a5f77fc9b4537a911024e6971e2f608374a759ed2892df9e61686",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 24,
+      "name": "ecommerce.modules.catalog-cache-seed-compatibility",
+      "checksum": "afdace5a085baf81d54598d86d945c1719d5562334e71b4363366b67d53365ff",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 25,
+      "name": "ecommerce.modules.catalog-storefront-slider",
+      "checksum": "1d2ec715ac28ae455acfa70ff5294352b44a4c6e38cce5d399d251a23a9f6f78",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 26,
+      "name": "ecommerce.modules.storefront-section-visibility",
+      "checksum": "9b4b1bce5c6de1b404c2f2df61972e7e53e05d9e311dc9b13739f13477ccab3e",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 27,
+      "name": "ecommerce.modules.storefront-schema",
+      "checksum": "c4ebaec326059e852cb2070de9ee49999e88d1a12cd51cca3ae177aafe61fa7d",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 28,
+      "name": "ecommerce.modules.storefront-performance",
+      "checksum": "64e3fb922e2a53c0528d6cbf731b46ed79aea655c7eeff05cc5cea7be386233b",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 29,
+      "name": "ecommerce.modules.legacy-cleanup",
+      "checksum": "b303909419bd40a6ffc0b28604adbde362a4a0257892f6d412611539c63b1d20",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 30,
+      "name": "ecommerce.modules.storefront-organisation",
+      "checksum": "9b34334dde77f997dfa7e4f454c9477f5f72176faa25048c29529b4699bdb793",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 31,
+      "name": "ecommerce.modules.storefront-organisation-branding",
+      "checksum": "4eb8f0d1166c0e15fc80ad5c012ca2c2a81a0a2d88077d15b125e8af6d78dcc7",
+      "status": "applied"
+    }
+  ],
+  "stable34": [
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 1,
+      "name": "ecommerce.modules.product-information",
+      "checksum": "ff9b4054e75dbd9650cec36238a9ef0dfc4e44c0cd831e1c6d361e7bf50fcb3f",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 2,
+      "name": "ecommerce.modules.product-information-details",
+      "checksum": "06912c44cd48f921687d5e81fd507596cac78cc7710eac84d6a6eee693476159",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 3,
+      "name": "ecommerce.modules.product-information-revision",
+      "checksum": "91f707243fa553bf750cdfaabfb0975318fd002d59ea165d3bdb17a507a3cecc",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 4,
+      "name": "ecommerce.modules.product-variant",
+      "checksum": "c2fbd60622c948bbbf2409bfa08bd91c0eb9e068ff8f12694b26fd63f3cdd393",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 5,
+      "name": "ecommerce.modules.product-variant-options",
+      "checksum": "23870bf2b9f4e5faa8c568fb48ec4da889aec856f2cd8db3bb404af6acd27d9c",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 6,
+      "name": "ecommerce.modules.product-variant-canonical-options",
+      "checksum": "f3c3de3ea6c17ce542dd23efe519b125b728e6f89e9e117f9bea2a91d907cbd9",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 7,
+      "name": "ecommerce.modules.product-image",
+      "checksum": "20c6f19f0c3cc5550afd55aafdd34710778372c6954d80b3c1c066d6e15c5f6a",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 8,
+      "name": "ecommerce.modules.storefront-slider",
+      "checksum": "974514e51c0ae3043bcfca98a7141e338fc2ddbddf4ded47a1b9381563aa8f69",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 9,
+      "name": "ecommerce.modules.promotion-card",
+      "checksum": "a798733b4e6c5a53ab4caa6cfbff3702b4c0bd54095040d3776cdd4282b76dc8",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 10,
+      "name": "ecommerce.modules.promotion-card-badge",
+      "checksum": "6eea087cfe88f2001de3125f95d009e2d6a544c2ba87131a31b99e49754a08ef",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 11,
+      "name": "ecommerce.modules.featured-card",
+      "checksum": "3096dd772d8fe51caf7794d93839db3327db9c5fd0dd5cec41cc3ef196305d04",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 12,
+      "name": "ecommerce.modules.season-strip",
+      "checksum": "4ad8c90c9cfaa0bbdd22226cf4df02607ad882f9b8dbf06b515df38ff5563746",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 13,
+      "name": "ecommerce.modules.storefront-announcement",
+      "checksum": "69ea01addfdbfe8001a5b9f7d08cbd8d2e7944eb65babf7e6a46c45f2911df11",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 14,
+      "name": "ecommerce.modules.storefront-profile",
+      "checksum": "465531875051d633bb947c8eabff280de506fafbfd449e06ae0ecae30eb90be6",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 15,
+      "name": "ecommerce.modules.storefront-profile-social",
+      "checksum": "8953b5c526ca5ca932946a8c1eec64fde3dc1ab31d771a95f1114dc8ea4c8436",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 16,
+      "name": "ecommerce.modules.storefront-profile-content",
+      "checksum": "40564c58a90bdaa7b532c8ebf39dd33e85df49e32fb2d7121e25785475a70152",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 17,
+      "name": "ecommerce.modules.storefront-profile-payments",
+      "checksum": "e1ca55a7526ca58cb12221e404ce8aadc2a28c3704059a8f8c5368c0d316a14d",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 18,
+      "name": "ecommerce.modules.catalog-matching",
+      "checksum": "e0fcf808713fc1d28a739e83ddc2808af2d7d28331edab80bdf1664e6e3e67ac",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 19,
+      "name": "ecommerce.modules.catalog-matching-uuid",
+      "checksum": "4ce702b6db9f4b6ab4e3e7193899b12f7a052c2e697a7496b2df804be9055e08",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 20,
+      "name": "ecommerce.modules.catalog-data-source",
+      "checksum": "514d3efb010db5a0f9474a923a4abf1d1d578efcfe505dec72598881c3775c31",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 21,
+      "name": "ecommerce.modules.catalog-data-source-audit",
+      "checksum": "2f2783080770d09eb9992cc43a52ae248c195ff5e17faa44e10c63ff346c0104",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 22,
+      "name": "ecommerce.modules.catalog-module-sources",
+      "checksum": "1954632b2dc67710cb0e21766afd4c1a569684ed7132ef252b3fdab6de3d76cd",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 23,
+      "name": "ecommerce.modules.catalog-source-compatibility",
+      "checksum": "d5a9bbbde3bb0759ab6de0c2d2ddebd8105da73cac258f384ea35aa48baa4e5f",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 24,
+      "name": "ecommerce.modules.catalog-ux-sources",
+      "checksum": "704a71aac3aa851c1db5ccdebce35e45e37e551e905d9464600ecdb9a58dedc1",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 25,
+      "name": "ecommerce.modules.catalog-erpnext-links",
+      "checksum": "f0a1bacaa2e51dcbfbee32315acb1b1b644d2b5eefe77d18484427f962c00b12",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 26,
+      "name": "ecommerce.modules.catalog-cache-compatibility",
+      "checksum": "df0f9dfa4d6e7c125e57b5d6d3ca9eab974f84bf94fb33edb9c4e5fa13577497",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 27,
+      "name": "ecommerce.modules.catalog-cache-seed-compatibility",
+      "checksum": "023863552fbc46672c0a404d45174b8daba9bca907383fac5a3f034e846512a1",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 28,
+      "name": "ecommerce.modules.catalog-storefront-slider",
+      "checksum": "f12551b4504d7c46adcc4ed0f221ab72cca018c555ec6175e2d763423ffe3b08",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 29,
+      "name": "ecommerce.modules.storefront-section-visibility",
+      "checksum": "45502190a836b8cd276ef276ef0791c73ec70a092e192e1cb995da5c0a9f043f",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 30,
+      "name": "ecommerce.modules.storefront-schema",
+      "checksum": "214c386e900a2778a648a86e38c9daa355440485e119035649b545de01778679",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 31,
+      "name": "ecommerce.modules.storefront-performance",
+      "checksum": "75257dc765e73fce5794a34ef09d2ac1adc046351b55396d3bf61c3872648ff8",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 32,
+      "name": "ecommerce.modules.legacy-cleanup",
+      "checksum": "c67edf60e691b3230ca40b03c33d2a6ce168f005e159bc9811b0af206adbaead",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 33,
+      "name": "ecommerce.modules.storefront-organisation",
+      "checksum": "d5bcef41e225ff6b088659155233d2e1435833b074b1a65734b536f5ee873176",
+      "status": "applied"
+    },
+    {
+      "scope": "ecommerce.modules",
+      "batch": 1,
+      "version": 34,
+      "name": "ecommerce.modules.storefront-organisation-branding",
+      "checksum": "dc4bd48836350c558550cc6c5d9be126a3e95706ca552236f70696d7dbfe9294",
+      "status": "applied"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/worker-api",
-  "version": "1.1.69",
+  "version": "1.1.72",
   "private": true,
   "type": "module",
   "scripts": {

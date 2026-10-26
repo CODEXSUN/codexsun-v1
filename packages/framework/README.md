@@ -6,6 +6,11 @@ Shared transport, configuration, database, environment, error, event, health, lo
 
 Keep this package free of app-owned fields and business CRUD. Expose intentional public contracts. Preserve runtime and source export resolution and root output paths.
 
+`MigrationBatch.resolveSteps` optionally resolves an owner's steps from immutable `MigrationLedgerEntry` metadata for that scope.
+The runner reads and resolves the scope ledger inside its existing advisory lock, before any migration-step write.
+Owner callbacks cannot change checksum semantics. The runner still validates each applied version and checksum and skips it without rewriting its ledger row.
+Owners define historical manifests and reject unsupported histories. Framework contains no app-specific lineage rules.
+
 - [TASK.md](agent/TASK.md): work items and acceptance evidence.
 - [PLAN.md](agent/PLAN.md): scope, ownership, delivery order, and verification gates.
 - [SKILLS.md](agent/SKILLS.md): component working rules and safety constraints.

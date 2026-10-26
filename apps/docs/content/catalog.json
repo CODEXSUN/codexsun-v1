@@ -1610,7 +1610,7 @@
       "title": "Product Variant",
       "summary": "Ecommerce source contracts for product-variant.",
       "sourcePath": "applications/ecommerce/modules/product-variant.md",
-      "sourceHash": "82a14ac4f657647a25f390dc6f3bd20720c6845d3b524f8e4a076850c5c3d5b0",
+      "sourceHash": "baf4e563c4a55a7249df196581880dbe386ee7f9dcb2f2e98b693ab38ded64cd",
       "sortOrder": 18
     },
     {
@@ -2364,7 +2364,7 @@
       "title": "Tenant",
       "summary": "Platform source contracts for tenant.",
       "sourcePath": "applications/platform/modules/tenant.md",
-      "sourceHash": "5aeff90f39e79fd0f3b106d24ae573f1b74f0cf891fa3bd3e2f1a3862e17ebc7",
+      "sourceHash": "94f9aad96503c6f27819c36b549d8678bd675758d8b8469b368814f06848a7ba",
       "sortOrder": 26
     },
     {
@@ -4318,6 +4318,19 @@
       "sortOrder": 100
     },
     {
+      "pageKey": "data-bridge/modules/legacy-cxapp",
+      "appKey": "data-bridge",
+      "appLabel": "Data Bridge",
+      "groupKey": "modules",
+      "groupLabel": "Modules",
+      "moduleKey": "legacy-cxapp",
+      "title": "Legacy CXApp preparation",
+      "summary": "Local preparation lifecycle, phase ordering, review snapshots, and execution denial.",
+      "sourcePath": "applications/data-bridge/modules/legacy-cxapp.md",
+      "sourceHash": "d0fb7b377f32831e8ede743186ca818005bfeafff385899785233dfd411ca72a",
+      "sortOrder": 19
+    },
+    {
       "pageKey": "repository/sources/d057f10bbc7ffa9b",
       "appKey": "repository",
       "appLabel": "Repository",
@@ -5588,7 +5601,7 @@
       "title": "apps/ecommerce/agent/SKILLS.md",
       "summary": "Ecommerce working skills — apps/ecommerce/agent/SKILLS.md",
       "sourcePath": "applications/repository/sources/e982c1a115b74db0.md",
-      "sourceHash": "4e5b1f546236ce360e397e1cf7ee1810518a7b9de937faad5e00aa78bd9da4b6",
+      "sourceHash": "c01f2a96d39004bd52d5dd34633a91be663c9d9afe584f316500f8c0fa74d6e8",
       "sortOrder": 8400
     },
     {
@@ -5614,7 +5627,7 @@
       "title": "apps/ecommerce/agent/TASK.md (part 1/2)",
       "summary": "Ecommerce tasks — apps/ecommerce/agent/TASK.md",
       "sourcePath": "applications/repository/sources/54b7c15157bc7726-1.md",
-      "sourceHash": "b7a299fc08fdefb998303ce2d29fd6bf74c7d0d3f5de19e95d353d34dfd5d0e1",
+      "sourceHash": "86b3bc6882139a25196660d1b02aae5c56334dca025ba5300defa9bfe123e3ee",
       "sortOrder": 8600
     },
     {
@@ -5627,7 +5640,7 @@
       "title": "apps/ecommerce/agent/TASK.md (part 2/2)",
       "summary": "Ecommerce tasks — apps/ecommerce/agent/TASK.md",
       "sourcePath": "applications/repository/sources/54b7c15157bc7726-2.md",
-      "sourceHash": "bfd0ff491aed8c4f953549a31d4adf005411d14df9e5db59f7def316ca58ec1f",
+      "sourceHash": "3ef9bc0ed4d11ca2dbb108189408a86e2eb480379d596935d4ff6a356a2e5991",
       "sortOrder": 8601
     },
     {
@@ -5874,7 +5887,7 @@
       "title": "apps/ecommerce/README.md",
       "summary": "Ecommerce — apps/ecommerce/README.md",
       "sourcePath": "applications/repository/sources/12b4d80ecd3c2f71.md",
-      "sourceHash": "f13101f2eadca26a17be8f16618f7451764c35bd2433be14fb7eda9909fc1987",
+      "sourceHash": "445a50b75f7e419caac254011cf8600479bf328cdc9c67f84591c29d4dadfd6a",
       "sortOrder": 10500
     },
     {
@@ -6589,7 +6602,7 @@
       "title": "apps/platform/agent/SKILLS.md",
       "summary": "Platform working skills — apps/platform/agent/SKILLS.md",
       "sourcePath": "applications/repository/sources/02eaac9fe91b79da.md",
-      "sourceHash": "bf20e5f77f94756e131032961c917207cc366a7b7689a09668f748801f3bbfb1",
+      "sourceHash": "a7438c31ccfac05756adb1a6cdd55bdd0ed5b694d670fc68f55edeb3342bc972",
       "sortOrder": 14800
     },
     {
@@ -6654,7 +6667,7 @@
       "title": "apps/platform/README.md",
       "summary": "Platform — apps/platform/README.md",
       "sourcePath": "applications/repository/sources/5858dc5ad6ebc850.md",
-      "sourceHash": "a5ac3dcfadd8c60226f26203c2cc79221f67a9f469cc31cbd9e31348e2c6edae",
+      "sourceHash": "e7853694c8d11915c55d0142ed6e983382e8a5c2cdb04e3331ed7022470c1036",
       "sortOrder": 15100
     },
     {
@@ -7551,7 +7564,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 1/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-1.md",
-      "sourceHash": "7d83aeae54b9870aff8db34dc08babaf673c441729dff512b6e8433dac67817a",
+      "sourceHash": "f3ae74643e126ece6b807629c3c90d6572ce065b33de4c057b820149250e1330",
       "sortOrder": 21100
     },
     {
@@ -7564,7 +7577,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 2/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-2.md",
-      "sourceHash": "db2e6651a48113f416a02c93c14f5c87f3683b8d0ccb5f8956eb24c098492381",
+      "sourceHash": "25c3f1e8d8d4e842f0994c3abee7dd43c0d20c2629d434f4d23d93646fe26793",
       "sortOrder": 21101
     },
     {
@@ -7577,7 +7590,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 3/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-3.md",
-      "sourceHash": "78da468065cabe9bf5b4e988cad764410b4f411220e0ffd373705c9210796ba1",
+      "sourceHash": "daf6ff6e605584d0a2b5e888bf86dba57ff1bd4451af084672b34b453eef85fc",
       "sortOrder": 21102
     },
     {
@@ -7590,7 +7603,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 4/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-4.md",
-      "sourceHash": "9232ee0c3dd2fffd7ccf90096d44511523396df3b0b688baadda14f5dbb2b432",
+      "sourceHash": "5152d70ce3851d1576bb60589122aa48ddc4e764306b8597dc24a5e187bda508",
       "sortOrder": 21103
     },
     {
@@ -7603,7 +7616,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 5/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-5.md",
-      "sourceHash": "3839852fced6a31a738966e218aa0e921a219554c62f0895307629877a27eda4",
+      "sourceHash": "540a43664761ead2a7bb7b7d034f368f01e91f92a5eaac36401e4bd6a77ee3c6",
       "sortOrder": 21104
     },
     {
@@ -7616,7 +7629,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 6/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-6.md",
-      "sourceHash": "689d56d30834ff65fdd0fac1b85eef470c64db885c38fb22c93d370916b6bc0c",
+      "sourceHash": "476e4f76d0b159291e2bf70c791e9601865ae897ba8c4f3d79d803e6fd85c5d4",
       "sortOrder": 21105
     },
     {
@@ -7629,7 +7642,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 7/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-7.md",
-      "sourceHash": "ec29f0870d00e564bc2f0d6faf5052d2f894f8730867b714335ffac74752fa37",
+      "sourceHash": "243b31cc5c1a8a18e6b931fec839d2c2512d5e3a7bbc6d8f90621200b1a52b99",
       "sortOrder": 21106
     },
     {
@@ -7642,7 +7655,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 8/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-8.md",
-      "sourceHash": "a431dffc1358490a50b91aa90f94d25d7b735c6940cb5d20ebd9555563146a0b",
+      "sourceHash": "9a775a7355983f7cad122908de5aca5268813db7092e503429d50edc2a9ea545",
       "sortOrder": 21107
     },
     {
@@ -7655,7 +7668,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 9/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-9.md",
-      "sourceHash": "f3aa79bb765d604533ea909798a0d64ca43ada7816561d1f309da0bf7c0be620",
+      "sourceHash": "e703faa92e7a4bf0b6825f266d7bb892a7052cdef745f2c70527eaa4c9efe4ec",
       "sortOrder": 21108
     },
     {
@@ -7668,7 +7681,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 10/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-10.md",
-      "sourceHash": "ca1dd22e52ea140e6e2b217a8fddd5f89e0d0d5085d30e97be0244ee40401282",
+      "sourceHash": "ff0963940b1e5e6e5f481489f2a1606515d6e736f3e7a4d34536b4ebfa827ce6",
       "sortOrder": 21109
     },
     {
@@ -7681,7 +7694,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 11/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-11.md",
-      "sourceHash": "23545639010a349902018540ee8e0b581e85e25442641308c6b390efaa9815a7",
+      "sourceHash": "8d8e2696ce7cd0db18e53fe34fb5a8ec436c2d60fb0b20e5649a627f76611ff2",
       "sortOrder": 21110
     },
     {
@@ -7694,7 +7707,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 12/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-12.md",
-      "sourceHash": "cedd2986d83404b909f263425ea31caa542113ae09495d88af1c854d574f5e3e",
+      "sourceHash": "aadc01aae8137f70b983c376877ed89f1d8c2294b9404a2f93ace95930e45995",
       "sortOrder": 21111
     },
     {
@@ -7707,7 +7720,7 @@
       "title": "assist/documentation/CHANGELOG.md (part 13/13)",
       "summary": "Changelog — assist/documentation/CHANGELOG.md",
       "sourcePath": "applications/repository/sources/c5dafc7c82bc2403-13.md",
-      "sourceHash": "e7b64ee79009cbea2c059be8523ebd8b653131283cd0e767d1d0bb0cd2b2e7df",
+      "sourceHash": "7a176ccf708c957d07fbba5cf8a75d1f854087b199378def33b693abbfc5ed0a",
       "sortOrder": 21112
     },
     {
@@ -9202,7 +9215,7 @@
       "title": "devkits/data-bridge/api/src/modules/legacy-cxapp/SKILLS.md",
       "summary": "Legacy CXApp preparation — devkits/data-bridge/api/src/modules/legacy-cxapp/SKILLS.md",
       "sourcePath": "applications/repository/sources/daa48d0917c6ad0e.md",
-      "sourceHash": "af7720bd3bff34092a53b42f43b59eda143791f014c2bdf392c0681f9a32489c",
+      "sourceHash": "4eee8aaa9cd3a151c07a124a152d74f8521dcf0bfcec694f0861d813cb17b477",
       "sortOrder": 32100
     },
     {
@@ -9254,7 +9267,7 @@
       "title": "devkits/data-bridge/README.md",
       "summary": "Data Bridge — devkits/data-bridge/README.md",
       "sourcePath": "applications/repository/sources/63f5cadd6c01b51f.md",
-      "sourceHash": "291215b0b1a42ff2c9ae17b367b3a3f489c930c8508fb90327b5c2b45017ea7a",
+      "sourceHash": "f3ab8b1bff73c896a0e53952e5bd26e5e4c0509132bc179fc91982d185bf254d",
       "sortOrder": 32500
     },
     {
@@ -9683,7 +9696,7 @@
       "title": "packages/framework/README.md",
       "summary": "Framework — packages/framework/README.md",
       "sourcePath": "applications/repository/sources/1c8fb8c9c4f7b27e.md",
-      "sourceHash": "4d897ce1e914eea2558c46140e133fe26953df2f5a8d5bb0dd5c3ffd890a5c0e",
+      "sourceHash": "126337060eb234600bebfdca6a6951ae40cef55cf869cf2116e1498ea3aa1cab",
       "sortOrder": 35800
     },
     {

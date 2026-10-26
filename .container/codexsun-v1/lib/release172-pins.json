@@ -1,0 +1,20 @@
+{
+  "source": {
+    "version": "1.1.72",
+    "revision": "e6e7b79c751fb0d700b063daadd89cba4b289473"
+  },
+  "images": {
+    "codexsun-api": "codexsun-candidate/api@sha256:c147adc0e2e996cfd113c9b7c8ac03a4288f9ff512c5ac818aa568285c2b7bcd",
+    "codexsun-web": "codexsun-candidate/web@sha256:7a3b3b4b010a100921fd16218865f11043341d3eb4154340bd3553ba7e29f47e",
+    "codexsun-shop": "codexsun-candidate/shop@sha256:6c39fca5226e266c67728c0c22d495378553763a914b388ca1812f32010ef5c0",
+    "codexsun-worker": "codexsun-candidate/worker@sha256:b2aedcf87295daef58841f002e5d094da8a5dc794c0a1a4a13b4b412c6c92db7",
+    "codexsun-chatb": "codexsun-candidate/chatb@sha256:3c82286f5a09d570f3efe17237254e4270487056fca0a803ba9723f1e9e56caf"
+  },
+  "humanExceptionSha256": "edad511d8f49201cf01368b2b7f8b0631963e2da68bc5cb0f29f5fbb565f8cb7",
+  "productionSha256": "64c47771d3fb907865cb01d4a894b58fb4d09b8f13c34749b436082c23f1e1aa",
+  "rollbackSha256": "be0198805f2c41447311f45abe9b67b5329ae910a48dc0578b3df69110a68ac9",
+  "scopeSha256": "3e72c9d4684494e3b6bab3715abab8751c2910c073ca07663c95299fe5a9efc5",
+  "backupScopeSha256": "94c90b320a5b962790848c30324905c463de8d6a45905870e0c2846e9c281034",
+  "targetsSha256": "26894702ddbbd3491cd322c65d228bf2a1d8d8b3d89f6380308de7f5cd807c28",
+  "expiresAt": "2026-10-26T18:30:00+00:00"
+}

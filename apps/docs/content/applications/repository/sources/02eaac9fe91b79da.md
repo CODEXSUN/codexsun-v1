@@ -2,7 +2,7 @@
 
 Repository source: `apps/platform/agent/SKILLS.md`
 
-Source SHA-256 (LF line endings): `a913e4c12fd0b00cf10822a93e0e15ac0d8a81c529d8c66e822a24011f12f862`
+Source SHA-256 (LF line endings): `8d98e3214253534580f10fc7fc1d19097c27f9ee3d0e9176bf79c3a367561065`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -66,4 +66,13 @@ Keep credential persistence, expiry, evidence, publication, and audit rules insi
 Storage Manager owns safe file reads, validation, target file writes, and storage-object registration.
 The host composes source-ID/database-bound read-only media roots and Core's public branding update contract.
 Do not resolve arbitrary URLs or accept a caller-selected filesystem root. Preserve conflicting target images.
+
+## Global administration isolation
+
+Keep the root global administration guard registered after authentication context resolution.
+Every registered `/admin` or mounted `/api/platform/admin` route requires active server-backed `super_admin` authority.
+Tenant administrator roles, staff identity, headers, body fields, and signed token claims alone cannot grant global authority.
+Reject unknown session identity/access-mode metadata. Never default missing authority to Super Admin.
+Run `global-admin-authorization.test.ts` and the existing authentication-context tests after changing this boundary.
+Tests use synthetic tokens and in-memory service/session boundaries. Staging and production acceptance remain separate.
 ```

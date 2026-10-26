@@ -6,6 +6,18 @@ This page records the `tenant` module in the Platform owner. The application bus
 
 Platform owns master registry and tenant runtime identity. Business data stays in each app owner.
 
+## Global administration authority
+
+The root authentication context protects the registered `/admin` namespace before validation or business handlers.
+Mounted `/api/platform/admin` routes receive the same policy.
+Tenant administrator roles and staff sessions cannot list, create, update, suspend, or restore global tenant records.
+They also cannot read global tenant activity, app registry, plans, subscriptions, entitlements, access control, industries, or operational administration.
+An active Super Admin requires matching verified token claims and a live, unrevoked server session in platform mode.
+Client roles, headers, bodies, and a signed token without a matching server session do not grant global access.
+Unknown stored session user types or access modes are rejected.
+Tenant/public routes keep their existing owner authorization.
+The in-memory regression tests do not certify staging or production behavior.
+
 Trace this module's concrete entry points below before changing its behavior. Its service is the authority for validation, lifecycle and dependency decisions; frontend controls cannot grant permissions.
 
 ## Source contracts

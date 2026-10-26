@@ -55,3 +55,12 @@ Keep credential persistence, expiry, evidence, publication, and audit rules insi
 Storage Manager owns safe file reads, validation, target file writes, and storage-object registration.
 The host composes source-ID/database-bound read-only media roots and Core's public branding update contract.
 Do not resolve arbitrary URLs or accept a caller-selected filesystem root. Preserve conflicting target images.
+
+## Global administration isolation
+
+Keep the root global administration guard registered after authentication context resolution.
+Every registered `/admin` or mounted `/api/platform/admin` route requires active server-backed `super_admin` authority.
+Tenant administrator roles, staff identity, headers, body fields, and signed token claims alone cannot grant global authority.
+Reject unknown session identity/access-mode metadata. Never default missing authority to Super Admin.
+Run `global-admin-authorization.test.ts` and the existing authentication-context tests after changing this boundary.
+Tests use synthetic tokens and in-memory service/session boundaries. Staging and production acceptance remain separate.

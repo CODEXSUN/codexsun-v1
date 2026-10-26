@@ -1,0 +1,20 @@
+{
+  "source": {
+    "version": "1.1.69",
+    "revision": "44f2e542d0ce8efb8b3ff090e648d32705522901"
+  },
+  "images": {
+    "codexsun-api": null,
+    "codexsun-web": null,
+    "codexsun-shop": null,
+    "codexsun-worker": null,
+    "codexsun-chatb": null
+  },
+  "staging": null,
+  "migrations": null,
+  "adoption": null,
+  "recovery": null,
+  "production": null,
+  "rollback": null,
+  "productionAuthorization": null
+}
