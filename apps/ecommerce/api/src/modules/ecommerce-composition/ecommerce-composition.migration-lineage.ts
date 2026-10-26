@@ -46,7 +46,8 @@ export const ecommerceMigrationVersions = Object.freeze({
     "ecommerce.modules.product-specification": 37,
     "ecommerce.modules.product-specification-revision": 38,
     "ecommerce.modules.product-collection": 39,
-    "ecommerce.modules.catalog-activity": 40
+    "ecommerce.modules.catalog-activity": 40,
+    "ecommerce.modules.product-variant-legacy-writers": 41
   }),
   stable34: Object.freeze({
     "ecommerce.modules.product-information": 1,
@@ -88,7 +89,8 @@ export const ecommerceMigrationVersions = Object.freeze({
     "ecommerce.modules.product-specification": 37,
     "ecommerce.modules.product-specification-revision": 38,
     "ecommerce.modules.product-collection": 39,
-    "ecommerce.modules.catalog-activity": 40
+    "ecommerce.modules.catalog-activity": 40,
+    "ecommerce.modules.product-variant-legacy-writers": 41
   })
 });
 

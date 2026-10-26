@@ -1,3 +1,4 @@
+import { canonicalStoredOptionSignature } from "../product-variant/product-variant.identity.js";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import {
@@ -104,7 +105,12 @@ export class MigrationFixture extends DummyDriver {
       return [];
     }
     if (text.startsWith("SELECT id,") && text.includes("FROM ecommerce_product_variants")) {
-      return this.variantRows.map((row) => ({ ...row }));
+      return this.variantRows.map((row) => ({
+        ...row,
+        ...(text.includes("AS databaseSignature")
+          ? { databaseSignature: canonicalStoredOptionSignature(row as never) }
+          : {})
+      }));
     }
     if (/SELECT COUNT\(/i.test(text)) return [{ count: 0 }];
     return [];
