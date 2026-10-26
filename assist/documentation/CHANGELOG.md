@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.72
+Current version: 1.1.73
 
-Release tag: v-1.1.72
+Release tag: v-1.1.73
 
-Changelog label: v 1.1.72
+Changelog label: v 1.1.73
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,27 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.73
+
+### [v 1.1.73] 2026-10-26 3:02 pm - Make CRM independent and verify mobile tenant isolation
+
+#### Database Changes
+
+- Database update: No (manual).
+- Add a guarded local test fixture command for five isolated tenant databases. No production migration, seed, or schema change is required.
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.73.
+- Remove Frappe sync columns, source panels, verification actions, and integration polling from CRM. Keep durable enquiry events for the separate Frappe app.
+- Commit CRM saves without waiting for remote readiness or delivery. Resolve work-report context before write transactions to avoid pool starvation.
+- Bound concurrent contact reads per tenant, coalesce active lookups, reuse scoped list counts, and return running-job summaries with enquiry pages.
+- Refresh mobile timers and assignments from list summaries. Search all enquiry pages after a 300 ms typing delay without requiring Enter.
+- Add repeatable local fixtures and a CRM test runner. Local acceptance passed 268 tests, all 20 ordered tenant pairs, five tenants with 3,000 enquiries each, and visible Android/web flows.
+- Record 2,000 successful sustained reads with 20 concurrent readers: p95 129 ms across five tenants and 270 ms on the 20,001-record dataset.
+- Keep provider workers disabled during local acceptance. Local fixtures and ignored evidence do not migrate or modify production data.
+- Preserve the explicit external Frappe and Platform fixture exclusions in the CRM suite. Local acceptance does not certify a production deployment.
 
 ## v-1.1.72
 
