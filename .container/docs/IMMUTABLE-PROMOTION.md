@@ -83,7 +83,11 @@ Archive members must stay within reviewed tenant-owned prefixes. Links, special 
 Do not infer ownership from a filename or fabricate an empty backup when storage mapping is unresolved.
 Existing shared coverage must be fresh and sufficient. Missing coverage blocks the operation under the two-tenant limit.
 Image and configuration artifacts do not establish database restore capability.
-Configuration digests alone do not establish image recovery. Every retained layer must match its configuration's uncompressed content digest.
+Image archives support classic Docker configuration identities and Docker/containerd OCI index or manifest identities.
+OCI recovery verifies every referenced descriptor, configuration blob, and layer against its recorded size and content digest.
+Configuration blobs alone do not establish recovery. Missing or corrupt layers fail either archive format.
+Configuration digests alone do not establish image recovery. OCI indexes must reference complete image manifests or indexes.
+Classic Docker layers also match their configuration's uncompressed content digests.
 
 ## Maintenance boundary and rollback
 
@@ -106,6 +110,7 @@ Application rollback never reverses database migrations. External browser and bu
 
 ```powershell
 python -B tools/deployment-promotion.test.py
+python -B tools/deployment-promotion-oci.test.py
 python -B tools/deployment-preparation.test.py
 ```
 

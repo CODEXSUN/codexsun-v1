@@ -65,9 +65,12 @@ def verify_image_archive(path, required):
                 name = member.name.removeprefix("./")
                 require(safe_name(name) and name not in members, "Unsafe or duplicate image archive member")
                 members[name] = member
+        found = verify_oci_images(archive, members, required)
+        if found == required:
+            return
         manifest = json.loads(image_metadata(archive, members, "manifest.json"))
         require(isinstance(manifest, list) and manifest, "Missing Docker save image manifest")
-        found, verified_layers = set(), {}
+        verified_layers = {}
         for record in manifest:
             config_data = image_metadata(archive, members, record["Config"])
             identity = hashlib.sha256(config_data).hexdigest()
@@ -88,6 +91,57 @@ def verify_image_archive(path, required):
                 require(verified_layers[name] == expected, "Rollback image layer content digest mismatch")
             found.add(identity)
         require(found == required, "Image archive does not retain every rollback image identity")
+
+
+def verify_oci_images(archive, members, required):
+    if "index.json" not in members:
+        return set()
+    index = json.loads(image_metadata(archive, members, "index.json"))
+    indexes = {"application/vnd.oci.image.index.v1+json", "application/vnd.docker.distribution.manifest.list.v2+json"}
+    manifests = {"application/vnd.oci.image.manifest.v1+json", "application/vnd.docker.distribution.manifest.v2+json"}
+    verified, visiting = set(), set()
+
+    def verify(descriptor, depth=0):
+        digest = descriptor.get("digest", "")
+        require(isinstance(digest, str) and re.fullmatch(r"sha256:[a-f0-9]{64}", digest), "Invalid OCI content digest")
+        require(depth <= 32 and digest not in visiting, "OCI descriptor cycle or excessive depth")
+        name = "blobs/sha256/" + digest[7:]
+        member = members.get(name)
+        require(member is not None and member.size == descriptor.get("size"), "Missing or truncated OCI image content")
+        if digest in verified:
+            return
+        calculated = hashlib.sha256()
+        with archive.extractfile(member) as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                calculated.update(block)
+        require("sha256:" + calculated.hexdigest() == digest, "OCI image content digest mismatch")
+        media = descriptor.get("mediaType")
+        if media in indexes | manifests:
+            visiting.add(digest)
+            document = json.loads(image_metadata(archive, members, name))
+            if media in indexes:
+                children = document.get("manifests")
+                require(isinstance(children, list) and children, "OCI image index has no manifests")
+                require(all(isinstance(child, dict) and child.get("mediaType") in indexes | manifests
+                            for child in children), "OCI image index must reference image manifests or indexes")
+            else:
+                require(isinstance(document.get("config"), dict) and isinstance(document.get("layers"), list),
+                        "OCI manifest is missing configuration or layers")
+                children = [document["config"], *document["layers"]]
+            for child in children:
+                require(isinstance(child, dict), "Invalid OCI child descriptor")
+                verify(child, depth + 1)
+            visiting.remove(digest)
+        verified.add(digest)
+
+    found = set()
+    for descriptor in index.get("manifests", []):
+        identity = descriptor.get("digest", "").removeprefix("sha256:")
+        if identity in required:
+            require(descriptor.get("mediaType") in indexes | manifests, "OCI root must describe a complete image")
+            verify(descriptor)
+            found.add(identity)
+    return found
 
 
 def image_metadata(archive, members, name):
