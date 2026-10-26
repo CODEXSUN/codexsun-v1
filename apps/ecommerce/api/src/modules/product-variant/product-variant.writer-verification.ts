@@ -37,12 +37,20 @@ export async function verifyProductVariantWriterCompatibility(
       );
       const stored = await sql<{
         signature: string;
-      }>`SELECT option_signature AS signature FROM ecommerce_product_variants WHERE id=${first}`.execute(
+        revision: number;
+      }>`SELECT option_signature AS signature, revision FROM ecommerce_product_variants WHERE id=${first}`.execute(
         transaction
       );
       assert.equal(stored.rows[0]?.signature, changed.expectedSignature);
+      assert.equal(Number(stored.rows[0]?.revision), 2);
       await assert.rejects(insert(transaction, productId, 3, true), duplicate);
-      checks += 2;
+      await assert.rejects(
+        sql`UPDATE ecommerce_product_variants SET option_1_name=${changed.columns[0]},option_1_value=${changed.columns[1]},option_2_name=${changed.columns[2]},option_2_value=${changed.columns[3]},option_3_name=${changed.columns[4]},option_3_value=${changed.columns[5]},option_signature=${changed.expectedSignature},revision=revision+1 WHERE id=${second}`.execute(
+          transaction
+        ),
+        duplicate
+      );
+      checks += 4;
       throw sentinel;
     });
   } catch (error) {

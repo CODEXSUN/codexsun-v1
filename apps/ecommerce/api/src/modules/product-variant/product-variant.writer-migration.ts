@@ -6,6 +6,7 @@ import {
   type CanonicalOptionIdentityRow
 } from "./product-variant.identity.js";
 import { variantWriterRoutines, variantWriterTrigger } from "./product-variant.writer-sql.js";
+import { variantWriterParityCases } from "./product-variant.writer-cases.js";
 
 export async function upgradeProductVariantLegacyWriters(database: Kysely<EcommerceDatabase>) {
   const rows = await sql<CanonicalOptionIdentityRow & { databaseSignature: string }>`SELECT id,
@@ -18,6 +19,18 @@ export async function upgradeProductVariantLegacyWriters(database: Kysely<Ecomme
     throw new Error("Legacy-writer upgrade refused canonical duplicates. No rows were changed.");
   }
   for (const statement of variantWriterRoutines()) await sql.raw(statement).execute(database);
+  for (const fixture of variantWriterParityCases) {
+    const probe = await sql<{
+      signature: string;
+    }>`SELECT ecommerce_variant_signature_v1(${fixture.columns[0]},${fixture.columns[1]},${fixture.columns[2]},${fixture.columns[3]},${fixture.columns[4]},${fixture.columns[5]}) AS signature`.execute(
+      database
+    );
+    if (probe.rows[0]?.signature !== fixture.expectedSignature) {
+      throw new Error(
+        "Database canonical signature parity probe failed. Preserve rows and review the database environment."
+      );
+    }
+  }
   // Verify database encoding/normalization against the application before changing business rows.
   const checked = await sql<CanonicalOptionIdentityRow & { databaseSignature: string }>`SELECT id,
     product_information_id AS productInformationId, sku,

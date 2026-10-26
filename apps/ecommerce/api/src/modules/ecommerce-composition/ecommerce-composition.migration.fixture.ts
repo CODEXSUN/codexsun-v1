@@ -32,6 +32,7 @@ export class MigrationFixture extends DummyDriver {
   scopeReads = 0;
   readonly queries: CompiledQuery[] = [];
   variantRows: Record<string, string | number>[] = [];
+  signatureProbeMismatch = false;
 
   constructor(ledger: readonly MigrationLedgerEntry[]) {
     super();
@@ -111,6 +112,22 @@ export class MigrationFixture extends DummyDriver {
           ? { databaseSignature: canonicalStoredOptionSignature(row as never) }
           : {})
       }));
+    }
+    if (text.includes("ecommerce_variant_signature_v1(") && text.endsWith("AS signature")) {
+      return [
+        {
+          signature: this.signatureProbeMismatch
+            ? "mismatch"
+            : canonicalStoredOptionSignature({
+                option1Name: String(parameters[0]),
+                option1Value: String(parameters[1]),
+                option2Name: String(parameters[2]),
+                option2Value: String(parameters[3]),
+                option3Name: String(parameters[4]),
+                option3Value: String(parameters[5])
+              })
+        }
+      ];
     }
     if (/SELECT COUNT\(/i.test(text)) return [{ count: 0 }];
     return [];
