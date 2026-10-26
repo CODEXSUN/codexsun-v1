@@ -1,3 +1,4 @@
+import { upgradeProductVariantLegacyWriters } from "../product-variant/product-variant.writer-migration.js";
 import type { Kysely } from "kysely";
 import {
   migrateStorefrontOrganisation,
@@ -111,7 +112,8 @@ const steps = [
   ["product-specification", migrateProductSpecificationModule],
   ["product-specification-revision", upgradeProductSpecificationRevision],
   ["product-collection", migrateProductCollectionModule],
-  ["catalog-activity", migrateCatalogActivityModule]
+  ["catalog-activity", migrateCatalogActivityModule],
+  ["product-variant-legacy-writers", upgradeProductVariantLegacyWriters]
 ] as const;
 const versionedSteps = steps.map(([name, up]) => ({
   name: `ecommerce.modules.${name}`,

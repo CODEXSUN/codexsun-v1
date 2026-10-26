@@ -42,3 +42,12 @@ Contract tests use historical metadata and an in-memory SQL boundary. They do no
 
 Check affected consumers and relevant tests. Report skipped or blocked checks explicitly.
 Documentation and prompts never replace backend authorization or deployment approval.
+
+## Forward variant writer repair
+
+Migration 41 adds deterministic owner SQL routines and insert/update triggers for old and new writers.
+Preserve all first-40 ledger identities. Keep the canonical unique index and existing application validation.
+The source includes frozen Unicode data and synthetic parity vectors. Do not substitute server LOWER, JSON formatting, or collation sorting.
+Verify actual strict-mode MariaDB inserts, updates, revision increments, duplicate rejection, and unchanged ledger rows before rollback acceptance.
+Missing routine/trigger privileges are deployment blockers. Never grant privileges or change server configuration to bypass them.
+No source check or staging fixture waives the verified recovery gate.

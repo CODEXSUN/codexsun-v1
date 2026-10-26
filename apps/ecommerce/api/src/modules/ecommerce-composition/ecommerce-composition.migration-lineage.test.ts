@@ -12,15 +12,15 @@ import {
 } from "./ecommerce-composition.migration.js";
 
 for (const [lineage, pending] of [
-  ["legacy31", 9],
-  ["stable34", 6]
+  ["legacy31", 10],
+  ["stable34", 7]
 ] as const) {
   test(`${lineage} retains every historical identity and appends only ${pending} steps`, () => {
     const rows = historicalLedger(lineage);
     const before = structuredClone(rows);
     const plan = planEcommerceTenantMigrations(rows);
     assert.equal(plan.lineage, lineage);
-    assert.equal(plan.steps.length, 40);
+    assert.equal(plan.steps.length, 41);
     assert.equal(plan.steps.filter((step) => !step.applied).length, pending);
     for (const row of rows) {
       const step = plan.steps.find((step) => step.name === row.name)!;
@@ -62,7 +62,7 @@ for (const [lineage, pending] of [
       const ledgerWrites = fixture.ledgerWrites.length;
       const repeated = await migrateEcommerceTenantDatabase(database);
       assert.deepEqual(repeated.applied, []);
-      assert.equal(repeated.skipped.length, 40);
+      assert.equal(repeated.skipped.length, 41);
       assert.equal(fixture.ledgerWrites.length, ledgerWrites);
       assert.ok(!fixture.statements.slice(writes).some((sql) => /^(ALTER|UPDATE|DROP)/.test(sql)));
       assert.equal(fixture.locks.size, 0);
@@ -78,8 +78,8 @@ test("fresh installation chooses the stable manifest and has no accepted checksu
   assert.equal(planEcommerceTenantMigrations([]).lineage, "stable34");
   try {
     const result = await migrateEcommerceTenantDatabase(database);
-    assert.equal(result.applied.length, 40);
-    assert.equal(fixture.rows.size, 40);
+    assert.equal(result.applied.length, 41);
+    assert.equal(fixture.rows.size, 41);
     assert.equal(planEcommerceTenantMigrations([...fixture.rows.values()]).lineage, "stable34");
   } finally {
     await database.destroy();
@@ -168,8 +168,10 @@ test("populated legacy variants receive bounded signatures without deletion", as
   const database = fixture.database();
   try {
     await migrateEcommerceTenantDatabase(database);
-    const updates = fixture.queries.filter((query) =>
-      query.sql.includes("UPDATE ecommerce_product_variants SET option_signature=")
+    const updates = fixture.queries.filter(
+      (query) =>
+        query.parameters.length > 0 &&
+        query.sql.includes("UPDATE ecommerce_product_variants SET option_signature=")
     );
     assert.equal(updates.length, 2);
     assert.deepEqual(
