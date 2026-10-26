@@ -28,6 +28,14 @@ Source checks require matching HEAD, clean tracked/untracked source, and matchin
 Dirty proposed fixes must fail until the supervisor prepares reviewed source.
 
 Staging checks require API, Web, and Shop repository digests plus saved image inspections.
+For the reviewed realtime profile, include both `worker` and `chatb` in `services` with the same image evidence.
+Remove them from `excludedServices`. Partial or contradictory service selection fails preparation.
+Set realtime to 1 only for that five-service candidate. Keep the default three-service sample disabled.
+Use staging ports 28040 and 28031, a private Worker control token, and the isolated API upstream from the environment sample.
+The resolved staging model must supply the API hostname and optional proxy service aliases on an isolated network.
+Add checksummed `realtime-queue-routing` evidence covering Redis namespace ownership, authenticated WebSockets, rejection, and graceful shutdown.
+Worker currently consumes its own `worker.probe` queue. It does not replace Platform business workers.
+Chatb forwards to the existing Chat gateway. Do not transfer queue ownership or trust caller tenant selectors implicitly.
 Each inspection must contain one image with matching OCI version/revision labels and the requested repository digest.
 For each image, record `inspection` as `{"path":"api.inspect.json","sha256":"<64 lowercase hex characters>"}`.
 Record image as `<repository>@sha256:<64 lowercase hex characters>`.
@@ -81,6 +89,10 @@ Preserve MariaDB, Redis, Media, Frappe, Cloudflare, CXApp, tenant data, and unre
 No staging launch command is supplied because an approved resolved staging model does not yet exist.
 No production promotion command is implemented by this preparation change.
 Production still needs an approved promotion implementation, exact images, adoption decisions, verified backups, and explicit deployment approval.
+The current operation permits new tenant backups for Techmedia and Rainbow only.
+Do not invoke the existing updater under that limit: its backup helper uses `--all-databases` and whole shared storage archives.
+Two tenant backups do not cover master migrations or other tenants. Review the actual migration target set and existing recovery coverage first.
+Missing coverage blocks replacement. Do not expand the backup scope or suppress migrations merely to pass the gate.
 The normal update script retains previous image IDs but does not export runtime image bytes.
 Require verified image recovery artifacts before future production changes. Do not use cleanup to obtain them.
 Application rollback does not reverse database migrations.

@@ -39,6 +39,8 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Update lockstep package versions, internal ranges, lockfile metadata, Windows manifests, and deployment sample without installation. No tag or deployment.
 - Candidate preparation, 26-10-2026: require the exact reviewed SHA for VPS updates and add read-only source, image, isolation, and evidence checks.
 - Add staging-only input templates and synthetic deployment tests. Candidate images, staging acceptance, recovery, migration review, and production promotion remain unexecuted.
+- Five-service review, 26-10-2026: extend staging input checks to API, Web, Shop, Worker, and Chatb, with complete realtime selection, isolated configuration, and queue/WebSocket evidence.
+- Keep new tenant backups limited to Techmedia and Rainbow. Wider migration recovery coverage and immutable-image promotion remain blocking gates.
 
 ## v-1.1.68
 

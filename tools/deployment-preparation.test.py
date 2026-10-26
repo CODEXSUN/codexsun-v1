@@ -61,6 +61,50 @@ class PreparationTests(unittest.TestCase):
         with patch.object(checker, "git", side_effect=self.git):
             self.assertEqual(checker.check("source"), [])
 
+    def enable_realtime(self):
+        self.manifest["services"].update(worker={"image": None}, chatb={"image": None})
+        self.manifest["excludedServices"] = {}
+        self.manifest["evidence"]["realtime-queue-routing"] = None
+        self.env = self.env.replace("CODEXSUN_REALTIME_ENABLED=0", "CODEXSUN_REALTIME_ENABLED=1").replace(
+            "CODEXSUN_WORKER_CONTROL_TOKEN=", "CODEXSUN_WORKER_CONTROL_TOKEN=" + "synthetic-" * 5
+        )
+
+    def test_five_service_candidate_requires_all_image_and_routing_evidence(self):
+        self.enable_realtime()
+        checker = self.checker()
+        checker.check_images()
+        checker.check_evidence()
+        self.assertEqual(sum("immutable repository digest" in error for error in checker.errors), 5)
+        self.assertTrue(any("WebSocket routing review" in error for error in checker.errors))
+
+    def test_complete_five_service_synthetic_inputs(self):
+        self.enable_realtime()
+        self.complete_inputs()
+        checker = self.checker()
+        with patch.object(checker, "git", side_effect=self.git):
+            self.assertEqual(checker.check("staging"), [])
+
+    def test_partial_or_contradictory_realtime_selection_is_rejected(self):
+        self.manifest["services"]["worker"] = {"image": None}
+        checker = self.checker()
+        checker.check_images()
+        self.assertTrue(any("both Worker and Chatb" in error for error in checker.errors))
+        self.enable_realtime()
+        self.manifest["excludedServices"] = {"chatb": "stale exclusion"}
+        checker = self.checker()
+        checker.check_images()
+        self.assertTrue(any("also appear" in error for error in checker.errors))
+
+    def test_realtime_live_upstream_short_token_and_wrong_ports_are_rejected(self):
+        self.enable_realtime()
+        self.env = self.env.replace("ws://codexsun-staging-api:28010", "ws://codexsun-api:18010").replace(
+            "synthetic-" * 5, "short"
+        ).replace("CODEXSUN_WORKER_PORT=28040", "CODEXSUN_WORKER_PORT=17040")
+        checker = self.checker()
+        checker.check_isolation()
+        self.assertGreaterEqual(len(checker.errors), 3)
+        self.assertFalse(any("short" in error for error in checker.errors))
+
     def test_dirty_or_different_head_is_not_published_source(self):
         checker = self.checker()
         with patch.object(checker, "git", side_effect=["b" * 40, " M update.sh", '{"version":"1.1.69"}']):

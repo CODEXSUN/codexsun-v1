@@ -48,8 +48,11 @@ class CandidatePreparation:
 
     def check_images(self):
         services = self.manifest.get("services", {})
-        if set(services) != {"api", "web", "shop"}:
-            self.errors.append("This preparation requires exactly API, Web, and Shop; review optional services separately")
+        base = {"api", "web", "shop"}
+        if set(services) not in [base, base | {"worker", "chatb"}]:
+            self.errors.append("Select API/Web/Shop, optionally with both Worker and Chatb")
+        if set(services) & set(self.manifest.get("excludedServices", {})):
+            self.errors.append("Included services cannot also appear in excludedServices")
         for name, service in services.items():
             digest = service.get("image") or ""
             if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9./:_-]*@sha256:[a-f0-9]{64}", digest):
@@ -79,7 +82,7 @@ class CandidatePreparation:
             "NODE_ENV": "production",
             "DB_DRIVER": "mariadb",
             "DB_PORT": "3306",
-            "CODEXSUN_REALTIME_ENABLED": "0",
+            "CODEXSUN_REALTIME_ENABLED": "1" if self.realtime_selected() else "0",
             "CODEXSUN_DB_FRESH_ON_START": "0",
             "CODEXSUN_ALLOW_PRODUCTION_DB_RESET": "0",
             "CODEXSUN_ALLOW_LIVE_RESTORE": "0",
@@ -113,10 +116,30 @@ class CandidatePreparation:
         for key in ["DB_PASSWORD", "JWT_SECRET"]:
             if not values.get(key) or values[key].startswith("change_this"):
                 self.errors.append(f"{key}: provision an isolated private staging secret")
+        if self.realtime_selected():
+            self.check_realtime(values)
+
+    def realtime_selected(self):
+        return {"worker", "chatb"} <= set(self.manifest.get("services", {}))
+
+    def check_realtime(self, values):
+        for key, value in {
+            "CODEXSUN_WORKER_PORT": "28040",
+            "CODEXSUN_CHATB_PORT": "28031",
+            "CODEXSUN_CHATB_UPSTREAM_URL": "ws://codexsun-staging-api:28010",
+        }.items():
+            if values.get(key) != value:
+                self.errors.append(f"{key}: use the isolated staging realtime configuration")
+        token = values.get("CODEXSUN_WORKER_CONTROL_TOKEN", "")
+        if len(token) < 32 or token.startswith("change_this"):
+            self.errors.append("Worker requires a private staging control token of at least 32 characters")
 
     def check_evidence(self):
         for name in ["isolation", "migration-review", "recovery-rehearsal", "mount-adoption"]:
             self.read_evidence(self.manifest.get("evidence", {}).get(name), name)
+        if self.realtime_selected():
+            self.read_evidence(self.manifest.get("evidence", {}).get("realtime-queue-routing"),
+                               "realtime queue and WebSocket routing review")
 
     def read_evidence(self, record, name):
         if not isinstance(record, dict) or not record.get("path"):
