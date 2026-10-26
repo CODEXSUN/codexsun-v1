@@ -34,6 +34,7 @@ Enquiry tabs load when first opened and retain drafts after tab changes. Hidden 
 Mobile uses the same records and retains its existing refresh and resume behavior.
 Mobile enquiry search requests matching records across all pages after a 300 ms typing delay.
 The web enquiry list starts with 20 rows. Users can select 50 or 100 rows.
+Created follows Priority in the web list. It uses the saved creation timestamp and refreshes elapsed hours and minutes locally each minute.
 Unsearched list totals reuse the scoped status counts. Search requests retain an independent filtered count.
 Contact lookups run once per distinct contact on each page and do not persist between requests.
 Concurrent pages share contact reads only while those reads are in progress, with at most four reads per tenant database.
@@ -121,6 +122,7 @@ Clear contact removes the task link without deleting the contact.
 ## Work timestamp display
 
 Job start/stop and check-in/check-out reports retain UTC instants. Generated work comments now keep timestamps in ISO UTC form so web and mobile can convert them to the viewer's local timezone. Both clients display `DD-MM-YYYY hh:mm:ss am/pm`. Older generated job and checkpoint comments are interpreted as UTC; older pinned-location captures remain local. Job start/stop fields and captured location times use the same display format.
+Pin location saves a structured capture, a single-line linked comment, a Pin Location action, and its durable outbox event in one transaction. Comments start with `Pin Location :`; action details omit that prefix. Both use seven coordinate decimals, two accuracy decimals, and the captured UTC instant formatted in the viewer's local time.
 The task detail page links to the saved contact and shows its mobile number.
 The additive `crm.task.optional-contact-v4` migration adds a nullable contact ID and a restrictive foreign key.
 Existing tasks remain unlinked. Older clients that omit contact fields preserve saved links on update.

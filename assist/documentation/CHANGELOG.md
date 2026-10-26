@@ -22,6 +22,18 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 
 ## v-1.1.74
 
+### [v 1.1.74] 2026-10-26 - Save linked pin comments and show enquiry creation age
+
+#### Database Changes
+
+- No schema migration or permission seed is required. Save each new location, comment, and action in one transaction.
+
+#### App Codebase Changes
+
+- Show Created after Priority in the web enquiry list, with the date and elapsed hours and minutes. Refresh the age once a minute without network polling.
+- Save Pin Location comments and action details with linked coordinates, two-decimal accuracy, and the local capture time.
+- Restore Android plugin registration and show actionable location errors instead of leaving a failed capture unexplained.
+
 ### [v 1.1.74] 2026-10-26 4:20 pm - Honor granted CRM mobile action permissions and scope cloud rollout
 
 #### Database Changes

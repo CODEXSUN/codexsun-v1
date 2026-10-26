@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -990,22 +994,21 @@ void main() {
     expect(find.text('Photo'), findsNothing);
 
     await tester.tap(find.text('Pin location'));
-    await tester.pumpAndSettle();
-    final locationInput = tester.widget<TextFormField>(
-      find.byKey(const ValueKey('pinned-location-details')),
-    );
-    expect(locationInput.initialValue, contains('Latitude: 13.082700'));
-    expect(locationInput.initialValue, contains('Longitude: 80.270700'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(
-      api.postedComments.where(
-        (comment) => comment.startsWith('Pinned location'),
-      ),
-      isEmpty,
+      find.byKey(const ValueKey('pinned-location-details')),
+      findsOneWidget,
     );
+    expect(find.text('13.0827000, 80.2707000'), findsOneWidget);
+    expect(find.textContaining('Accuracy: 8.50 m'), findsOneWidget);
+    expect(api.loggedLocations, isEmpty);
     await tester.tap(find.byKey(const ValueKey('submit-pinned-location')));
     await tester.pumpAndSettle();
-    expect(api.postedComments.last, contains('Pinned location'));
-    expect(api.postedComments.last, contains('Accuracy: ±9 m'));
+    expect(api.loggedLocations.single.latitude, 13.0827);
+    expect(api.loggedLocations.single.longitude, 80.2707);
+    expect(api.loggedLocations.single.accuracyMeters, 8.5);
+    expect(api.postedComments, isEmpty);
 
     await tester.tap(find.byKey(const ValueKey('enquiry-card-more')));
     await tester.pumpAndSettle();
@@ -1059,6 +1062,53 @@ void main() {
     expect(find.text('New call opened successfully.'), findsOneWidget);
     expect(find.textContaining('QUOTED 1. Acer One 15'), findsOneWidget);
   });
+
+  for (final failure in [
+    MissingPluginException(),
+    TimeoutException('GPS timed out'),
+  ]) {
+    testWidgets('pin location shows ${failure.runtimeType} without posting', (
+      tester,
+    ) async {
+      final api = _FakeCrmMobileApi();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: JobEnquiryCard(
+              api: api,
+              session: const UserSession(
+                accessToken: 'test-token',
+                profile: UserProfile(
+                  email: 'user@example.invalid',
+                  name: 'User',
+                  role: 'user',
+                ),
+              ),
+              enquiry: DashboardListItem.fromCrmJob(api._job),
+              job: api._job,
+              onJobChanged: () {},
+              capturePosition: () => Future<Position>.error(failure),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('enquiry-card-more')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pin location'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining(
+          failure is MissingPluginException
+              ? 'Location support is missing'
+              : 'Could not get a fresh GPS location',
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      expect(api.postedComments, isEmpty);
+    });
+  }
 
   testWidgets('shows the live Messages loading state', (
     WidgetTester tester,

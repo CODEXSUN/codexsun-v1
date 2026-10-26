@@ -1,5 +1,6 @@
 export { enquiryModule } from "./enquiry.module.js";
 export { authorizeEnquiryWrite } from "./enquiry.write-access.js";
+export { recordEnquiryPin } from "./enquiry.pin-location.js";
 export {
   enquiryMigrationBatch,
   migrateCrmTenantDatabase,

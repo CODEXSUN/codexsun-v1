@@ -790,6 +790,7 @@ export async function createApp() {
   await enquiryLocationModule.register(app, async (request) => {
     const context = await crmAccess(request, "enquiry", "/crm/enquiries");
     if (request.method === "POST") await context.authorize("crm.enquiry.work");
+    const reportContext = request.method === "POST" ? await workReportContext(request) : null;
     const actor = await context.database
       .selectFrom("app_users")
       .select("id")
@@ -809,7 +810,17 @@ export async function createApp() {
       >,
       actorEmail: context.actorEmail,
       actorUserId: actor?.id ?? null,
-      canViewAll
+      canViewAll,
+      workEvent: async (transaction, enquiryId, action, body) => {
+        if (!reportContext) throw AppError.forbidden("A work action context is required.");
+        await recordWorkEvent(
+          reportContext,
+          transaction as never,
+          { enquiryId, taskId: null },
+          action,
+          body
+        );
+      }
     };
   });
   const workReportContext = async (request: FastifyRequest): Promise<WorkReportContext> => {

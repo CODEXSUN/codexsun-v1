@@ -1,4 +1,5 @@
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
+import { useEffect, useState } from "react";
 import { BellRing } from "lucide-react";
 import { WorkspaceTable } from "@codexsun/ui/workspace/table";
 import { WorkspaceRowActions } from "@codexsun/ui/workspace/row-actions";
@@ -6,6 +7,8 @@ import { CrmStatusBadge, prioritySwatch } from "../../crm-colors";
 import { EnquiryInlineFilter } from "./enquiry.inline-filter";
 import { enquiryTableText } from "./enquiry.table-text";
 import { formatListDueDate } from "./enquiry.view-utils";
+import { formatCrmDateTime } from "../../crm-time.js";
+import { enquiryCreatedAge } from "./enquiry.created-age.js";
 import type { EnquiryColumnFilters, EnquiryLookup, EnquiryRecord } from "./enquiry.types";
 
 const filterColumns: Record<string, { key: keyof EnquiryColumnFilters; label: string }> = {
@@ -56,6 +59,11 @@ export function EnquiryList({
   openingCallId: string | null;
   panelClassName?: string;
 }) {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const userNames = new Map(users.map((user) => [String(user.id), user.name]));
   const creatorNames = new Map<string, string>();
   for (const user of users) {
@@ -155,6 +163,21 @@ export function EnquiryList({
       )
     },
 
+    {
+      id: "createdAt",
+      accessorKey: "createdAt",
+      header: "Created",
+      cell: ({ row }) => (
+        <time
+          dateTime={row.original.createdAt}
+          title={formatCrmDateTime(row.original.createdAt)}
+          className="whitespace-nowrap"
+        >
+          {formatListDueDate(row.original.createdAt)} ·{" "}
+          {enquiryCreatedAge(row.original.createdAt, now)}
+        </time>
+      )
+    },
     {
       id: "creator",
       header: "Creator",
@@ -300,7 +323,8 @@ export function EnquiryList({
             </p>
           </div>
           <p className="truncate text-xs text-muted-foreground">
-            Created by {creatorName(record)} · {formatListDueDate(record.createdAt.slice(0, 10))}
+            Created by {creatorName(record)} · {formatListDueDate(record.createdAt)} ·{" "}
+            {enquiryCreatedAge(record.createdAt, now)}
           </p>
           <div className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 border-t border-border/70 pt-2 text-xs text-muted-foreground">
             <span>List in · {record.listIn || "Unlisted"}</span>

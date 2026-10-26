@@ -1,5 +1,6 @@
 import { WorkspaceTableEmptyState } from "@codexsun/ui/workspace/table";
 import { capitalize, formatDateTime } from "./enquiry.view-utils";
+import { PinLocationText } from "../../pin-location-text.js";
 import type { EnquiryActivity } from "./enquiry.types";
 
 export function EnquiryActivityPanel({
@@ -29,9 +30,17 @@ export function EnquiryActivityPanel({
             {activity.map((entry) => (
               <tr className="border-t border-border/70" key={entry.id}>
                 <td className="px-3 py-2 font-medium">
-                  {capitalize(entry.action.replaceAll("-", " "))}
+                  {entry.action === "pin-location"
+                    ? "Pin Location"
+                    : capitalize(entry.action.replaceAll("-", " "))}
                 </td>
-                <td className="px-3 py-2">{entry.details}</td>
+                <td className="px-3 py-2">
+                  {entry.action === "pin-location" ? (
+                    <PinLocationText value={entry.details} />
+                  ) : (
+                    entry.details
+                  )}
+                </td>
                 <td className="px-3 py-2">{entry.createdBy}</td>
                 <td className="px-3 py-2">{formatDateTime(entry.createdAt)}</td>
               </tr>

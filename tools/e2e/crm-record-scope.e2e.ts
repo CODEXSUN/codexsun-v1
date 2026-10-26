@@ -26,7 +26,11 @@ import { authorizeEnquiryWrite } from "../../apps/crm/api/src/modules/enquiry/en
 import { seedStatusMaster } from "../../apps/crm/api/src/modules/status/index.js";
 import { seedPriorityMaster } from "../../apps/crm/api/src/modules/priority/index.js";
 import { enquiryLocationModule } from "../../apps/crm/api/src/modules/enquiry-location/index.js";
-import { workReportModule } from "../../apps/crm/api/src/modules/work-report/index.js";
+import {
+  recordWorkEvent,
+  workReportModule
+} from "../../apps/crm/api/src/modules/work-report/index.js";
+import { EnquiryLocationRepository } from "../../apps/crm/api/src/modules/enquiry-location/enquiry-location.repository.js";
 
 test(
   "CRM record scope uses live roles, protects direct actions, and reconciles legacy grants",
@@ -163,7 +167,18 @@ test(
     await enquiryLocationModule.register(app, async (request) => {
       const context = await scope(emailFor(request.headers), "enquiry");
       if (request.method === "POST") await context.authorize("crm.enquiry.work");
-      return context;
+      return {
+        ...context,
+        workEvent: async (transaction, enquiryId, action, body) => {
+          await recordWorkEvent(
+            context,
+            transaction as never,
+            { enquiryId, taskId: null },
+            action,
+            body
+          );
+        }
+      };
     });
     await workReportModule.register(app, async (request) =>
       scope(emailFor(request.headers), "enquiry")
@@ -347,11 +362,17 @@ test(
       capturedAt: new Date().toISOString()
     };
     for (const path of ["comments", "open-new-call"] as const) {
-      for (const [record, expected] of [[1, 200], [2, 403], [3, 403]] as const) {
+      for (const [record, expected] of [
+        [1, 200],
+        [2, 403],
+        [3, 403]
+      ] as const) {
         const response = await app.inject({
           method: "POST",
           url: `/crm/enquiries/${record}/${path}`,
-          ...(path === "comments" ? { payload: { body: "Assigned work comment", parentId: null } } : {})
+          ...(path === "comments"
+            ? { payload: { body: "Assigned work comment", parentId: null } }
+            : {})
         });
         assert.equal(response.statusCode, expected, response.body);
       }
@@ -368,6 +389,52 @@ test(
       });
       assert.equal(response.statusCode, expected, response.body);
     }
+    const pinComment = (
+      await sql<{
+        body: string;
+      }>`SELECT body FROM crm_enquiry_comments WHERE enquiry_id=1 AND body LIKE 'Pin Location : %'`.execute(
+        database
+      )
+    ).rows;
+    const pinAction = (
+      await sql<{
+        body: string;
+      }>`SELECT body FROM crm_work_reports WHERE enquiry_id=1 AND action='pin-location'`.execute(
+        database
+      )
+    ).rows;
+    assert.equal(pinComment.length, 1);
+    assert.equal(pinAction.length, 1);
+    assert.equal(pinComment[0]!.body, `Pin Location : ${pinAction[0]!.body}`);
+    assert.match(
+      pinAction[0]!.body,
+      /\[13\.0827000, 80\.2707000\]\(https:\/\/www\.google\.com\/maps\?q=13\.0827000,80\.2707000\) · Accuracy: 8\.00 m · Captured:/
+    );
+    const pinCounts = async () =>
+      Promise.all(
+        [
+          "crm_enquiry_locations",
+          "crm_enquiry_comments",
+          "crm_enquiry_activity",
+          "crm_work_reports",
+          "crm_enquiry_sync_events"
+        ].map(
+          async (table) =>
+            (
+              await sql<{
+                n: number;
+              }>`SELECT COUNT(*) n FROM ${sql.ref(table)} WHERE enquiry_id=1`.execute(database)
+            ).rows[0]!.n
+        )
+      );
+    const beforeFailedPin = await pinCounts();
+    await assert.rejects(
+      new EnquiryLocationRepository(database as never, async () => {
+        throw new Error("Reject pin action transaction");
+      }).create(1, null, gps, "scope2@example.test"),
+      /Reject pin action transaction/
+    );
+    assert.deepEqual(await pinCounts(), beforeFailedPin);
     for (const action of ["check-in", "check-out"] as const) {
       const payload = {
         ...gps,
@@ -406,10 +473,20 @@ test(
     });
     assert.equal(assignedCharge.statusCode, 200, assignedCharge.body);
     const forbiddenCharge = await app.inject({
-      method: "POST", url: "/crm/work-reports",
-      payload: { enquiryId: 2, taskId: null, action: "charge",
-        body: "Creator cannot charge another assignee", amount: 10, requestId: randomUUID(),
-        latitude: null, longitude: null, accuracyMeters: null, capturedAt: null }
+      method: "POST",
+      url: "/crm/work-reports",
+      payload: {
+        enquiryId: 2,
+        taskId: null,
+        action: "charge",
+        body: "Creator cannot charge another assignee",
+        amount: 10,
+        requestId: randomUUID(),
+        latitude: null,
+        longitude: null,
+        accuracyMeters: null,
+        capturedAt: null
+      }
     });
     assert.equal(forbiddenCharge.statusCode, 403, forbiddenCharge.body);
     await sql`UPDATE app_role_permissions rp JOIN app_roles r ON r.id=rp.role_id

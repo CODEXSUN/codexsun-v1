@@ -1,4 +1,4 @@
-import type { ColumnType, Generated } from "kysely";
+import type { ColumnType, Generated, Kysely, Transaction } from "kysely";
 import type { EnquiryDatabase } from "../enquiry/index.js";
 
 export type EnquiryLocationRow = {
@@ -18,6 +18,19 @@ export type EnquiryLocationRow = {
 export type EnquiryLocationDatabase = EnquiryDatabase & {
   crm_enquiry_locations: EnquiryLocationRow;
   core_contacts: { id: number };
+};
+
+export type EnquiryLocationContext = {
+  database: Kysely<EnquiryLocationDatabase>;
+  actorEmail: string;
+  actorUserId: number | null;
+  canViewAll: boolean;
+  workEvent?: (
+    transaction: Transaction<EnquiryLocationDatabase>,
+    enquiryId: number,
+    action: string,
+    body: string
+  ) => Promise<void>;
 };
 
 export type EnquiryLocation = {

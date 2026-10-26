@@ -1,18 +1,10 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
-import type { Kysely } from "kysely";
 import { z } from "zod";
 import { AppError } from "@codexsun/framework/errors";
 import { registerContractRoute } from "@codexsun/framework/http";
 import { EnquiryLocationRepository } from "./enquiry-location.repository.js";
 import { EnquiryLocationService } from "./enquiry-location.service.js";
-import type { EnquiryLocationDatabase } from "./enquiry-location.types.js";
-
-type Scope = {
-  database: Kysely<EnquiryLocationDatabase>;
-  actorEmail: string;
-  actorUserId: number | null;
-  canViewAll: boolean;
-};
+import type { EnquiryLocationContext as Scope } from "./enquiry-location.types.js";
 
 const params = z.object({ id: z.coerce.number().int().positive() });
 const item = z.object({
@@ -43,7 +35,7 @@ export function registerEnquiryLocationRoutes(
   };
   const service = (scope: Scope) =>
     new EnquiryLocationService(
-      new EnquiryLocationRepository(scope.database),
+      new EnquiryLocationRepository(scope.database, scope.workEvent),
       scope.actorEmail,
       scope.actorUserId,
       scope.canViewAll
