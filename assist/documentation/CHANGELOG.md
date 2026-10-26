@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.74
+Current version: 1.1.75
 
-Release tag: v-1.1.74
+Release tag: v-1.1.75
 
-Changelog label: v 1.1.74
+Changelog label: v 1.1.75
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,25 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.75
+
+### [v 1.1.75] 2026-10-26 6:22 pm - Finalize CRM pin comments and web creation age
+
+#### Database Changes
+
+- Database update: No (manual).
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.75.
+- Release the CRM pin comment and action contract from main commit `0df24fc9`.
+- Save each pin with one linked comment and one Pin Location action. Display seven coordinate decimals, two accuracy decimals, and local capture time.
+- Show Created immediately after Priority on the web enquiry list. Display the date and elapsed hours and minutes without network polling.
+- Include the Android plugin registration guard and clear location capture error messages.
+- Prior functional validation passed: 46 mobile widget tests, 26 staged action checks, pin formatting tests, and the database record-scope and rollback suite.
+- The prior 1.1.74 rollout passed public health checks and live web column verification. Verify the 1.1.75 images on staging before promotion.
+- Scope cloud promotion to API/Web. No database migration, permission reseed, or further database backup is required for this release.
 
 ## v-1.1.74
 

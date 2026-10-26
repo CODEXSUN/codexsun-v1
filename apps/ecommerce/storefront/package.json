@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/ecommerce-storefront",
-  "version": "1.1.74",
+  "version": "1.1.75",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,8 +12,8 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/ecommerce-web": "^1.1.74",
-    "@codexsun/ui": "^1.1.74",
+    "@codexsun/ecommerce-web": "^1.1.75",
+    "@codexsun/ui": "^1.1.75",
     "@tanstack/react-query": "^5.104.1",
     "lucide-react": "^1.52.0",
     "react": "^19.3.0",
