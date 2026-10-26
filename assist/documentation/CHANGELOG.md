@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.70
+Current version: 1.1.71
 
-Release tag: v-1.1.70
+Release tag: v-1.1.71
 
-Changelog label: v 1.1.70
+Changelog label: v 1.1.71
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,23 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.71
+
+### [v 1.1.71] 2026-10-26 11:20 am - Preserve legacy variant writes and Data Bridge ownership
+
+#### Database Changes
+
+- Database update: Yes (manual).
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.71.
+- Remove the unused Marketing conversation-list binding that blocked repository lint. Keep its unfinished app worktree unchanged.
+- Append Ecommerce migration 41 for old/new writer canonical signatures, guarded SQL parity, collision refusal, and revision updates. Preserve all historical migration identities.
+- Restore Data Bridge preparation ownership with real lifecycle roles, ordered service, snapshot hydration, transaction worker, authenticated capabilities, and execution denial.
+- Add focused compatibility tests, Unicode/escape parity vectors, and a staging-only SQL verification helper.
+- Record unchanged recovery requirements and remaining staging/production gates in `.container/docs/RELEASE-1.1.71.md`. No new backups, restores, server changes, or deployment.
 
 ## v-1.1.70
 

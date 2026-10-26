@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/logicx-erp-api",
-  "version": "1.1.70",
+  "version": "1.1.71",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,7 +12,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/framework": "^1.1.70",
+    "@codexsun/framework": "^1.1.71",
     "fastify": "^5.12.5",
     "kysely": "^0.29.6",
     "zod": "^4.6.5"

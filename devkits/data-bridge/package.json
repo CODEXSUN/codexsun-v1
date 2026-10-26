@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/data-bridge-web",
-  "version": "1.1.70",
+  "version": "1.1.71",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,7 +12,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/ui": "^1.1.70",
+    "@codexsun/ui": "^1.1.71",
     "lucide-react": "^1.52.0",
     "react": "^19.3.0"
   }
