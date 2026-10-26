@@ -49,8 +49,10 @@ class CandidatePreparation:
     def check_images(self):
         services = self.manifest.get("services", {})
         base = {"api", "web", "shop"}
-        if set(services) not in [base, base | {"worker", "chatb"}]:
-            self.errors.append("Select API/Web/Shop, optionally with both Worker and Chatb")
+        if set(services) not in [{"api", "web"}, base, base | {"worker", "chatb"}]:
+            self.errors.append("Select API/Web, API/Web/Shop, or all five services")
+        if set(services) == {"api", "web"} and set(self.manifest.get("excludedServices", {})) != {"shop", "worker", "chatb"}:
+            self.errors.append("API/Web preparation must record Shop/Worker/Chatb exclusion compatibility")
         if set(services) & set(self.manifest.get("excludedServices", {})):
             self.errors.append("Included services cannot also appear in excludedServices")
         for name, service in services.items():

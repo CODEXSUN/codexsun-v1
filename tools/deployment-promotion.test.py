@@ -261,6 +261,58 @@ class PromotionTests(unittest.TestCase):
             runtime.inspect().check_quiescence()
         self.assertTrue(all(call[0] in ["image", "ps", "inspect"] for call in self.calls))
 
+    def scoped_policy(self):
+        selected = {"codexsun-api", "codexsun-web"}
+        preserved = {name: {"id": "retained-" + name, "image": "sha256:" + "f" * 64}
+                     for name in SERVICES - selected}
+        self.images = {name: image for name, image in self.images.items() if name in selected}
+        self.record["images"] = self.images
+        self.record["preservedServices"] = preserved
+        self.record["productionAuthorization"].update(images=self.images, preservedServices=preserved)
+        self.model["services"] = {name: service for name, service in self.model["services"].items() if name in selected}
+        self.old = {name: service for name, service in self.old.items() if name in selected}
+        self.data["rollback"]["services"] = self.old
+        for receipt in ["staging", "adoption"]:
+            self.data[receipt]["preservedServices"] = preserved
+        self.data["staging"]["images"] = self.images
+        self.data["migrations"]["images"] = self.images
+        self.data["recovery"]["quiescedContainers"] = {
+            name: value for name, value in self.data["recovery"]["quiescedContainers"].items() if name in selected}
+        return self.policy().validate()
+
+    def test_scoped_apply_replaces_only_api_web_and_never_dependencies(self):
+        policy = self.scoped_policy()
+        runtime = PROMOTE.ImagePromotion(policy)
+        def docker(*args, **kwargs):
+            if args[0] == "inspect" and args[1] in policy.preserved:
+                return json.dumps([{"Id": policy.preserved[args[1]]["id"],
+                    "Image": policy.preserved[args[1]]["image"], "State": {"Health": {"Status": "healthy"}}}])
+            return self.docker(*args, **kwargs)
+        with patch.object(runtime, "lock", return_value=nullcontext()), patch.object(
+            runtime, "docker", side_effect=docker), patch.object(runtime, "verify"):
+            runtime.apply()
+        command = next(call for call in self.calls if "up" in call)
+        self.assertIn("--no-deps", command)
+        self.assertEqual(set(command[-2:]), {"codexsun-api", "codexsun-web"})
+        self.assertFalse(set(command) & set(policy.preserved))
+
+    def test_scoped_missing_inventory_or_replaced_excluded_container_blocks(self):
+        policy = self.scoped_policy()
+        policy.record["preservedServices"] = {}
+        with self.assertRaisesRegex(ValueError, "excluded service inventory"):
+            policy.validate()
+        policy = self.scoped_policy()
+        runtime = PROMOTE.ImagePromotion(policy)
+        with patch.object(runtime, "docker", return_value=json.dumps([{"Id": "changed", "Image": "changed"}])):
+            with self.assertRaisesRegex(ValueError, "Excluded service changed"):
+                runtime.verify_preserved()
+
+    def test_scoped_rollback_cannot_include_shop(self):
+        policy = self.scoped_policy()
+        policy.rollback["services"]["codexsun-shop"] = {"image": "sha256:" + "f" * 64}
+        with self.assertRaisesRegex(ValueError, "Rollback includes unrelated"):
+            policy.check_model()
+
     def test_successful_apply_never_fetches_builds_pulls_or_runs_migrations(self):
         runtime = PROMOTE.ImagePromotion(self.policy().validate())
         with patch.object(runtime, "lock", return_value=nullcontext()), patch.object(

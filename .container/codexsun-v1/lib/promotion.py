@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 SERVICES = {"codexsun-" + role for role in ["api", "web", "shop", "worker", "chatb"]}
+API_WEB = {"codexsun-api", "codexsun-web"}
 SCOPED_DATABASES = {"techmedia_db", "rainbow_db"}
 
 
@@ -25,7 +26,15 @@ class PromotionPolicy:
         require(source["revision"] == self.expected_revision, "Release source differs from reviewed SHA")
         require(re.fullmatch(r"\d+\.\d+\.\d+", source["version"]), "Invalid release version")
         self.images = self.record["images"]
-        require(set(self.images) == SERVICES, "Promotion requires the exact five reviewed services")
+        self.services = set(self.images)
+        require(self.services in [SERVICES, API_WEB], "Promotion requires five services or the exact API/Web pair")
+        self.preserved = self.record.get("preservedServices", {})
+        require(set(self.preserved) == SERVICES - self.services,
+                "Scoped promotion requires the exact excluded service inventory")
+        for service in self.preserved.values():
+            require(isinstance(service, dict) and service.get("id") and
+                    re.fullmatch(r"sha256:[a-f0-9]{64}", service.get("image", "")),
+                    "Preserved service requires its existing container and image identities")
         for image in self.images.values():
             require(isinstance(image, str) and re.fullmatch(
                 r"[a-zA-Z0-9][a-zA-Z0-9./:_-]*@sha256:[a-f0-9]{64}", image
@@ -45,6 +54,10 @@ class PromotionPolicy:
         for receipt in [self.stage, self.migrations, self.adoption]:
             require(receipt.get("source") == self.record["source"], "Evidence source does not match release")
         require(self.stage.get("images") == self.images, "Staging images differ from promotion images")
+        if self.preserved:
+            require(self.stage.get("preservedServices") == self.preserved and
+                    self.adoption.get("preservedServices") == self.preserved,
+                    "Staging and adoption must bind unchanged excluded services")
         fresh(self.stage["completedAt"], 86400)
         checks = self.stage.get("checks", {})
         for name in ["startup", "isolation", "authentication", "tenant-isolation", "browser",
@@ -62,6 +75,9 @@ class PromotionPolicy:
                 "Production authorization must bind the exact source")
         require(self.record["productionAuthorization"].get("images") == self.images,
                 "Production authorization must bind the exact image set")
+        if self.preserved:
+            require(self.record["productionAuthorization"].get("preservedServices") == self.preserved,
+                    "Production authorization must bind excluded services")
 
     def check_recovery(self):
         fresh(self.recovery["completedAt"], 3600)
@@ -87,7 +103,7 @@ class PromotionPolicy:
         require(self.model.get("name") == "codexsun", "Unexpected production Compose project")
         require(set(self.model) <= {"name", "services", "networks", "volumes"}, "Unresolved Compose extensions are prohibited")
         services = self.model.get("services", {})
-        require(set(services) == SERVICES, "Production model must contain only the five application services")
+        require(set(services) == self.services, "Production model must contain only the selected application services")
         for name, service in services.items():
             require(service.get("image") == self.images[name], "Production image differs from tested image")
             require(service.get("container_name") == name, "Unexpected production container identity")
@@ -127,7 +143,7 @@ class PromotionPolicy:
             require(all(v.get("external") is True for v in self.model[section].values()),
                     "Promotion cannot provision infrastructure")
         previous = self.rollback.get("services", {})
-        require(previous and set(previous) <= SERVICES, "Rollback includes unrelated or missing services")
+        require(previous and set(previous) <= self.services, "Rollback includes unrelated or missing services")
         require(set(self.rollback) <= {"name", "services", "networks", "volumes"},
                 "Rollback Compose extensions are prohibited")
         for section in ["networks", "volumes"]:
