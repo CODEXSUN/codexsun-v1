@@ -15,6 +15,10 @@ import { readEncryptedSessionCookie, clearInvalidSessionCookies } from "./sessio
 import { isSingleTenantMode } from "../tenancy-mode.js";
 import { env } from "../env.js";
 import { requestHost } from "./request-host.js";
+import { claimsMatchSession } from "./auth-session-authority.js";
+import { isGlobalPlatformAdminRoute, registerGlobalPlatformAdminAuthorization, requireSuperAdmin } from "./super-admin.guard.js";
+
+export { claimsMatchSession } from "./auth-session-authority.js";
 
 export { requestHost } from "./request-host.js";
 
@@ -75,6 +79,10 @@ export function registerAuthRequestContext(app: FastifyInstance) {
 
     request.authContext = { payload, session, source };
     if (isPublicAuthenticationPath(requestPath)) return;
+    // Global administration never resolves tenant business context or trusts tenant roles.
+    if (isGlobalPlatformAdminRoute(requestPath) && payload.userType !== "super_admin") {
+      return requireSuperAdmin(request,reply);
+    }
 
     if (payload.userType === "tenant") {
       const tenant = payload.tenantId ? await tenants.findByIdOrCode(payload.tenantId) : null;
@@ -130,6 +138,7 @@ export function registerAuthRequestContext(app: FastifyInstance) {
       await sessions.touch(payload.jti);
     }
   });
+  registerGlobalPlatformAdminAuthorization(app);
 }
 
 export function isPublicAuthenticationPath(path: string) {
@@ -154,22 +163,6 @@ export function selectRequestAuthentication(bearer: string, cookie: string) {
   if (cookie) return { source: "cookie" as const, token: cookie };
   if (bearer) return { source: "bearer" as const, token: bearer };
   return null;
-}
-
-export function claimsMatchSession(
-  payload: AuthTokenPayload,
-  session: AuthSessionRecord | null
-): session is AuthSessionRecord {
-  if (!session) return false;
-  return (
-    session.jti === payload.jti &&
-    session.userUuid === payload.userId &&
-    session.userType === payload.userType &&
-    session.tenantId === (payload.tenantId ?? null) &&
-    session.tenantDbName === (payload.tenantDbName ?? null) &&
-    session.loginHost === payload.loginHost &&
-    session.tenantAccessMode === payload.tenantAccessMode
-  );
 }
 
 function hostMatchesClaims(host: string, payload: AuthTokenPayload) {

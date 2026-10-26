@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { getPlatformDatabase } from "../database/platform-database.js";
 import type { AuthUserType, TenantAccessMode } from "./jwt.js";
+import { parseSessionAuthority } from "./auth-session-authority.js";
 
 export type TenantSessionCache = {
   cachedAt: string;
@@ -124,7 +125,9 @@ function toRecord(row: {
   user_type: string;
   user_uuid: string;
   uuid: string;
-}): AuthSessionRecord {
+}): AuthSessionRecord | null {
+  const authority=parseSessionAuthority(row.user_type,row.tenant_access_mode);
+  if (!authority) return null;
   return {
     context: parseContext(row.context_json),
     expiresAt: new Date(row.expires_at),
@@ -132,19 +135,13 @@ function toRecord(row: {
     lastSeenAt: new Date(row.last_seen_at),
     loginHost: row.login_host,
     revokedAt: row.revoked_at ? new Date(row.revoked_at) : null,
-    tenantAccessMode:
-      row.tenant_access_mode === "custom_domain"
-        ? "custom_domain"
-        : row.tenant_access_mode === "shared_domain"
-          ? "shared_domain"
-          : "platform",
+    tenantAccessMode: authority.tenantAccessMode,
     tenantCode: row.tenant_code,
     tenantDbName: row.tenant_db_name,
     tenantId: row.tenant_id,
     userEmail: row.user_email,
     userName: row.user_name,
-    userType:
-      row.user_type === "tenant" ? "tenant" : row.user_type === "staff" ? "staff" : "super_admin",
+    userType: authority.userType,
     userUuid: row.user_uuid,
     uuid: row.uuid
   };

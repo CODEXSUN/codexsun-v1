@@ -258,3 +258,13 @@ A transport failure after claim refunds the queue attempt and uses the Frappe-ow
 Business mapping failures still use normal retry and error behavior.
 Platform composes the Frappe-owned schedule and health check for imports, exports, contact/enquiry outboxes, SOPs, and duties.
 Schedulers and relays check readiness before creating automatic jobs. CRM list reads never ping Frappe.
+
+## Global administration authority
+
+All registered `/admin` routes, including `/api/platform/admin` when mounted with that prefix, require a matching active server-backed Super Admin session.
+The root authentication context installs the global guard after session resolution and before request validation or handlers.
+Tenant users, including tenant administrators, and staff cannot read or change the global tenant registry, plans, subscriptions, app registry, entitlements, access control, industries, activity, or operational administration.
+Client headers, role names, request bodies, and token claims without a matching active server session cannot grant this access.
+Unknown stored session user types or access modes fail closed instead of defaulting to Super Admin authority.
+Tenant and public routes retain their existing owner authorization. Staff retains its own session surface.
+The regression suite executes actual route registrations with signed synthetic tokens and in-memory session/service boundaries. It never contacts a database or a live service.
