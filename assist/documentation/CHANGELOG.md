@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.71
+Current version: 1.1.72
 
-Release tag: v-1.1.71
+Release tag: v-1.1.72
 
-Changelog label: v 1.1.71
+Changelog label: v 1.1.72
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,22 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.72
+
+### [v 1.1.72] 2026-10-26 12:43 pm - Enforce trusted global Platform administration
+
+#### Database Changes
+
+- Database update: No (manual).
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.72.
+- Require a verified, active server-backed Super Admin session for every global Platform admin read and write. Deny tenant administrator, tenant user, staff, and anonymous authority at the backend.
+- Reject unknown session identity/access-mode metadata rather than defaulting to privileged authority. Preserve public and tenant owner checks.
+- Add actual route-registration, encrypted-cookie, bearer/session mismatch, forged-authority, adjacent-route, and positive operator regressions.
+- Record staging and recovery limits in `.container/docs/RELEASE-1.1.72.md`. No production, SQL, backup, restore, install, tag, or deployment operation.
 
 ## v-1.1.71
 

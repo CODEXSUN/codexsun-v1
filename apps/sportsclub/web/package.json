@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/sportsclub-web",
-  "version": "1.1.71",
+  "version": "1.1.72",
   "private": true,
   "type": "module",
   "exports": {
@@ -21,8 +21,8 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/core-web": "^1.1.71",
-    "@codexsun/ui": "^1.1.71",
+    "@codexsun/core-web": "^1.1.72",
+    "@codexsun/ui": "^1.1.72",
     "@tanstack/react-query": "^5.104.1",
     "@tanstack/react-table": "^9.2.6",
     "lucide-react": "^1.52.0",
