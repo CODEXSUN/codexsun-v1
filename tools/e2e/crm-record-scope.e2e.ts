@@ -339,6 +339,16 @@ test(
       accuracyMeters: 8,
       capturedAt: new Date().toISOString()
     };
+    for (const path of ["comments", "open-new-call"] as const) {
+      for (const [record, expected] of [[1, 200], [2, 403], [3, 403]] as const) {
+        const response = await app.inject({
+          method: "POST",
+          url: `/crm/enquiries/${record}/${path}`,
+          ...(path === "comments" ? { payload: { body: "Assigned work comment", parentId: null } } : {})
+        });
+        assert.equal(response.statusCode, expected, response.body);
+      }
+    }
     for (const [record, expected] of [
       [1, 200],
       [2, 403],

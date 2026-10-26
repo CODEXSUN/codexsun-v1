@@ -611,15 +611,15 @@ export async function createApp() {
       request.method === "POST" &&
       /^\/crm\/(?:mobile\/)?call-logs(?:\/CL-\d+\/comments)?$/u.test(path);
     const taskAction = resource === "task" ? taskPermissionForRequest(request.method, path) : null;
-    const locationAction =
+    const enquiryWorkAction =
       resource === "enquiry" &&
       request.method === "POST" &&
-      /^\/crm\/enquiries\/\d+\/locations$/u.test(path)
+      /^\/crm\/(?:mobile\/)?enquiries\/\d+\/(?:locations|comments|open-new-call)$/u.test(path)
         ? "work"
         : null;
     const action =
       taskAction ??
-      locationAction ??
+      enquiryWorkAction ??
       (request.method === "GET" || /^\/crm\/enquiries\/alerts\/\d+\/read$/u.test(path)
         ? "view"
         : request.method === "DELETE" && !/^\/crm\/enquiries\/live\//u.test(path)
