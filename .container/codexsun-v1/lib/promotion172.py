@@ -9,7 +9,7 @@ from promotion_recovery import verify_image_archive
 
 PINS = json.loads(Path(__file__).with_name("release172-pins.json").read_text())
 FALSE_PROOFS = ["restoreRehearsalVerified", "completeRecovery", "crossDatabaseAtomicityVerified", "filesCoverageVerified"]
-USED = Path("/tmp/codexsun-v1-release172-e6e7b79c-exception.used")
+USED = Path("/home/codexsun-operators/release172-e6e7b79c-exception.used")
 
 
 class Release172PromotionPolicy(PromotionPolicy):

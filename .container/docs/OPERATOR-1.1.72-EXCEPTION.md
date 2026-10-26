@@ -51,8 +51,11 @@ Add these checksummed references. Each `path` points to a private copy readable 
 
 ```json
 {
-  "release172Exception": {"path":"human-release-exception.json","sha256":"PINNED-HUMAN-RECORD-HASH"},
-  "recovery": {"path":"recovery.json","sha256":"ACTUAL-RECOVERY-RECEIPT-HASH"}
+  "release172Exception": {
+    "path": "human-release-exception.json",
+    "sha256": "PINNED-HUMAN-RECORD-HASH"
+  },
+  "recovery": { "path": "recovery.json", "sha256": "ACTUAL-RECOVERY-RECEIPT-HASH" }
 }
 ```
 
@@ -60,18 +63,22 @@ The referenced recovery JSON retains the standard actual fields and adds:
 
 ```json
 {
-  "completedAt":"ACTUAL-FINAL-PROOF-COMPLETION",
-  "backupProof":{"path":"BACKUP-PROOF.json","sha256":"ACTUAL-PROOF-HASH"},
-  "localVerification":{"path":"LOCAL-VERIFICATION.json","sha256":"PRINTED-VERIFIER-HASH"},
-  "coveredTargets":["master","EXACT-THIRTEEN-APPROVED-TENANT-DATABASES"],
-  "registryTargetsVerified":true,
-  "rollbackSha256":"PINNED-ROLLBACK-MODEL-HASH",
-  "quiescedContainers":{"codexsun-api":{"id":"ACTUAL-ID","finishedAt":"ACTUAL-DOCKER-TIMESTAMP"}},
-  "restoreRehearsalVerified":false,
-  "completeRecovery":false,
-  "crossDatabaseAtomicityVerified":false,
-  "filesCoverageVerified":false,
-  "artifacts":{"images":{"path":"VERIFIED-PREVIOUS-IMAGE-ARCHIVE","sha256":"ACTUAL-ARCHIVE-HASH"}}
+  "completedAt": "ACTUAL-FINAL-PROOF-COMPLETION",
+  "backupProof": { "path": "BACKUP-PROOF.json", "sha256": "ACTUAL-PROOF-HASH" },
+  "localVerification": { "path": "LOCAL-VERIFICATION.json", "sha256": "PRINTED-VERIFIER-HASH" },
+  "coveredTargets": ["master", "EXACT-THIRTEEN-APPROVED-TENANT-DATABASES"],
+  "registryTargetsVerified": true,
+  "rollbackSha256": "PINNED-ROLLBACK-MODEL-HASH",
+  "quiescedContainers": {
+    "codexsun-api": { "id": "ACTUAL-ID", "finishedAt": "ACTUAL-DOCKER-TIMESTAMP" }
+  },
+  "restoreRehearsalVerified": false,
+  "completeRecovery": false,
+  "crossDatabaseAtomicityVerified": false,
+  "filesCoverageVerified": false,
+  "artifacts": {
+    "images": { "path": "VERIFIED-PREVIOUS-IMAGE-ARCHIVE", "sha256": "ACTUAL-ARCHIVE-HASH" }
+  }
 }
 ```
 
@@ -96,8 +103,9 @@ It also retains ownership, mount/configuration identity, secret preservation, Li
 It never fetches, builds, pulls images, captures backups, runs migrations, restores data, or provisions infrastructure.
 CXApp databases and MariaDB server lifecycle, configuration, privileges, and volumes remain outside its operations.
 
-After all preflight checks, apply exclusively creates `/tmp/codexsun-v1-release172-e6e7b79c-exception.used` under the deployment lock.
+After all preflight checks, apply exclusively creates `/home/codexsun-operators/release172-e6e7b79c-exception.used` under the deployment lock.
 This fixed host marker prevents replay through another manifest or directory.
+The operator checkout preparation creates its parent directory. The marker persists across reboots.
 There is no reset command. A failed attempt after consumption needs operator review instead of automatic replay.
 The private status and command result explicitly record accepted gaps and the unchanged false proof values.
 Application rollback restores prior images/configuration and running states. It does not reverse database migrations.
@@ -110,3 +118,12 @@ Omitted running states fail this exception instead of silently creating stopped 
 Run the normal promotion, OCI, preparation, release172 exception, and local encrypted-integrity tests.
 Tests use synthetic receipts, keys, dumps, archives, and a fake Docker boundary.
 They do not certify production recovery or perform any production operation.
+
+## Published operator validation
+
+The focused suites passed 64 tests: 22 standard promotion, seven OCI recovery, 11 preparation, 20 release-exception/archive, and four real encrypted-integrity tests.
+The failed-replacement test restarts all three prior running applications with dependency startup disabled.
+Default recovery gates, stale backup rejection, immutable source/image/model binding, registry scope, private inputs, and graceful quiescence remain enforced.
+Version and Docs checks passed. No application, package, DevKit, Assist, or lockfile source changed from the tested application SHA.
+No backups, restores, database operations, image builds, container operations, or production promotion ran during operator implementation.
+Only the separately authorized Git-only VPS operator checkout preparation may follow publication.
