@@ -1,5 +1,12 @@
 # Ecommerce tasks
 
+## Migration lineage compatibility — 2026-10-26
+
+The source repair preserves the proven 31-step and 34-step histories and appends missing upgrades without renumbering applied records.
+The public planner validates exact metadata before execution under the framework migration lock.
+Focused contract tests cover both histories, fresh installation, repeat runs, and rejection paths without a database server.
+Live migration, restored-data, recovery, and production acceptance remain blocked or unverified. Earlier delivery notes below are historical evidence.
+
 ## Current status - authoritative, 2026-10-25 (EC-T03/EC-T05 browser repair)
 
 This section is the single current status source. Every section below it is historical evidence and

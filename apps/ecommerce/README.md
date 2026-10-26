@@ -50,7 +50,14 @@ Settings reads require `ecommerce.storefront.view`. Saves and uploads require `e
 
 In local development, localhost storefront traffic uses `DEFAULT_TENANT_CORPORATE_ID` independently of `ENABLE_DEFAULT_TENANT_SEED`. Production still requires verified tenant-domain routing. Staff requests pass the server-verified tenant database name to Core lookups.
 
-The tenant migration installs the new Ecommerce tables, then drops the retired `ecommerce_catalog`, `ecommerce_catalog_activity`, and `ecommerce_storefront_*` quote/config/activity tables. Existing records in those retired tables are deleted. Core tables and records are not dropped. The migration ledger records each step for repeatable startup. The seed creates Ecommerce permissions and the default storefront profile.
+Tenant migrations preserve legacy catalog tables and recorded ledger identities. The historical cleanup step is a data-preserving no-op.
+Explicit manifests support the proven 31-step `8433a8ff` lineage and 34-step `27135c9a` lineage.
+The framework supplies immutable scope-ledger metadata under its migration lock. Ecommerce selects only a complete, exact known lineage before running steps.
+Unknown, mixed, incomplete, failed, running, rolled-back, or duplicated histories require review and fail before migration-step writes.
+Missing upgrades append at versions 32–40 for the older lineage or 35–40 for the newer lineage. Fresh installations use the newer manifest.
+Applied names, versions, checksums, statuses, and timestamps remain unchanged. The checksum guard and ledger format are unchanged.
+`planEcommerceTenantMigrations(ledger)` exposes the selected lineage and pending metadata without SQL or migration execution.
+The seed creates Ecommerce permissions and the default storefront profile. No live migration or recovery acceptance follows from metadata planning.
 
 Staff permissions are `ecommerce.catalog.view`, `ecommerce.catalog.edit`, `ecommerce.storefront.view`, and `ecommerce.storefront.manage`. Platform checks them before the staff routes run. Frappe catalog connection settings use the tenant's Frappe connection when that module is enabled.
 

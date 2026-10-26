@@ -9,6 +9,7 @@ export {
 export {
   ecommerceTenantMigrations,
   migrateEcommerceTenantDatabase,
+  planEcommerceTenantMigrations,
   rollbackEcommerceTenantDatabase
 } from "./modules/ecommerce-composition/ecommerce-composition.migration.js";
 export { seedEcommerceTenantModules } from "./modules/ecommerce-composition/ecommerce-composition.seed.js";

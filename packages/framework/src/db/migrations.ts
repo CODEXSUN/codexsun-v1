@@ -17,6 +17,7 @@ export type MigrationBatch<Database> = {
   batch: number;
   description: string;
   scope: string;
+  resolveSteps?: (ledger: readonly MigrationLedgerEntry[]) => readonly MigrationStep<Database>[];
   steps: readonly MigrationStep<Database>[];
   version: string;
 };
@@ -52,6 +53,8 @@ type LedgerRow = {
   status: "applied" | "failed" | "rolled_back" | "running";
   version: number;
 };
+
+export type MigrationLedgerEntry = Readonly<LedgerRow & { batch: number; scope: string }>;
 
 export const migrationSchemaTableName = "migration_schema";
 export const legacyMigrationSchemaTableName = "app_migration_batches";
@@ -92,6 +95,11 @@ export async function runMigrationBatch<Database>(
   await ensureMigrationLedger(database, ledgerTable);
 
   return withMigrationLock(database, lockName, options.lockTimeoutSeconds ?? 30, async () => {
+    if (migrationBatch.resolveSteps) {
+      const ledger = await readScopeLedger(database, ledgerTable, migrationBatch.scope);
+      migrationBatch = { ...migrationBatch, steps: migrationBatch.resolveSteps(ledger) };
+      assertBatch(migrationBatch);
+    }
     const result: MigrationRunResult = {
       applied: [],
       batch: migrationBatch.batch,
@@ -398,6 +406,20 @@ async function ensureMigrationLedger<Database>(database: Kysely<Database>, ledge
       )
       .execute(database);
   });
+}
+
+async function readScopeLedger<Database>(
+  database: Kysely<Database>,
+  ledgerTable: string,
+  scope: string
+) {
+  const result = await sql<MigrationLedgerEntry>`
+    SELECT scope, batch, checksum, name, status, version
+    FROM ${sql.table(ledgerTable)}
+    WHERE scope=${scope}
+    ORDER BY version, name
+  `.execute(database);
+  return Object.freeze(result.rows.map((row) => Object.freeze({ ...row })));
 }
 
 async function findLedgerRow<Database>(

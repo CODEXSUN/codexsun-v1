@@ -24,6 +24,11 @@ Core owns shared product identity and Frappe owns connection credentials. Public
 
 ## Review and evidence
 
+Migration compatibility must preserve both proven 31-step and 34-step manifests and their exact applied ledger identities.
+Use the public metadata planner for lineage-aware audits. The default version map describes fresh installations only.
+Do not accept arbitrary checksum aliases, rewrite applied rows, or infer lineage from the current array order.
+Contract tests use historical metadata and an in-memory SQL boundary. They do not establish live MariaDB or recovery acceptance.
+
 - `node tools/check-module-boundaries.mjs ecommerce`
 - `npm run typecheck -w @codexsun/ecommerce-api`
 - `npm run lint -w @codexsun/ecommerce-api`

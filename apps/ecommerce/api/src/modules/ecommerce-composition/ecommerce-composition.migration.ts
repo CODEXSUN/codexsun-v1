@@ -3,7 +3,16 @@ import {
   migrateStorefrontOrganisation,
   upgradeStorefrontOrganisationBranding
 } from "../storefront-organisation/index.js";
-import { runMigrationBatch, type MigrationBatch } from "@codexsun/framework/db";
+import {
+  migrationChecksum,
+  runMigrationBatch,
+  type MigrationBatch,
+  type MigrationLedgerEntry
+} from "@codexsun/framework/db";
+import {
+  ecommerceMigrationVersions,
+  resolveEcommerceMigrationPlan
+} from "./ecommerce-composition.migration-lineage.js";
 import type { EcommerceDatabase } from "../../database/ecommerce-database.js";
 import {
   migrateProductInformationModule,
@@ -61,8 +70,7 @@ import {
 import { standardizeStorefrontSchema } from "../storefront/storefront-schema.migration.js";
 import { upgradeStorefrontReadPerformance } from "../storefront/storefront-performance.migration.js";
 
-// Versions 1-34 are the committed 27135c9a ledger. They are immutable: tenants may already
-// have recorded them, so new forward steps are appended at 35 and above without renumbering.
+// This array controls execution dependencies, not historical ledger identities.
 const steps = [
   ["product-information", migrateProductInformationModule],
   ["product-information-details", upgradeProductInformationDetails],
@@ -105,11 +113,11 @@ const steps = [
   ["product-collection", migrateProductCollectionModule],
   ["catalog-activity", migrateCatalogActivityModule]
 ] as const;
-const versionedSteps = steps.map(([name, up], index) => ({
+const versionedSteps = steps.map(([name, up]) => ({
   name: `ecommerce.modules.${name}`,
   description: `Migrate ecommerce ${name}.`,
   checksum: `ecommerce.modules.${name}:v1`,
-  version: index + 1,
+  version: ecommerceMigrationVersions.stable34[`ecommerce.modules.${name}`],
   up
 }));
 const sourcePreferenceStep = versionedSteps.find(
@@ -127,7 +135,8 @@ const batch: MigrationBatch<EcommerceDatabase> = {
   scope: "ecommerce.modules",
   description: "Install Ecommerce modules while preserving legacy catalog and quote data.",
   version: "1.0.85",
-  steps: orderedSteps
+  steps: resolveEcommerceMigrationPlan(orderedSteps, []).steps,
+  resolveSteps: (ledger) => resolveEcommerceMigrationPlan(orderedSteps, ledger).steps
 };
 
 export const ecommerceTenantMigrations = batch.steps.map(({ name, description }) => ({
@@ -138,6 +147,20 @@ export const ecommerceTenantMigrations = batch.steps.map(({ name, description })
 export const ecommerceTenantMigrationVersions: Readonly<Record<string, number>> = Object.freeze(
   Object.fromEntries(batch.steps.map(({ name, version }) => [name, version]))
 );
+
+export function planEcommerceTenantMigrations(ledger: readonly MigrationLedgerEntry[]) {
+  const plan = resolveEcommerceMigrationPlan(orderedSteps, ledger);
+  const applied = new Set(ledger.map((row) => row.name));
+  return {
+    lineage: plan.lineage,
+    steps: plan.steps.map((step) => ({
+      name: step.name,
+      version: step.version,
+      checksum: migrationChecksum(batch, step),
+      applied: applied.has(step.name)
+    }))
+  };
+}
 
 export async function migrateEcommerceTenantDatabase(database: Kysely<EcommerceDatabase>) {
   return runMigrationBatch(database, batch);

@@ -20,11 +20,14 @@ test("repository references preserve MDX as text, exclude output, and detect dri
     writeFileSync(join(root, "dist/ignored.md"), "# Output");
     mkdirSync(join(root, ".container"));
     writeFileSync(join(root, ".container/README.md"), "# Container guide");
+    mkdirSync(join(root, ".codex-runtime"));
+    writeFileSync(join(root, ".codex-runtime/HANDOFF.md"), "# Private local runtime record");
     const audit = new RepositoryDocumentation(root);
     assert.equal(audit.synchronize().count, 1);
     assert.deepEqual(audit.synchronize(true).failures, []);
     const catalog = JSON.parse(readFileSync(join(root, "apps/docs/content/catalog.json"), "utf8"));
     assert.ok(!catalog.pages.some((page) => page.title.startsWith(".container/")));
+    assert.ok(!catalog.pages.some((page) => page.title.startsWith(".codex-runtime/")));
     const mdx = catalog.pages.find((page) => page.title === "README.mdx");
     const body = readFileSync(join(root, "apps/docs/content", mdx.sourcePath), "utf8");
     assert.match(body, /````mdx\n# Example/u);

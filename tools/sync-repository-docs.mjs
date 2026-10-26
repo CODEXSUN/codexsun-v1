@@ -12,6 +12,7 @@ export class RepositoryDocumentation {
       ".idea",
       ".turbo",
       ".cache",
+      ".codex-runtime",
       ".next",
       ".vite",
       "node_modules",
