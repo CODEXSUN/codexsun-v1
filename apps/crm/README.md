@@ -79,6 +79,11 @@ exports remain outside this approval.
 
 ## Record visibility
 
+Assigned users can pin enquiry locations and submit check-in/out with `crm.enquiry.work`.
+The enquiry permission seed grants this permission to the standard active role set.
+Full enquiry editing and charges retain their existing administrative checks. Creator-only access does not permit location or checkpoint writes.
+Existing tenants need the enquiry permission seed after the API update to receive the new grant.
+
 Tenant Admin and Super Admin retain tenant-wide enquiry and task reads. Other roles see only
 records assigned to their active user or created by their email. Activities, overview totals,
 filters, direct record links, comments, and closure review inherit that record scope.

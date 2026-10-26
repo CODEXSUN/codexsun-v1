@@ -12,7 +12,12 @@ test("tenant-wide enquiry and task reads require an administrator role", () => {
 });
 
 test("ordinary permissions retain their existing permission checks", () => {
-  for (const permission of ["crm.enquiry.view", "crm.task.work", "core.application.records.view"])
+  for (const permission of [
+    "crm.enquiry.view",
+    "crm.enquiry.work",
+    "crm.task.work",
+    "core.application.records.view"
+  ])
     assert.equal(crmRecordReadRoles(permission), null);
 });
 

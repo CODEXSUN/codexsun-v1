@@ -611,8 +611,15 @@ export async function createApp() {
       request.method === "POST" &&
       /^\/crm\/(?:mobile\/)?call-logs(?:\/CL-\d+\/comments)?$/u.test(path);
     const taskAction = resource === "task" ? taskPermissionForRequest(request.method, path) : null;
+    const locationAction =
+      resource === "enquiry" &&
+      request.method === "POST" &&
+      /^\/crm\/enquiries\/\d+\/locations$/u.test(path)
+        ? "work"
+        : null;
     const action =
       taskAction ??
+      locationAction ??
       (request.method === "GET" || /^\/crm\/enquiries\/alerts\/\d+\/read$/u.test(path)
         ? "view"
         : request.method === "DELETE" && !/^\/crm\/enquiries\/live\//u.test(path)
@@ -777,7 +784,7 @@ export async function createApp() {
   });
   await enquiryLocationModule.register(app, async (request) => {
     const context = await crmAccess(request, "enquiry", "/crm/enquiries");
-    if (request.method === "POST") await context.authorize("crm.enquiry.update");
+    if (request.method === "POST") await context.authorize("crm.enquiry.work");
     const actor = await context.database
       .selectFrom("app_users")
       .select("id")

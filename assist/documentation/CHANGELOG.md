@@ -22,6 +22,20 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 
 ## v-1.1.73
 
+### [v 1.1.73] 2026-10-26 - Allow assigned mobile users to post field actions
+
+#### Database Changes
+
+- Seed the new `crm.enquiry.work` permission for the five standard roles in existing active CRM tenants. No schema migration is required.
+- Apply the permission seed only after a verified backup and staged acceptance. Production application remains pending.
+
+#### App Codebase Changes
+
+- Allow assigned users to post enquiry location pins and check-in/check-out with the dedicated work permission.
+- Keep record editing, charges, collections, creator-only writes, and unassigned writes restricted by existing checks.
+- Verify positive and negative actions with the real database record-scope suite. CRM and Platform API type checks pass.
+
+
 ### [v 1.1.73] 2026-10-26 3:02 pm - Make CRM independent and verify mobile tenant isolation
 
 #### Database Changes
