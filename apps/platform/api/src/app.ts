@@ -91,6 +91,7 @@ import {
   getActiveStatusForDatabase,
   getActivePriorityForDatabase,
   lookupAssignedEnquirySummary,
+  EnquiryContactLookup,
   type EnquiryDatabase,
   type ActivitiesDatabase,
   type ListInDatabase,
@@ -659,10 +660,14 @@ export async function createApp() {
       database: context.database as unknown as import("kysely").Kysely<PriorityDatabase>
     };
   });
+  const enquiryContactLookup = new EnquiryContactLookup();
   const enquiryRelations = (
     context: Pick<ReturnType<typeof tenantAccessContext>, "database" | "tenantDatabase">
   ) => ({
-    contact: (id: number) => getActiveContactForDatabase(context.tenantDatabase, id),
+    contact: (id: number) =>
+      enquiryContactLookup.find(context.tenantDatabase, id, () =>
+        getActiveContactForDatabase(context.tenantDatabase, id)
+      ),
     resolveExternalCustomer: async (input: {
       externalKey: string;
       externalCode: string;
@@ -749,13 +754,15 @@ export async function createApp() {
     } catch (error) {
       if (!(error instanceof AppError) || error.code !== "FORBIDDEN") throw error;
     }
+    const reportContext = request.method === "GET" ? null : await workReportContext(request);
     return {
       database: context.database as unknown as import("kysely").Kysely<
         import("@codexsun/crm-api").ClosureDatabase
       >,
       workEvent: async (transaction, enquiryId, action, body) => {
+        if (!reportContext) throw AppError.forbidden("A work action context is required.");
         await recordWorkEvent(
-          await workReportContext(request),
+          reportContext,
           transaction as never,
           { enquiryId, taskId: null },
           action,
@@ -857,10 +864,12 @@ export async function createApp() {
       (await canViewCrmEnquiryFrappeSync(context.actorEmail, () =>
         context.authorize("crm.enquiry.frappe-sync.view")
       ));
+    const reportContext = request.method === "GET" ? null : await workReportContext(request);
     return {
       workEvent: async (transaction, enquiryId, action, body) => {
+        if (!reportContext) throw AppError.forbidden("A work action context is required.");
         await recordWorkEvent(
-          await workReportContext(request),
+          reportContext,
           transaction as never,
           { enquiryId, taskId: null },
           action,
@@ -909,8 +918,6 @@ export async function createApp() {
         const live = await new FrappeLiveSyncService(database).settings();
         if (live.direction === "inbound" || !live.enabled || live.paused || !live.modules.enquiries)
           return;
-        if (env.CODEXSUN_QUEUE_WORKER_ENABLED !== "1")
-          throw new Error("The background queue worker is disabled.");
         await enqueueCrmEnquirySync(queueService, {
           tenantId: context.tenantId,
           tenantDatabase: context.tenantDatabase,
@@ -949,12 +956,10 @@ export async function createApp() {
         return;
       const sync = await requestContactExport(database, id, context.actorEmail);
       if (!sync) return;
-      if (!(await canDispatchCrmFrappeSync(context.database))) return;
+      if (!(await readCrmFrappeSyncAccess(context.database)).outbound) return;
       try {
-        if (env.CODEXSUN_QUEUE_WORKER_ENABLED !== "1")
-          throw new Error("The background queue worker is disabled.");
         await queueService.enqueue({
-          dispatchImmediately: true,
+          dispatchImmediately: false,
           actorEmail: context.actorEmail,
           correlationId: request.id,
           idempotencyKey: crmDutySyncIdempotencyKey(
@@ -1647,12 +1652,13 @@ export async function createApp() {
     } catch (error) {
       if (!(error instanceof AppError) || error.code !== "FORBIDDEN") throw error;
     }
+    const taskChat = request.method === "GET" ? null : await chatContext(request);
     return {
       database: context.database as unknown as import("kysely").Kysely<
         import("@codexsun/crm-api").TaskDatabase
       >,
       workEvent: async (transaction, taskId, action, body) => {
-        const chat = await chatContext(request);
+        if (!taskChat) throw AppError.forbidden("A work action context is required.");
         const workContext: WorkReportContext = {
           database: transaction as never,
           actorEmail: context.actorEmail,
@@ -1662,7 +1668,7 @@ export async function createApp() {
             writeWorkMessage(trx as never, {
               ...message,
               actorEmail: context.actorEmail,
-              companyId: chat.companyId
+              companyId: taskChat.companyId
             })
         };
         await recordWorkEvent(

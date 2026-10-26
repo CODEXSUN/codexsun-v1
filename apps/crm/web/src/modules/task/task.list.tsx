@@ -4,7 +4,6 @@ import { WorkspaceTable } from "@codexsun/ui/workspace/table";
 import { formatDate as formatWorkspaceDate } from "@codexsun/ui/workspace/utils";
 import { CrmStatusBadge } from "../../crm-colors";
 import { TaskInlineFilter } from "./task.inline-filter";
-import { CloudOff } from "lucide-react";
 import type { TaskColumnFilters, TaskRecord } from "./task.types";
 
 const filters: Record<string, { key: keyof TaskColumnFilters; label: string }> = {
@@ -114,22 +113,7 @@ export function TaskList({
         <CrmStatusBadge code={row.original.status} label={row.original.statusName} />
       )
     },
-    {
-      id: "frappeSync",
-      header: "Frappe sync",
-      cell: () => (
-        <span
-          className="inline-flex items-center gap-1.5 text-muted-foreground"
-          title="CRM Tasks are not linked to a Frappe DocType."
-        >
-          <CloudOff className="size-4" aria-hidden="true" />
-          <span className="rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-800">
-            Not configured
-          </span>
-          <span className="sr-only">Frappe sync is not supported for CRM Tasks</span>
-        </span>
-      )
-    },
+
     {
       id: "actions",
       header: "Action",

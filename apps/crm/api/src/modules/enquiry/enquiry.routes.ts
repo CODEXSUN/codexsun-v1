@@ -57,6 +57,8 @@ const recordSchema = inputSchema.extend({
   createdAt: z.string(),
   updatedAt: z.string(),
   closurePending: z.boolean().optional(),
+  runningJobId: z.number().int().positive().nullable().optional(),
+  runningJobStartedAt: z.string().nullable().optional(),
   frappeSyncStatus: z
     .enum(["pending", "processing", "retry", "failed", "synced", "unlinked"])
     .nullable()

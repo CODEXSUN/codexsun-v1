@@ -1,8 +1,7 @@
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import { WorkspaceTable } from "@codexsun/ui/workspace/table";
 import { WorkspaceStatusBadge } from "@codexsun/ui/workspace/status";
-import { FrappeSyncIndicator, verifyFrappeRecord } from "../frappe-sync/frappe-sync.indicator";
-import type { FrappeSyncStatus } from "../frappe-sync/frappe-sync.indicator";
+
 import type { CallLogRecord } from "./call-log.types";
 
 export const callLogColumns = [
@@ -14,8 +13,7 @@ export const callLogColumns = [
   { id: "status", label: "Status" },
   { id: "duration", label: "Duration" },
   { id: "receiver", label: "Call received by" },
-  { id: "caller", label: "Caller" },
-  { id: "frappeSync", label: "Frappe sync" }
+  { id: "caller", label: "Caller" }
 ] as const;
 
 type CallLogCell = { row: { original: CallLogRecord } };
@@ -23,13 +21,11 @@ type CallLogCell = { row: { original: CallLogRecord } };
 export function CallLogList({
   records,
   loading,
-  visibleColumns,
-  frappeSyncStatuses
+  visibleColumns
 }: {
   records: CallLogRecord[];
   loading: boolean;
   visibleColumns: Record<string, boolean>;
-  frappeSyncStatuses: Record<number, FrappeSyncStatus>;
 }) {
   const columns: ColumnDef<CallLogRecord>[] = [
     { id: "name", accessorKey: "name", header: "ID" },
@@ -70,16 +66,6 @@ export function CallLogList({
       accessorKey: "caller",
       header: "CALLER",
       cell: ({ row }: CallLogCell) => row.original.caller || "—"
-    },
-    {
-      id: "frappeSync",
-      header: "FRAPPE SYNC",
-      cell: ({ row }: CallLogCell) => (
-        <FrappeSyncIndicator
-          status={frappeSyncStatuses[row.original.id] ?? null}
-          onVerify={() => verifyFrappeRecord("call-logs", row.original.id)}
-        />
-      )
     }
   ].filter((column) => visibleColumns[column.id] !== false);
   return (

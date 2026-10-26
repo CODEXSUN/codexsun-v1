@@ -7,10 +7,18 @@ import { EnquiryWhatsAppForm } from "./enquiry-whatsapp.form";
 import { EnquiryWhatsAppList } from "./enquiry-whatsapp.list";
 import { useWhatsAppMessages, whatsAppKey } from "./enquiry-whatsapp.hooks";
 import { prepareWhatsAppMessage } from "./enquiry-whatsapp.services";
-export function EnquiryWhatsAppWorkspace({ id, mobile }: { id: number; mobile: string | null }) {
+export function EnquiryWhatsAppWorkspace({
+  id,
+  mobile,
+  active = true
+}: {
+  id: number;
+  mobile: string | null;
+  active?: boolean;
+}) {
   const [message, setMessage] = useState("");
   const retry = useRef<{ message: string; id: string } | null>(null);
-  const history = useWhatsAppMessages(id);
+  const history = useWhatsAppMessages(id, active);
   const client = useQueryClient();
   const save = useMutation({
     mutationFn: async () => {

@@ -1,4 +1,3 @@
-import { useCrmFrappeSyncEnabled } from "../frappe-sync/frappe-sync.hooks";
 import { useEffect, useState, type ReactNode } from "react";
 import { Check, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
@@ -6,12 +5,7 @@ import { Button } from "@codexsun/ui/components/button";
 import { Input } from "@codexsun/ui/components/input";
 import { WorkspaceLookup } from "@codexsun/ui/workspace/lookup";
 import { ContactRelatedTabs } from "./contact.related";
-import { useQuery } from "@tanstack/react-query";
-import {
-  FrappeSyncIndicator,
-  getFrappeRecordStates,
-  verifyFrappeRecord
-} from "../frappe-sync/frappe-sync.indicator";
+
 import type { ContactLookups, ContactRecord, ContactSavePayload } from "./contact.types";
 
 export function CrmContactShow({
@@ -29,26 +23,8 @@ export function CrmContactShow({
   onStatusChange: (active: boolean) => Promise<void>;
   onOpenEnquiry?: (id: string) => void;
 }) {
-  const frappeSyncEnabled = useCrmFrappeSyncEnabled();
-  const sync = useQuery({
-    queryKey: ["crm", "frappe-sync", "contacts", [Number(record.id)]],
-    queryFn: () => getFrappeRecordStates("contacts", [Number(record.id)]),
-    enabled: frappeSyncEnabled,
-    refetchInterval: 1000
-  });
-  const state = sync.data?.[Number(record.id)];
   return (
     <div className="mx-auto w-[calc(100%-2rem)] max-w-[92rem] py-4 lg:w-[calc(100%-3rem)] lg:py-5">
-      {frappeSyncEnabled ? (
-        <div className="mb-3 flex items-center gap-2 text-sm">
-          <span>Frappe mobile sync</span>
-          <FrappeSyncIndicator
-            status={state?.status ?? null}
-            error={state?.message ?? sync.error?.message}
-            onVerify={() => verifyFrappeRecord("contacts", Number(record.id))}
-          />
-        </div>
-      ) : null}
       <ContactRelatedTabs
         contactId={record.id}
         mobile={record.primaryPhone}

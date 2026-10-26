@@ -38,21 +38,6 @@ export type EnquiryRecord = EnquirySavePayload & {
   canViewFrappeSync?: boolean;
 };
 
-export type EnquiryFrappeSyncEvent = {
-  id: string;
-  eventType: "enquiry-upsert" | "comment-add" | "job-upsert" | "estimate-upsert";
-  status: "pending" | "processing" | "retry" | "failed" | "synced";
-  attempts: number;
-  remoteName: string | null;
-  lastError: string | null;
-  createdAt: string;
-  validation: {
-    status: "valid" | "invalid" | "warning";
-    errors: string[];
-    checkedAt: string;
-  } | null;
-};
-
 export type EnquiryPage = {
   items: EnquiryRecord[];
   total: number;

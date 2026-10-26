@@ -16,6 +16,6 @@ export function useDutyReportPage(
     queryKey: ["crm", "duty-reports", search, page, from, to, canViewAll, filters],
     queryFn: () => listReports(search, page, from, to, filters),
     enabled: canViewAll === true,
-    refetchInterval: 1000
+    refetchInterval: 15000
   });
 }

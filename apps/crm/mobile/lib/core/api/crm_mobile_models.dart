@@ -317,6 +317,7 @@ class CrmJob {
     required this.comments,
     required this.jobs,
     required this.activities,
+    this.hasJobSummary = false,
   });
 
   final int id;
@@ -339,6 +340,7 @@ class CrmJob {
   final List<CrmComment> comments;
   final List<CrmJobExecution> jobs;
   final List<CrmActivity> activities;
+  final bool hasJobSummary;
 
   CrmJob withJobs(List<CrmJobExecution> updatedJobs) => CrmJob(
     id: id,
@@ -361,6 +363,7 @@ class CrmJob {
     comments: comments,
     jobs: updatedJobs,
     activities: activities,
+    hasJobSummary: hasJobSummary,
   );
 
   factory CrmJob.fromJson(Map<String, dynamic> json) {
@@ -436,10 +439,22 @@ class CrmJob {
       priorityId: json['priorityId']?.toString() ?? '',
       listInId: json['listInId']?.toString() ?? '',
       comments: comments.map(CrmComment.fromJson).toList(),
-      jobs: (json['jobs'] as List? ?? [])
-          .whereType<Map<String, dynamic>>()
-          .map(CrmJobExecution.fromJson)
-          .toList(),
+      hasJobSummary: json.containsKey('runningJobId'),
+      jobs:
+          (json['jobs'] as List? ??
+                  (json['runningJobId'] == null
+                      ? []
+                      : [
+                          {
+                            'id': json['runningJobId'],
+                            'startAt': json['runningJobStartedAt'],
+                            'createdAt': json['runningJobStartedAt'],
+                            'status': 'running',
+                          },
+                        ]))
+              .whereType<Map<String, dynamic>>()
+              .map(CrmJobExecution.fromJson)
+              .toList(),
       activities: (json['activities'] as List? ?? [])
           .whereType<Map<String, dynamic>>()
           .map(CrmActivity.fromJson)

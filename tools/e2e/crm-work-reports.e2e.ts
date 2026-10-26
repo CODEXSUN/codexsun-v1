@@ -89,12 +89,21 @@ test(
       );
       assert.equal(
         coreGrants.rows.filter(
-          (g) => g.role === role && g.permission !== "core.application.records.view"
+          (g) =>
+            g.role === role &&
+            g.permission !== "core.application.records.view" &&
+            !(role === "user" && g.permission === "core.application.records.create")
         ).length,
         0,
-        "Core read access must not grant master writes"
+        "Core defaults must not grant administrative master writes"
       );
     }
+    assert.ok(
+      coreGrants.rows.some(
+        (g) => g.role === "user" && g.permission === "core.application.records.create"
+      ),
+      "Standard User retains the published record-create default"
+    );
     await seedEnquiryModule(database as never);
     await seedEnquiryModule(database as never);
     const grants = await sql<{

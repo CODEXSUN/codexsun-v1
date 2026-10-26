@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -39,16 +41,56 @@ class MyEnquiriesPageState extends State<MyEnquiriesPage> {
   var _statusFilter = '';
   var _searchQuery = '';
   var _page = 1;
+  Timer? _searchDebounce;
+  List<CrmJob> _feedSnapshot = [];
 
   @override
   void initState() {
     super.initState();
     _enquiries = _load();
     _formData = _loadFormData();
+    _feedSnapshot = widget.jobsFeed?.jobs ?? [];
+    widget.jobsFeed?.addListener(_refreshChangedRecords);
+  }
+
+  @override
+  void didUpdateWidget(covariant MyEnquiriesPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.jobsFeed != widget.jobsFeed) {
+      oldWidget.jobsFeed?.removeListener(_refreshChangedRecords);
+      _feedSnapshot = widget.jobsFeed?.jobs ?? [];
+      widget.jobsFeed?.addListener(_refreshChangedRecords);
+    }
+  }
+
+  void _refreshChangedRecords() {
+    final next = widget.jobsFeed?.jobs ?? [];
+    final changed =
+        next.length != _feedSnapshot.length ||
+        next.indexed.any((entry) {
+          final before = _feedSnapshot[entry.$1];
+          final after = entry.$2;
+          return before.sourceId != after.sourceId ||
+              before.status != after.status ||
+              before.priority != after.priority ||
+              before.list != after.list ||
+              before.assignedTo != after.assignedTo ||
+              before.dueDate != after.dueDate ||
+              before.title != after.title;
+        });
+    _feedSnapshot = next;
+    if (mounted && changed) {
+      final enquiries = _load();
+      setState(() {
+        _enquiries = enquiries;
+      });
+    }
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    widget.jobsFeed?.removeListener(_refreshChangedRecords);
     _searchController.dispose();
     super.dispose();
   }
@@ -165,6 +207,7 @@ class MyEnquiriesPageState extends State<MyEnquiriesPage> {
                       ? IconButton(
                           icon: const Icon(Icons.clear, size: 18),
                           onPressed: () {
+                            _searchDebounce?.cancel();
                             _searchController.clear();
                             setState(() {
                               _searchQuery = '';
@@ -185,11 +228,23 @@ class MyEnquiriesPageState extends State<MyEnquiriesPage> {
                   ),
                 ),
                 onChanged: (value) {
+                  _searchDebounce?.cancel();
                   setState(() {
                     _searchQuery = value.trim();
+                    _page = 1;
                   });
+                  _searchDebounce = Timer(
+                    const Duration(milliseconds: 300),
+                    () {
+                      if (!mounted) return;
+                      setState(() {
+                        _enquiries = _load();
+                      });
+                    },
+                  );
                 },
                 onSubmitted: (value) {
+                  _searchDebounce?.cancel();
                   setState(() {
                     _searchQuery = value.trim();
                     _page = 1;
@@ -210,7 +265,8 @@ class MyEnquiriesPageState extends State<MyEnquiriesPage> {
         child: FutureBuilder<CrmPage<CrmJob>>(
           future: _enquiries,
           builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
+            if (snapshot.connectionState != ConnectionState.done &&
+                !snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) return _LoadError(onRetry: refresh);
@@ -222,15 +278,13 @@ class MyEnquiriesPageState extends State<MyEnquiriesPage> {
                   pageSize: 100,
                   total: 0,
                 );
-            final allEnquiries = result.items;
-            final enquiries = sortRunningJobsFirst(
-              _filter(allEnquiries).map((enquiry) {
-                final sharedJob = widget.jobsFeed?.jobFor(enquiry.sourceId);
-                return sharedJob == null
-                    ? enquiry
-                    : enquiry.withJobs(sharedJob.jobs);
-              }),
-            );
+            final allEnquiries = result.items
+                .map(
+                  (enquiry) =>
+                      widget.jobsFeed?.jobFor(enquiry.sourceId) ?? enquiry,
+                )
+                .toList();
+            final enquiries = sortRunningJobsFirst(_filter(allEnquiries));
             if (enquiries.isEmpty && result.total == 0) {
               return Center(
                 child: Text(

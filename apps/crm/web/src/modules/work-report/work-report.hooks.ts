@@ -10,10 +10,11 @@ export const workReportKey = (target: WorkReportTarget) => [
 export const useWorkReports = (
   target: WorkReportTarget,
   page = 1,
-  filter: WorkReportHistoryFilter = "all"
+  filter: WorkReportHistoryFilter = "all",
+  poll = true
 ) =>
   useQuery({
     queryKey: [...workReportKey(target), "history", page, filter],
     queryFn: () => listWorkHistory(target, page, filter),
-    refetchInterval: 10000
+    refetchInterval: poll ? 10000 : false
   });

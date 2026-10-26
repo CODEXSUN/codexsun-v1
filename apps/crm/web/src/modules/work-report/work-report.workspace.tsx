@@ -44,12 +44,14 @@ export function WorkReportWorkspace({
   const reports = useWorkReports(
     target,
     page,
-    actionFilter === "checkpoints" ? "checkpoints" : "all"
+    actionFilter === "checkpoints" ? "checkpoints" : "all",
+    active
   );
   const checkpoint = useQuery({
     queryKey: [...workReportKey(target), "checkpoint"],
     queryFn: () => getWorkCheckpoint(target),
-    refetchInterval: 10000
+    enabled: active,
+    refetchInterval: active ? 10000 : false
   });
   const save = useMutation({
     mutationFn: async (action: "check-in" | "check-out") => {
