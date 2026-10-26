@@ -1,4 +1,5 @@
 import { formatCrmDateTime } from "../../crm-time.js";
+import { PinLocationText } from "../../pin-location-text.js";
 import { WorkspaceTableEmptyState } from "@codexsun/ui/workspace/table";
 import type { WorkReport } from "./work-report.types";
 
@@ -32,13 +33,19 @@ export function WorkReportList({
               <tr key={row.uuid} className="border-t border-border/70 align-top">
                 <td className="px-3 py-2 text-muted-foreground">{offset + index + 1}</td>
                 <td className="px-3 py-2 font-medium capitalize whitespace-nowrap">
-                  {["report", "comment", "comment-added"].includes(row.action)
-                    ? "Comments"
-                    : row.action.replaceAll("-", " ")}
+                  {row.action === "pin-location"
+                    ? "Pin Location"
+                    : ["report", "comment", "comment-added"].includes(row.action)
+                      ? "Comments"
+                      : row.action.replaceAll("-", " ")}
                 </td>
                 <td className="min-w-56 max-w-xl px-3 py-2">
                   <p className="whitespace-pre-wrap break-words">
-                    {workReportText(row.body) || "—"}
+                    {row.action === "pin-location" ? (
+                      <PinLocationText value={row.body} />
+                    ) : (
+                      workReportText(row.body) || "—"
+                    )}
                   </p>
                   {row.latitude !== null && row.longitude !== null ? (
                     <p className="mt-1 text-xs text-muted-foreground">

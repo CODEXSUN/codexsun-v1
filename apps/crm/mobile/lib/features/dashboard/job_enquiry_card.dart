@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'dart:async';
 
@@ -10,6 +11,7 @@ import 'dashboard_list_page.dart';
 import 'job_duration.dart';
 import 'work_timestamp_format.dart';
 import 'job_detail_page.dart';
+import 'pin_location_text.dart';
 
 class JobEnquiryCard extends StatefulWidget {
   const JobEnquiryCard({
@@ -370,6 +372,14 @@ class _JobEnquiryCardState extends State<JobEnquiryCard> {
       await action();
     } on CrmMobileApiException catch (error) {
       _showMessage(error.message);
+    } on MissingPluginException {
+      _showMessage(
+        'Location support is missing from this app build. Update the app and reopen it.',
+      );
+    } on TimeoutException {
+      _showMessage(
+        'Could not get a fresh GPS location. Check device location and try again.',
+      );
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
@@ -473,25 +483,16 @@ class _JobEnquiryCardState extends State<JobEnquiryCard> {
     await _performCardAction(() async {
       final position = await _captureCurrentPosition();
       if (!mounted) return;
-      var details = _locationComment(position);
-      final comment = await showDialog<String>(
+      final details = _locationComment(position);
+      final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Pin location'),
           content: SizedBox(
             width: 480,
-            child: TextFormField(
+            child: PinLocationText(
+              details,
               key: const ValueKey('pinned-location-details'),
-              initialValue: details,
-              autofocus: true,
-              minLines: 5,
-              maxLines: 8,
-              onChanged: (value) => details = value,
-              decoration: const InputDecoration(
-                labelText: 'Location details',
-                alignLabelWithHint: true,
-                border: OutlineInputBorder(),
-              ),
             ),
           ),
           actions: [
@@ -501,18 +502,22 @@ class _JobEnquiryCardState extends State<JobEnquiryCard> {
             ),
             FilledButton(
               key: const ValueKey('submit-pinned-location'),
-              onPressed: () => Navigator.pop(dialogContext, details.trim()),
+              onPressed: () => Navigator.pop(dialogContext, true),
               child: const Text('Submit'),
             ),
           ],
         ),
       );
-      if (comment == null || comment.isEmpty) return;
-      _job = await widget.api.addJobComment(
+      if (confirmed != true) return;
+      await widget.api.logEnquiryLocation(
         accessToken: widget.session.accessToken,
-        id: _job.sourceId,
-        comment: comment,
+        enquiryId: _job.sourceId,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        accuracyMeters: position.accuracy,
+        capturedAt: position.timestamp,
       );
+      _job = await widget.api.job(widget.session.accessToken, _job.sourceId);
       widget.onJobChanged();
       widget.onJobUpdated?.call(_job);
       _showMessage('Pinned location saved in comments.');
@@ -521,13 +526,10 @@ class _JobEnquiryCardState extends State<JobEnquiryCard> {
 
   String _locationComment(Position position) {
     final timestamp = formatWorkDateTime(position.timestamp);
-    return 'Pinned location\n'
-        'Latitude: ${position.latitude.toStringAsFixed(6)}\n'
-        'Longitude: ${position.longitude.toStringAsFixed(6)}\n'
-        'Accuracy: ±${position.accuracy.round()} m\n'
-        'Captured @ $timestamp\n'
-        'Customer: ${_job.customer}\n'
-        'Enquiry: ${_job.title}';
+    final latitude = position.latitude.toStringAsFixed(7);
+    final longitude = position.longitude.toStringAsFixed(7);
+    return 'Pin Location : [$latitude, $longitude](https://www.google.com/maps?q=$latitude,$longitude)'
+        ' · Accuracy: ${position.accuracy.toStringAsFixed(2)} m · Captured: $timestamp';
   }
 
   void _showUnavailable(String action) {
@@ -717,6 +719,7 @@ class _JobCardHeader extends StatelessWidget {
           height: 36,
           child: PopupMenuButton<_JobMoreAction>(
             key: const ValueKey('enquiry-card-more'),
+            enabled: !isSending,
             tooltip: 'More job actions',
             padding: EdgeInsets.zero,
             position: PopupMenuPosition.under,
@@ -760,7 +763,15 @@ class _JobCardHeader extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(Icons.add_rounded, color: Color(0xFF682A82)),
+              child: isSending
+                  ? const Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : const Icon(Icons.add_rounded, color: Color(0xFF682A82)),
             ),
           ),
         ),

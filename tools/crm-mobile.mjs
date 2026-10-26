@@ -46,7 +46,25 @@ function defines() {
 }
 
 function buildApk(mode) {
+  const registrant = join(
+    appRoot,
+    "android",
+    "app",
+    "src",
+    "main",
+    "java",
+    "io",
+    "flutter",
+    "plugins",
+    "GeneratedPluginRegistrant.java"
+  );
+  if (flutterArgs.includes("--no-pub") && !existsSync(registrant))
+    fail(
+      "Android plugin registration is missing. Run Flutter pub get (offline is supported) before a --no-pub APK build."
+    );
   runFlutter(["build", "apk", `--${mode}`, ...defines(), ...flutterArgs]);
+  if (!existsSync(registrant))
+    fail("Android plugin registration is missing; do not distribute this APK.");
   const version = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
   const outputDirectory = join(appRoot, "build", "app", "outputs", "flutter-apk");
   const source = join(outputDirectory, `app-${mode}.apk`);

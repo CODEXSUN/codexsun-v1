@@ -38,6 +38,7 @@ const columnOptions = [
   { id: "listIn", label: "List in" },
   { id: "dueDate", label: "Due date" },
   { id: "priority", label: "Priority" },
+  { id: "createdAt", label: "Created" },
 
   { id: "creator", label: "Creator" },
   { id: "assignedTo", label: "Assigned to" },

@@ -8,7 +8,7 @@ import { createEnquiryComment } from "./enquiry.services";
 import { enquiryActivityQueryKey, enquiryCommentsQueryKey } from "./enquiry.hooks";
 import { enquiryTableText } from "./enquiry.table-text";
 import { formatCommentByline } from "./enquiry.view-utils";
-import { formatCrmWorkTimestamps } from "../../crm-time.js";
+import { PinLocationText } from "../../pin-location-text.js";
 import type { EnquiryComment } from "./enquiry.types";
 
 export function EnquiryComments({
@@ -80,7 +80,7 @@ export function EnquiryComments({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="whitespace-pre-wrap break-words rounded-md bg-muted/25 px-3 py-2 text-sm">
-                  {formatCrmWorkTimestamps(enquiryTableText(comment.body))}
+                  <PinLocationText value={enquiryTableText(comment.body)} />
                 </p>
                 <div className="mt-1 flex flex-wrap items-center justify-end gap-4 text-xs text-muted-foreground">
                   {comment.id === latestCommentId ? (

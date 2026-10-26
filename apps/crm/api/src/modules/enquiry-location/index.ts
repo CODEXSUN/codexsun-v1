@@ -6,5 +6,6 @@ export {
 export type {
   EnquiryLocation,
   EnquiryLocationDatabase,
+  EnquiryLocationContext,
   EnquiryLocationRow
 } from "./enquiry-location.types.js";

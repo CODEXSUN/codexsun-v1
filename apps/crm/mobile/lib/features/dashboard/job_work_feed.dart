@@ -4,6 +4,7 @@ import '../../core/api/crm_mobile_api.dart';
 import '../../core/platform/mobile_actions.dart';
 import 'job_duration.dart';
 import 'work_timestamp_format.dart';
+import 'pin_location_text.dart';
 
 class JobWorkFeed extends StatelessWidget {
   const JobWorkFeed({
@@ -87,10 +88,12 @@ class _WorkFeedEntry {
           _ => 'actions',
         };
         return _WorkFeedEntry(
-          icon: report['latitude'] == null
+          icon: report['latitude'] == null && action != 'pin-location'
               ? Icons.task_alt
               : Icons.location_on_outlined,
-          title: normalizeCrmText('${report['action']}').replaceAll('-', ' '),
+          title: action == 'pin-location'
+              ? 'Pin Location'
+              : normalizeCrmText('${report['action']}').replaceAll('-', ' '),
           detail: [
             if (report['amount'] != null) 'Amount: ${report['amount']}',
             formatWorkTimestamps(normalizeCrmText('${report['body'] ?? ''}')),
@@ -132,31 +135,58 @@ class _WorkFeedEntry {
           section: 'jobs',
         ),
       ),
-      ...locations.map(
-        (location) => _WorkFeedEntry(
-          icon: Icons.location_on_outlined,
-          title: 'Location logged',
-          detail:
-              '${location.latitude.toStringAsFixed(6)}, ${location.longitude.toStringAsFixed(6)}'
-              '${location.accuracyMeters == null ? '' : ' · ±${location.accuracyMeters!.round()} m'}',
-          author: _author(location.createdBy, session),
-          createdAt: location.capturedAt,
-          section: 'actions',
-          onTap: () => MobileActions.location(
-            '${location.latitude},${location.longitude}',
+      ...locations
+          .where(
+            (location) => !reports.any(
+              (report) =>
+                  report['action'] == 'pin-location' &&
+                  '${report['body']}'.contains(
+                    'q=${location.latitude.toStringAsFixed(7)},${location.longitude.toStringAsFixed(7)}',
+                  ) &&
+                  '${report['body']}'.contains(
+                    location.capturedAt
+                        .toUtc()
+                        .toIso8601String()
+                        .split('.')
+                        .first,
+                  ),
+            ),
+          )
+          .map(
+            (location) => _WorkFeedEntry(
+              icon: Icons.location_on_outlined,
+              title: 'Location logged',
+              detail:
+                  '${location.latitude.toStringAsFixed(6)}, ${location.longitude.toStringAsFixed(6)}'
+                  '${location.accuracyMeters == null ? '' : ' · ±${location.accuracyMeters!.round()} m'}',
+              author: _author(location.createdBy, session),
+              createdAt: location.capturedAt,
+              section: 'actions',
+              onTap: () => MobileActions.location(
+                '${location.latitude},${location.longitude}',
+              ),
+            ),
           ),
-        ),
-      ),
-      ...job.activities.map(
-        (activity) => _WorkFeedEntry(
-          icon: Icons.bolt_outlined,
-          title: normalizeCrmText(activity.action),
-          detail: normalizeCrmText(activity.details),
-          author: _author(activity.createdBy, session),
-          createdAt: activity.createdAt,
-          section: 'actions',
-        ),
-      ),
+      ...job.activities
+          .where(
+            (activity) =>
+                activity.action != 'pin-location' ||
+                !reports.any(
+                  (report) =>
+                      report['action'] == 'pin-location' &&
+                      '${report['body']}' == activity.details,
+                ),
+          )
+          .map(
+            (activity) => _WorkFeedEntry(
+              icon: Icons.bolt_outlined,
+              title: normalizeCrmText(activity.action),
+              detail: normalizeCrmText(activity.details),
+              author: _author(activity.createdBy, session),
+              createdAt: activity.createdAt,
+              section: 'actions',
+            ),
+          ),
       ...schedules.map((schedule) {
         final scheduledAt = DateTime.tryParse(
           '${schedule['scheduledAt'] ?? ''}',
@@ -246,7 +276,7 @@ class _WorkFeedTile extends StatelessWidget {
                     ],
                   ),
                 if (entry.title != null) const SizedBox(height: 3),
-                Text(entry.detail),
+                PinLocationText(entry.detail),
                 const SizedBox(height: 5),
                 Align(
                   alignment: Alignment.centerRight,
