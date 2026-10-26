@@ -11,6 +11,21 @@ import {
   migrateEcommerceTenantDatabase,
   planEcommerceTenantMigrations
 } from "../ecommerce-composition/ecommerce-composition.migration.js";
+import { upgradeProductVariantLegacyWriters } from "./product-variant.writer-migration.js";
+
+test("SQL/application parity failure stops before triggers, defaults, and business rewrites", async () => {
+  const fixture = new MigrationFixture([]);
+  fixture.signatureProbeMismatch = true;
+  const database = fixture.database();
+  try {
+    await assert.rejects(upgradeProductVariantLegacyWriters(database), /parity probe failed/);
+    assert.ok(
+      !fixture.statements.some((text) => /^(CREATE TRIGGER|ALTER TABLE|UPDATE)/.test(text))
+    );
+  } finally {
+    await database.destroy();
+  }
+});
 
 test("frozen Unicode normalization matches the application runtime for all scalar values", () => {
   const lower: Record<string, string> = unicode.lower;
