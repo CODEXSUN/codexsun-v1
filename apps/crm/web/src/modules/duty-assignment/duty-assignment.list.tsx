@@ -1,28 +1,25 @@
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
-import { useCrmFrappeSyncEnabled } from "../frappe-sync/frappe-sync.hooks";
+
 import { WorkspaceTable } from "@codexsun/ui/workspace/table";
 import { ScheduleRecordButton } from "../scheduler";
-import { FrappeSyncIndicator, type FrappeSyncStatus } from "../frappe-sync/frappe-sync.indicator";
+
 import type { DutyAssignment } from "./duty-assignment.types";
 export function DutyAssignmentList({
   items,
   loading,
-  onOpen,
-  onVerify
+  onOpen
 }: {
   items: DutyAssignment[];
   loading: boolean;
   onOpen: (row: DutyAssignment) => void;
-  onVerify: (row: DutyAssignment) => Promise<FrappeSyncStatus>;
 }) {
-  const frappeSyncEnabled = useCrmFrappeSyncEnabled();
   return (
     <WorkspaceTable<DutyAssignment>
       data={items}
       isLoading={loading}
       onRowClick={onOpen}
       emptyState="No duties found."
-      columns={(
+      columns={
         [
           {
             id: "sop",
@@ -62,20 +59,9 @@ export function DutyAssignmentList({
                 sourceLabel={`Duty · ${row.original.itemTitle} · ${row.original.assigneeName}`}
               />
             )
-          },
-          {
-            id: "frappeSync",
-            header: "Frappe sync",
-            cell: ({ row }) => (
-              <FrappeSyncIndicator
-                status={row.original.frappeSyncStatus}
-                error={row.original.frappeSyncError}
-                onVerify={() => onVerify(row.original)}
-              />
-            )
           }
         ] satisfies ColumnDef<DutyAssignment>[]
-      ).filter((column) => column.id !== "frappeSync" || frappeSyncEnabled)}
+      }
     />
   );
 }

@@ -1,4 +1,3 @@
-import { useCrmFrappeSyncEnabled } from "../frappe-sync/frappe-sync.hooks";
 import { EnquiryWhatsAppWorkspace } from "../enquiry-whatsapp";
 import { useWhatsAppMessages } from "../enquiry-whatsapp/enquiry-whatsapp.hooks";
 import { WorkChargesWorkspace, WorkReportWorkspace } from "../work-report/index";
@@ -9,7 +8,6 @@ import {
   Activity,
   BellRing,
   CalendarClock,
-  CloudUpload,
   LogIn,
   MessageSquare,
   ReceiptText,
@@ -37,8 +35,7 @@ import {
   useEnquiryComments,
   useEnquiryDetail,
   useEnquiryEstimates,
-  useEnquiryJobs,
-  useEnquiryFrappeSync
+  useEnquiryJobs
 } from "./enquiry.hooks";
 import { EnquiryJobs } from "./enquiry.jobs";
 import { EnquiryProperties } from "./enquiry.properties";
@@ -46,8 +43,7 @@ import { EnquiryCustomer } from "./enquiry.customer";
 import { ScheduleRecordList, useRecordSchedules } from "../scheduler";
 import { createEnquiryComment, startEnquiryJob, stopEnquiryJob } from "./enquiry.services";
 import { enquiryTableText } from "./enquiry.table-text";
-import { EnquiryFrappeSyncWorkspace } from "./enquiry.frappe-sync";
-import { EnquiryFrappeSource } from "./enquiry.frappe-source";
+
 import type { EnquiryLookup, EnquiryMasterLookup, EnquiryRecord } from "./enquiry.types";
 
 type EnquiryTab =
@@ -61,8 +57,7 @@ type EnquiryTab =
   | "closure"
   | "customer"
   | "whatsapp"
-  | "schedules"
-  | "frappe-sync";
+  | "schedules";
 
 export function EnquiryShow({
   id,
@@ -83,23 +78,28 @@ export function EnquiryShow({
 }) {
   const client = useQueryClient();
   const [activeTab, setActiveTab] = useState<EnquiryTab>("actions");
+  const [visitedTabs, setVisitedTabs] = useState(() => new Set<EnquiryTab>(["actions"]));
+  const selectTab = (tab: EnquiryTab) => {
+    setVisitedTabs((visited) => new Set([...visited, tab]));
+    setActiveTab(tab);
+  };
+  useEffect(() => {
+    setActiveTab("actions");
+    setVisitedTabs(new Set(["actions"]));
+  }, [id]);
   const enquiry = useEnquiryDetail(id);
   const closure = useEnquiryClosureState(id);
-  const comments = useEnquiryComments(id);
-  const jobs = useEnquiryJobs(id);
+  const comments = useEnquiryComments(id, activeTab === "comments");
+  const jobs = useEnquiryJobs(id, activeTab === "jobs" || activeTab === "actions");
   const estimates = useEnquiryEstimates(id);
   const workTarget = { enquiryId: Number(id), taskId: null };
-  const actions = useWorkReports(workTarget);
-  const checkpoints = useWorkReports(workTarget, 1, "checkpoints");
-  const charges = useWorkReports(workTarget, 1, "charges");
-  const whatsApp = useWhatsAppMessages(Number(id));
+  const actions = useWorkReports(workTarget, 1, "all", activeTab === "actions");
+  const checkpoints = useWorkReports(workTarget, 1, "checkpoints", activeTab === "checkpoints");
+  const charges = useWorkReports(workTarget, 1, "charges", activeTab === "charges");
+  const whatsApp = useWhatsAppMessages(Number(id), activeTab === "whatsapp");
   const schedules = useRecordSchedules("enquiry", Number(id));
   const record = enquiry.data;
-  const frappeSyncEnabled = useCrmFrappeSyncEnabled();
-  const frappeSync = useEnquiryFrappeSync(
-    id,
-    frappeSyncEnabled && record?.canViewFrappeSync === true
-  );
+
   const contact = contacts.find((item) => item.id === record?.contactId);
   const mobile = contact?.primaryPhone || record?.capturedPhone || null;
   const error = enquiry.error ?? comments.error ?? jobs.error ?? estimates.error;
@@ -129,8 +129,8 @@ export function EnquiryShow({
         <WorkReportWorkspace
           enquiryId={Number(id)}
           active={activeTab === "actions"}
-          onWhatsApp={() => setActiveTab("whatsapp")}
-          onRequestClosure={() => setActiveTab("closure")}
+          onWhatsApp={() => selectTab("whatsapp")}
+          onRequestClosure={() => selectTab("closure")}
           onComment={async (body, parentId, requestId) => {
             await createEnquiryComment(
               id,
@@ -178,7 +178,13 @@ export function EnquiryShow({
           count={checkpoints.data?.total ?? 0}
         />
       ),
-      content: <WorkReportWorkspace enquiryId={Number(id)} actionFilter="checkpoints" />
+      content: (
+        <WorkReportWorkspace
+          enquiryId={Number(id)}
+          actionFilter="checkpoints"
+          active={activeTab === "checkpoints"}
+        />
+      )
     },
     {
       value: "jobs",
@@ -209,7 +215,12 @@ export function EnquiryShow({
           )}
         />
       ),
-      content: <WorkChargesWorkspace target={{ enquiryId: Number(id), taskId: null }} />
+      content: (
+        <WorkChargesWorkspace
+          target={{ enquiryId: Number(id), taskId: null }}
+          active={activeTab === "charges"}
+        />
+      )
     },
     {
       value: "properties",
@@ -248,14 +259,22 @@ export function EnquiryShow({
     {
       value: "customer",
       label: <TabLabel icon={<UserRound className="size-4" />} label="Customer" />,
-      content: record ? <EnquiryCustomer record={record} mobile={mobile} /> : null
+      content: record ? (
+        <EnquiryCustomer record={record} mobile={mobile} active={activeTab === "customer"} />
+      ) : null
     },
     {
       value: "whatsapp",
       label: (
         <TabLabel icon={<WhatsAppIcon />} label="WhatsApp" count={whatsApp.data?.length ?? 0} />
       ),
-      content: <EnquiryWhatsAppWorkspace id={Number(id)} mobile={mobile} />
+      content: (
+        <EnquiryWhatsAppWorkspace
+          id={Number(id)}
+          mobile={mobile}
+          active={activeTab === "whatsapp"}
+        />
+      )
     },
     {
       value: "schedules",
@@ -274,30 +293,7 @@ export function EnquiryShow({
         />
       ) : null
     },
-    ...(frappeSyncEnabled && record?.canViewFrappeSync
-      ? [
-          {
-            value: "frappe-sync" as const,
-            label: (
-              <TabLabel
-                icon={<CloudUpload className="size-4" />}
-                label="Frappe sync"
-                count={frappeSync.data?.length ?? 0}
-              />
-            ),
-            content: (
-              <div className="space-y-4 p-3">
-                <EnquiryFrappeSource key={record.id} enquiryId={Number(record.id)} />
-                <EnquiryFrappeSyncWorkspace
-                  events={frappeSync.data ?? []}
-                  loading={frappeSync.isLoading}
-                  error={frappeSync.error?.message ?? ""}
-                />
-              </div>
-            )
-          }
-        ]
-      : []),
+
     {
       value: "closure",
       label: (
@@ -364,19 +360,15 @@ export function EnquiryShow({
             mobile={mobile}
             closurePending={closure.data?.item?.status === "pending"}
           />
-          {frappeSyncEnabled && record.canViewFrappeSync && record.frappeSyncError ? (
-            <p
-              role="alert"
-              className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
-            >
-              Frappe export error: {record.frappeSyncError}
-            </p>
-          ) : null}
+
           <WorkspaceAnimatedTabs
             keepMounted
-            tabs={tabs}
+            tabs={tabs.map((tab) => ({
+              ...tab,
+              content: visitedTabs.has(tab.value as EnquiryTab) ? tab.content : null
+            }))}
             value={activeTab}
-            onValueChange={(value) => setActiveTab(value as EnquiryTab)}
+            onValueChange={(value) => selectTab(value as EnquiryTab)}
             listClassName="justify-between border-b-0 bg-card px-1 shadow-none 2xl:px-2"
             triggerClassName="px-1 py-2 2xl:px-2"
             contentClassName="mt-0 rounded-t-none bg-card pb-0 [&>*]:border-t-0 [&>*]:rounded-t-none"
@@ -418,10 +410,10 @@ function EnquirySummary({
   const description = enquiryTableText(record.description);
   return (
     <section
-      className={`rounded-xl border border-border/70 bg-card px-3 py-3 shadow-sm ring-2 sm:rounded-md sm:px-4 sm:py-4 ${statusRing(record.status)}`}
+      className={`@container/enquiry-summary rounded-xl border border-border/70 bg-card px-3 py-3 shadow-sm ring-2 sm:rounded-md sm:px-4 sm:py-4 ${statusRing(record.status)}`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+      <div className="flex flex-col gap-3 @2xl/enquiry-summary:flex-row @2xl/enquiry-summary:flex-wrap @2xl/enquiry-summary:items-start @2xl/enquiry-summary:justify-between">
+        <div className="min-w-0 @2xl/enquiry-summary:flex-1">
           <h1 className="break-words text-lg font-semibold">
             #{record.enquiryNo} - {title || "Untitled enquiry"}
           </h1>
@@ -439,7 +431,7 @@ function EnquirySummary({
           {closurePending ? <ClosurePendingBadge /> : null}
         </div>
       </div>
-      <div className="mt-3 grid gap-2 sm:hidden">
+      <div className="mt-3 grid gap-2 @2xl/enquiry-summary:hidden">
         <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
           <p className="mb-1 text-xs font-medium text-muted-foreground">Enquiry message</p>
           <p className="whitespace-pre-wrap break-words text-sm font-semibold [overflow-wrap:anywhere]">
@@ -470,13 +462,13 @@ function EnquirySummary({
           />
         </dl>
       </div>
-      <div className="mt-4 hidden overflow-hidden rounded-md border border-border/60 sm:block">
+      <div className="mt-4 hidden overflow-hidden rounded-md border border-border/60 @2xl/enquiry-summary:block">
         <table aria-label="Enquiry details" className="w-full table-fixed text-sm">
           <colgroup className="hidden sm:table-column-group">
-            <col className="w-[12%]" />
-            <col className="w-[38%]" />
-            <col className="w-[12%]" />
-            <col className="w-[38%]" />
+            <col className="w-[16%]" />
+            <col className="w-[34%]" />
+            <col className="w-[16%]" />
+            <col className="w-[34%]" />
           </colgroup>
           <tbody className="divide-y divide-border/60">
             <tr>

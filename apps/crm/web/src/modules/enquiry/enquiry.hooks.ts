@@ -1,8 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { crmRequest } from "../../crm-request";
 import {
   getEnquiry,
-  listEnquiryFrappeSync,
   getEnquiryOverviewActivity,
   getEnquiryAttention,
   getEnquirySummary,
@@ -25,8 +24,7 @@ export const enquiryReportQueryKey = ["crm", "enquiries", "reports"] as const;
 export const enquiryContactsQueryKey = ["crm", "enquiry", "core-contacts"] as const;
 export const enquiryUsersQueryKey = ["crm", "enquiry", "tenant-users"] as const;
 export const enquiryDetailQueryKey = (id: string) => ["crm", "enquiry", id] as const;
-export const enquiryFrappeSyncQueryKey = (id: string) =>
-  ["crm", "enquiry", id, "frappe-sync"] as const;
+
 export const enquiryCommentsQueryKey = (id: string) => ["crm", "enquiry", id, "comments"] as const;
 export const enquiryJobsQueryKey = (id: string) => ["crm", "enquiry", id, "jobs"] as const;
 export const enquiryEstimatesQueryKey = (id: string) =>
@@ -68,8 +66,8 @@ export const useEnquiryPage = (options: {
       options.reportFilters,
       options.dateRange
     ],
-    refetchInterval: (query) =>
-      query.state.data?.items.some((record) => record.canViewFrappeSync === true) ? 1000 : 15000,
+    refetchInterval: 15000,
+    placeholderData: keepPreviousData,
     queryFn: () => listEnquiryPage(options)
   });
 export const useEnquiryReport = (
@@ -139,26 +137,20 @@ export const useEnquiryDetail = (id: string) =>
   useQuery({
     queryKey: enquiryDetailQueryKey(id),
     queryFn: () => getEnquiry(id),
-    refetchInterval: 1000
+    refetchInterval: 15000
   });
-export const useEnquiryFrappeSync = (id: string, enabled: boolean) =>
-  useQuery({
-    queryKey: enquiryFrappeSyncQueryKey(id),
-    queryFn: () => listEnquiryFrappeSync(id),
-    enabled,
-    refetchInterval: 1000
-  });
-export const useEnquiryComments = (id: string) =>
+
+export const useEnquiryComments = (id: string, poll = true) =>
   useQuery({
     queryKey: enquiryCommentsQueryKey(id),
     queryFn: () => listEnquiryComments(id),
-    refetchInterval: 10000
+    refetchInterval: poll ? 10000 : false
   });
-export const useEnquiryJobs = (id: string) =>
+export const useEnquiryJobs = (id: string, poll = true) =>
   useQuery({
     queryKey: enquiryJobsQueryKey(id),
     queryFn: () => listEnquiryJobs(id),
-    refetchInterval: 10000
+    refetchInterval: poll ? 10000 : false
   });
 export const useEnquiryEstimates = (id: string) =>
   useQuery({ queryKey: enquiryEstimatesQueryKey(id), queryFn: () => listEnquiryEstimates(id) });

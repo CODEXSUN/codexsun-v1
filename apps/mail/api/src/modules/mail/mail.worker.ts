@@ -1,5 +1,5 @@
 import { ImapFlow } from "imapflow";
-import { simpleParser } from "mailparser";
+import { simpleParser, type ParsedMail } from "mailparser";
 import Pop3Command from "node-pop3";
 import nodemailer from "nodemailer";
 import { migrateMailModule } from "./mail.migration.js";
@@ -234,6 +234,7 @@ async function syncPop3(
   settings: Awaited<ReturnType<MailRepository["deliverySettings"]>>
 ) {
   const client = new Pop3Command({
+    parseStreamToString: true,
     host: settings.inboundHost,
     password: settings.inboundPassword,
     port: settings.inboundPort,
@@ -249,7 +250,10 @@ async function syncPop3(
     for (const [messageNumberValue, uid] of entries.slice(-50)) {
       const messageNumber = Number(messageNumberValue);
       if (!Number.isInteger(messageNumber) || messageNumber <= 0 || !uid) continue;
-      const parsed = await simpleParser(await client.RETR(messageNumber));
+      const source = await client.RETR(messageNumber);
+      if (typeof source !== "string")
+        throw new Error("POP3 did not return the requested message text.");
+      const parsed = await simpleParser(source);
       if (await importParsedMessage(context, repository, parsed, `pop3-${uid}`)) imported += 1;
     }
   } finally {
@@ -261,7 +265,7 @@ async function syncPop3(
 async function importParsedMessage(
   context: MailRuntimeContext,
   repository: MailRepository,
-  parsed: Awaited<ReturnType<typeof simpleParser>>,
+  parsed: ParsedMail,
   fallbackProviderMessageId: string
 ) {
   const from = parsed.from?.value[0];

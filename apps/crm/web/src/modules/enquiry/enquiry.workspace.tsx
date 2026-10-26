@@ -1,4 +1,3 @@
-import { useCrmFrappeSyncEnabled } from "../frappe-sync/frappe-sync.hooks";
 import { useMemo, useState, useDeferredValue, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { SlidersHorizontal } from "lucide-react";
@@ -39,7 +38,7 @@ const columnOptions = [
   { id: "listIn", label: "List in" },
   { id: "dueDate", label: "Due date" },
   { id: "priority", label: "Priority" },
-  { id: "frappeSync", label: "Frappe sync" },
+
   { id: "creator", label: "Creator" },
   { id: "assignedTo", label: "Assigned to" },
   { id: "status", label: "Status" }
@@ -77,7 +76,6 @@ function EnquiryPage({
   onCloseCreate?: () => void;
   onCancelCreate?: () => void;
 }) {
-  const frappeSyncEnabled = useCrmFrappeSyncEnabled();
   const client = useQueryClient();
   const [editing, setEditing] = useState<EnquiryRecord | null | undefined>(
     initialCreate ? null : undefined
@@ -93,7 +91,7 @@ function EnquiryPage({
   const [dateRange, setDateRange] = useState({ fromDate: "", toDate: "" });
   const [status, setStatus] = useState(reportFilters?.filter ?? (mobileFilter ? "all" : "active"));
   const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(100);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({});
   const deferredSearch = useDeferredValue(search);
   const deferredColumnFilters = useDeferredValue(columnFilters);
@@ -278,9 +276,6 @@ function EnquiryPage({
         columnOptions={columnOptions
           .filter(
             (column) =>
-              (column.id !== "frappeSync" ||
-                (frappeSyncEnabled &&
-                  records.some((record) => record.canViewFrappeSync === true))) &&
               (column.id !== "creator" || scope !== "created") &&
               (column.id !== "assignedTo" || scope !== "assigned")
           )
@@ -323,9 +318,7 @@ function EnquiryPage({
       ) : null}
       <EnquiryList
         records={records}
-        showFrappeSync={
-          frappeSyncEnabled && records.some((record) => record.canViewFrappeSync === true)
-        }
+
         showInlineFilters={showInlineFilters}
         columnFilters={columnFilters}
         onColumnFilterChange={(column, value) => {

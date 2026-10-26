@@ -1,35 +1,51 @@
 # CRM
 
-## Tenant Frappe switch
+## Local five-tenant acceptance suite
 
-CRM works without Frappe. The tenant's enabled Frappe app, enabled saved connection,
-and Live sync switch control integration visibility. `GET /crm/frappe-sync/capabilities`
-returns only `{ enabled }` through authenticated tenant context. It exposes no connection secrets.
-Web queries scope this flag by tenant ID and database. They refresh it every five seconds.
-Disabled or unknown flags hide sync columns, column choices, detail tabs, errors, and verification controls.
-This applies to contacts, enquiries, call logs, SOPs, duties, reporting, and the local Task notice.
-Tasks remain local even when sync is enabled.
+Run `npm run test:crm:full` from the CRM worktree after you start the local API and provision the five `CRMISO1` to `CRMISO5` fixtures.
+To create the fixtures on an empty local test database, run `npm run test:crm:seed-five-tenants` once while the local API is running.
+The seed command checks existing fixture tenants and resumes only missing fixtures. It does not clear or replace tenant data.
+Each fixture has 3,000 enquiries and its own tenant database. The runner rejects a nonlocal database host, an unexpected master database, or enabled Frappe and queue workers.
+It runs CRM, authentication, and tenant unit tests, local CRM E2E tests, the five-tenant HTTP isolation matrix, and Flutter tests.
+The isolation matrix checks all 20 ordered tenant pairs, restricted record access, shared contact identifiers, forged routing headers, writes, and session revocation.
+Run `npm run test:e2e:crm-five-tenants` to repeat only the matrix.
+The suite excludes `crm-duties-live.e2e.ts` because it needs the external Frappe service.
+It also excludes two Platform-wide E2E fixtures that require the legacy CODEXSUN development login or unrelated Core and Billing seeds.
+The five-tenant matrix uses real tenant logins and checks session isolation. The suite does not certify a cloud deployment.
+Logs and results stay under `.codex-runtime/crm/tenancy/full-suite/`.
 
-The switch gates immediate dispatch, scheduled dispatch, manual transfers, and queued workers.
-Outbound work also requires bidirectional mode, an unpaused schedule, and a verified connection.
-Automatic per-module switches and record permissions still apply.
-Local records, source links, and durable change events remain stored while sync is off.
-Re-enabling sync allows eligible pending events to resume. Deferred deliveries receive a fresh
-queue generation without changing their stable record or comment identity.
-Connection setup and verification remain available while live sync is off.
-This change adds no migration and does not modify Frappe records.
+## Local CRM and queued Frappe delivery
 
-Frappe sync errors remain visible on contacts, enquiries, duties, and duty reports while retries
-are pending. Web views refresh these states every second. Tasks remain local and show
-**Not configured**. Supported contact-mobile and enquiry exports dispatch after the local save;
-the durable queue remains the recovery source. See [Frappe](../frappe/README.md) for the contract.
+CRM web and mobile use the local CRM API and tenant database.
+CRM does not show Frappe sync columns, detail panels, source-history tabs, or verification actions.
+It does not poll integration capabilities or sync status.
+The separate Frappe app remains the owner of connection settings and integration operations.
+Existing imported records and source links remain stored.
 
-Enquiry sync indicators combine saved Frappe links with unfinished export events.
-Imported enquiries retain their confirmed state even when they have no outbound events.
-The list shows the saved remote name. A later failed update preserves that name and shows its error.
-Local records without a link or outbox event show Local only. Error badges keep rows compact.
-Hover over the indicator or open the enquiry to read the complete failure reason.
-Green records show the last successful sync, not a fresh remote read on every list refresh.
+Enquiry saves and comments commit durable change events before queue submission.
+Queue submission checks local activation and connection settings without a remote readiness request.
+Delivery runs through the background worker. The worker retains availability, permission, retry, and tenant checks.
+Disabled integration settings leave events pending for the existing relay.
+This cleanup does not remove the outbox, change existing schemas, or send provider messages during local tests.
+
+Enquiry lists, enquiry details, contacts, duties, and duty reports refresh every 15 seconds while active.
+Local mutations still invalidate their queries immediately. Enquiry pagination keeps the previous page visible during a request.
+Enquiry tabs load when first opened and retain drafts after tab changes. Hidden enquiry panels stop polling.
+Mobile uses the same records and retains its existing refresh and resume behavior.
+Mobile enquiry search requests matching records across all pages after a 300 ms typing delay.
+The web enquiry list starts with 20 rows. Users can select 50 or 100 rows.
+Unsearched list totals reuse the scoped status counts. Search requests retain an independent filtered count.
+Contact lookups run once per distinct contact on each page and do not persist between requests.
+Concurrent pages share contact reads only while those reads are in progress, with at most four reads per tenant database.
+Completed reads leave the coordinator immediately, so later requests read current Core contact names.
+
+Enquiry responses include nullable `runningJobId` and `runningJobStartedAt` timer summaries.
+The API loads summaries in one query for the returned page, after pagination and record scope checks.
+Mobile cards use these summaries without a job-session request per card.
+Dashboard refreshes replace cached timer state, so web job stops clear mobile timers without reopening the screen.
+Older API responses retain a fallback refresh for previously opened job sessions.
+Enquiry, closure, and task actions resolve work-report context before starting their write transactions.
+This prevents concurrent writes from exhausting the pool while waiting for an additional context connection.
 
 ## Marketing integration planning — 2026-10-23
 
@@ -45,7 +61,7 @@ This decision does not enable Marketing, migrate records, or expand Frappe expor
 ## Inbound enquiry source fields
 
 Frappe imports retain complete source Enquiry documents and comment revisions in the local integration store.
-The enquiry **Frappe sync** tab shows these source fields and paged history after record visibility checks.
+CRM retains these source fields and paged history without rendering them in its workspace.
 This includes company, address, Mobile Contact Customer, status details, and additional returned fields.
 These source fields are read-only when CRM has no matching editor. Normal CRM field mappings remain editable through CRM workflows.
 Inbound updates preserve CRM-only email. Local-edit conflicts require review before overwriting mapped values.
@@ -82,7 +98,7 @@ Use [CODEXSUN/logicx-biz](https://github.com/CODEXSUN/logicx-biz.git) for custom
 Read the [CRM comparison](agent/FRAPPE-COMPARISON.md) and
 [complete DocType catalogue](../frappe/agent/LOGICX-CRM-REFERENCE.md) for the reviewed source snapshot.
 CRM remains locally authoritative for normal enquiries. Frappe-imported enquiries preserve their source timestamps and comments, and the approved Frappe live-sync path posts CRM enquiry changes back to the linked Frappe record. Reference parity does not authorize additional outbound integration beyond this explicit enquiry sync contract.
-Local enquiry creates and edits now append a durable upsert event in the same transaction, then dispatch it to the queue after commit. Queue retries and the periodic relay recover transient failures; the CRM save does not wait for the remote Frappe request. Only the exact account `admin@tenant.com` can see the Frappe sync status column and detail history, and it must also have `crm.enquiry.frappe-sync.view`. Platform checks both conditions on every request.
+Local enquiry creates and edits append a durable upsert event in the same transaction, then submit it to the queue after commit. Queue retries and the periodic relay recover transient failures. The CRM save does not wait for the remote Frappe request. The retained integration-status API requires the exact account `admin@tenant.com` and `crm.enquiry.frappe-sync.view`. CRM does not render sync columns or detail history.
 See the [implemented Duty bindings](../frappe/agent/CRM-DUTY-FIELD-MAPPING.md) for frequency, Department, Employee, and report fields.
 Run `npm run test:crm-frappe` for CRM/Frappe unit tests and isolated Duty API/database E2E.
 

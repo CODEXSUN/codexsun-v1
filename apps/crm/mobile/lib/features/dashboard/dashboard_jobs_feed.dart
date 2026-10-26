@@ -33,9 +33,12 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
   List<CrmJob> get jobs => List.unmodifiable(_jobs);
   CrmJob? jobFor(String sourceId) => _jobsBySourceId[sourceId];
 
-  Future<List<CrmJobExecution>> jobSessions(String sourceId) {
+  Future<List<CrmJobExecution>> jobSessions(
+    String sourceId, {
+    bool refresh = false,
+  }) {
     final cached = _jobSessions[sourceId];
-    if (cached != null) return Future.value(cached);
+    if (cached != null && !refresh) return Future.value(cached);
     final generation = _sessionGeneration;
     final requestKey = '$generation:$sourceId';
     return _sessionRequests.putIfAbsent(requestKey, () async {
@@ -88,6 +91,14 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
     try {
       final updated = await _loadEnquiries();
       if (generation != _sessionGeneration) return;
+      // Older API responses need a refresh only for previously opened sessions.
+      final tracked = updated.where(
+        (job) => !job.hasJobSummary && _jobSessions.containsKey(job.sourceId),
+      );
+      for (final job in tracked) {
+        await jobSessions(job.sourceId, refresh: true);
+        if (generation != _sessionGeneration) return;
+      }
       final pendingResults = await Future.wait([
         _loadPendingIds(
           () => api.pendingEnquiryClosureIds(session.accessToken),
@@ -115,6 +126,10 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
           ..addAll(pendingCollectionIds);
       }
       final merged = updated.map((job) {
+        if (job.hasJobSummary) {
+          _jobSessions.remove(job.sourceId);
+          return job;
+        }
         final sessions = _jobSessions[job.sourceId];
         return job.jobs.isEmpty && sessions != null
             ? job.withJobs(sessions)
@@ -224,9 +239,21 @@ class DashboardJobsFeed extends ChangeNotifier with WidgetsBindingObserver {
           oldJob.status != newJob.status ||
           oldJob.priority != newJob.priority ||
           oldJob.customer != newJob.customer ||
+          oldJob.assignedTo != newJob.assignedTo ||
+          oldJob.dueDate != newJob.dueDate ||
+          oldJob.list != newJob.list ||
           oldJob.lastAction != newJob.lastAction ||
           oldJob.jobs.length != newJob.jobs.length)
         return false;
+      for (var jobIndex = 0; jobIndex < oldJob.jobs.length; jobIndex++) {
+        final before = oldJob.jobs[jobIndex];
+        final after = newJob.jobs[jobIndex];
+        if (before.name != after.name ||
+            before.status != after.status ||
+            before.startTime != after.startTime ||
+            before.stopTime != after.stopTime)
+          return false;
+      }
     }
     return true;
   }

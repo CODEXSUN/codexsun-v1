@@ -21,6 +21,7 @@ test("repository references preserve MDX as text, exclude output, and detect dri
     mkdirSync(join(root, ".container"));
     writeFileSync(join(root, ".container/README.md"), "# Container guide");
     mkdirSync(join(root, ".codex-runtime"));
+    writeFileSync(join(root, ".codex-runtime/local-report.md"), "# Local acceptance evidence");
     writeFileSync(join(root, ".codex-runtime/HANDOFF.md"), "# Private local runtime record");
     const audit = new RepositoryDocumentation(root);
     assert.equal(audit.synchronize().count, 1);

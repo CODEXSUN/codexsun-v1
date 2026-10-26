@@ -13,10 +13,16 @@ import type { WorkReportPayload, WorkReportTarget } from "./work-report.types";
 
 type ChargeAction = "charge" | "collection";
 
-export function WorkChargesWorkspace({ target }: { target: WorkReportTarget }) {
+export function WorkChargesWorkspace({
+  target,
+  active = true
+}: {
+  target: WorkReportTarget;
+  active?: boolean;
+}) {
   const client = useQueryClient();
   const [page, setPage] = useState(1);
-  const history = useWorkReports(target, page, "charges");
+  const history = useWorkReports(target, page, "charges", active);
   const [selectedAction, setSelectedAction] = useState<ChargeAction | null>(null);
   const [amount, setAmount] = useState("");
   const [body, setBody] = useState("");

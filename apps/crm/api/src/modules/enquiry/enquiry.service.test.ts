@@ -54,6 +54,32 @@ const relations: EnquiryRelations = {
   priority: async () => ({ name: "Normal" })
 };
 
+test("a list page resolves repeated contacts once without retaining them across requests", async () => {
+  let lookups = 0;
+  const repository = {
+    listPage: async () => ({
+      items: [record(), { ...record(), id: 8 }],
+      total: 2,
+      statusCounts: []
+    })
+  } as unknown as EnquiryRepository;
+  const service = new EnquiryService(
+    repository,
+    {
+      ...relations,
+      contact: async () => ({ name: `Customer revision ${++lookups}` })
+    },
+    { actorEmail: "creator@example.com", actorUserId: 2, canViewAll: false }
+  );
+  const options = { scope: "all" as const, page: 1, pageSize: 25, search: "", filter: "all" };
+  const first = await service.listPage(options);
+  assert.equal(lookups, 1);
+  assert.equal(first.items[1]?.contactName, "Customer revision 1");
+  const second = await service.listPage(options);
+  assert.equal(lookups, 2);
+  assert.equal(second.items[0]?.contactName, "Customer revision 2");
+});
+
 test("new enquiries accept only ten-digit mobile numbers when provided", async () => {
   let created = 0;
   const repository = {

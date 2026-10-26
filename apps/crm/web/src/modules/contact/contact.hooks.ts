@@ -8,7 +8,8 @@ export function useContacts(search = "") {
   return useQuery({
     placeholderData: keepPreviousData,
     queryFn: () => listContacts(search),
-    queryKey: [...contactsQueryKey, search]
+    queryKey: [...contactsQueryKey, search],
+    refetchInterval: 15000
   });
 }
 

@@ -36,6 +36,8 @@ export type EnquiryRecord = EnquiryInput & {
   createdAt: string;
   updatedAt: string;
   closurePending?: boolean;
+  runningJobId?: number | null;
+  runningJobStartedAt?: string | null;
 };
 
 export type EnquiryListScope = "all" | "assigned" | "created";

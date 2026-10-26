@@ -55,7 +55,9 @@ class _JobEnquiryCardState extends State<JobEnquiryCard> {
   void initState() {
     super.initState();
     _syncJobTimer();
-    if (_job.jobs.isEmpty && widget.loadJobSessions != null) {
+    if (!_job.hasJobSummary &&
+        _job.jobs.isEmpty &&
+        widget.loadJobSessions != null) {
       _loadingJobSessions = true;
       _loadJobSessions();
     }

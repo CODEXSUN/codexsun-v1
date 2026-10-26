@@ -18,6 +18,7 @@ import type {
 import { sanitizeCommentHtml } from "./enquiry.comment-html.js";
 import { scopedFrappeCommentKey } from "./enquiry.comment-source.js";
 import { EnquirySyncRepository } from "./enquiry.sync.repository.js";
+import { enquiryCountForFilter, enquiryStatusFilter } from "./enquiry.status-filter.js";
 
 type PersistedRow = Selectable<EnquiryRow> & {
   list_name: string | null;
@@ -57,6 +58,9 @@ export class EnquiryRepository {
       if (value?.trim()) query = this.withSearchFilter(query, value.trim(), column);
     }
     query = this.withStatusFilter(query, options.filter);
+    const hasSearch = Boolean(
+      options.search?.trim() || columnTerms.some(([, value]) => value?.trim())
+    );
     const [rows, total, counts] = await Promise.all([
       query
         .orderBy(options.mobile ? "enquiry.created_at" : "enquiry.enquiry_no", "desc")
@@ -64,10 +68,12 @@ export class EnquiryRepository {
         .limit(options.pageSize)
         .offset((options.page - 1) * options.pageSize)
         .execute(),
-      query
-        .clearSelect()
-        .select(({ fn }) => fn.count<number>("enquiry.id").as("count"))
-        .executeTakeFirstOrThrow(),
+      hasSearch
+        ? query
+            .clearSelect()
+            .select(({ fn }) => fn.count<number>("enquiry.id").as("count"))
+            .executeTakeFirstOrThrow()
+        : Promise.resolve(null),
       this.scopedQuery(options)
         .clearSelect()
         .select([
@@ -78,8 +84,8 @@ export class EnquiryRepository {
         .execute()
     ]);
     return {
-      items: rows.map(toRecord),
-      total: Number(total.count),
+      items: await this.withRunningJobs(rows.map(toRecord)),
+      total: total ? Number(total.count) : enquiryCountForFilter(counts, options.filter),
       statusCounts: counts.map((item) => ({ code: item.code, count: Number(item.count) }))
     };
   }
@@ -312,34 +318,15 @@ export class EnquiryRepository {
   }
 
   private withStatusFilter(query: ReturnType<EnquiryRepository["scopedQuery"]>, filter: string) {
-    const holds = ["hold-for-approval", "long-hold", "hold-for-spares", "hold-for-job-out"];
-    if (filter === "all") return query;
-    if (filter === "active")
-      return query.where("status_master.code", "not in", ["won", "lost", "closed"]);
-    if (filter === "hold") return query.where("status_master.code", "in", holds);
-    if (filter === "pending-group")
-      return query.where("status_master.code", "in", ["open", "reopen", "escalation"]);
-    if (filter === "in-progress")
-      return query.where("status_master.code", "in", [...holds, "escalation", "open", "reopen"]);
-    if (filter === "closed-group")
-      return query.where("status_master.code", "in", ["won", "lost", "closed"]);
-    if (filter === "other")
-      return query.where("status_master.code", "not in", [
-        "new",
-        "open",
-        "reopen",
-        "escalation",
-        ...holds,
-        "won",
-        "lost",
-        "closed"
-      ]);
-    return query.where("status_master.code", "=", filter);
+    const selection = enquiryStatusFilter(filter);
+    return selection
+      ? query.where("status_master.code", selection.exclude ? "not in" : "in", selection.codes)
+      : query;
   }
 
   async get(id: number) {
     const row = await this.detailQuery().where("enquiry.id", "=", id).executeTakeFirst();
-    return row ? toRecord(row) : null;
+    return row ? ((await this.withRunningJobs([toRecord(row)]))[0] ?? null) : null;
   }
 
   async findBySourceReference(source: string, reference: string) {
@@ -874,6 +861,31 @@ export class EnquiryRepository {
         "priority_master.code as priority_code",
         "priority_master.name as priority_name"
       ]);
+  }
+
+  private async withRunningJobs(records: EnquiryRecord[]): Promise<EnquiryRecord[]> {
+    if (records.length === 0) return records;
+    const jobs = await this.database
+      .selectFrom("crm_enquiry_jobs")
+      .select(["id", "enquiry_id", "start_at"])
+      .where(
+        "enquiry_id",
+        "in",
+        records.map((record) => record.id)
+      )
+      .where("status", "=", "running")
+      .orderBy("id", "desc")
+      .execute();
+    const running = new Map<number, { id: number; startAt: string }>();
+    for (const job of jobs) {
+      if (!running.has(job.enquiry_id))
+        running.set(job.enquiry_id, { id: job.id, startAt: toIso(job.start_at) });
+    }
+    return records.map((record) => ({
+      ...record,
+      runningJobId: running.get(record.id)?.id ?? null,
+      runningJobStartedAt: running.get(record.id)?.startAt ?? null
+    }));
   }
 }
 

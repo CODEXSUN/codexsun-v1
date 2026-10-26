@@ -11,10 +11,12 @@ import type { EnquiryRecord } from "./enquiry.types";
 
 export function EnquiryCustomer({
   record,
-  mobile
+  mobile,
+  active = true
 }: {
   record: EnquiryRecord;
   mobile: string | null;
+  active?: boolean;
 }) {
   return (
     <div className="space-y-4 p-4">
@@ -43,18 +45,23 @@ export function EnquiryCustomer({
       <CustomerEnquiries
         key={`enquiries-${record.contactId ?? "no-contact"}`}
         contactId={record.contactId}
+        active={active}
       />
-      <CustomerTasks key={record.contactId ?? "no-contact"} contactId={record.contactId} />
+      <CustomerTasks
+        key={record.contactId ?? "no-contact"}
+        contactId={record.contactId}
+        active={active}
+      />
     </div>
   );
 }
 
-function CustomerTasks({ contactId }: { contactId: number | null }) {
+function CustomerTasks({ contactId, active }: { contactId: number | null; active: boolean }) {
   const [page, setPage] = useState(1);
   const tasks = useQuery({
     queryKey: ["crm", "tasks", "customer", contactId, page],
     queryFn: () => listCustomerTasks(contactId!, page),
-    enabled: contactId !== null,
+    enabled: active && contactId !== null,
     refetchInterval: 10000
   });
   const pages = Math.max(1, Math.ceil((tasks.data?.total ?? 0) / 100));
@@ -142,7 +149,7 @@ function CustomerTasks({ contactId }: { contactId: number | null }) {
   );
 }
 
-function CustomerEnquiries({ contactId }: { contactId: number | null }) {
+function CustomerEnquiries({ contactId, active }: { contactId: number | null; active: boolean }) {
   const [page, setPage] = useState(1);
   const enquiries = useQuery({
     queryKey: ["crm", "enquiries", "customer", contactId, page],
@@ -155,7 +162,7 @@ function CustomerEnquiries({ contactId }: { contactId: number | null }) {
         search: "",
         filter: "all"
       }),
-    enabled: contactId !== null,
+    enabled: active && contactId !== null,
     refetchInterval: 10000
   });
   const pages = Math.max(1, Math.ceil((enquiries.data?.total ?? 0) / 100));

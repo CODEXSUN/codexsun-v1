@@ -1,6 +1,6 @@
 {
   "name": "codexsun",
-  "version": "1.1.72",
+  "version": "1.1.73",
   "private": true,
   "packageManager": "npm@12.2.0",
   "description": "CODEXSUN",
@@ -76,6 +76,9 @@
     "test:e2e:tenant-session": "tsx tools/e2e/tenant-session-access.e2e.ts",
     "test:e2e:contact-360": "tsx tools/e2e/contact-360.e2e.ts",
     "test:e2e:crm-enquiry-list-in": "tsx --test tools/e2e/crm-enquiry-list-in.e2e.ts",
+    "test:e2e:crm-five-tenants": "node --import ./tools/register-root-package-resolution.mjs --import tsx --test tools/e2e/crm-five-tenant-isolation.e2e.ts",
+    "test:crm:seed-five-tenants": "node --import ./tools/register-root-package-resolution.mjs --import tsx tools/seed-crm-five-tenants.ts",
+    "test:crm:full": "node tools/test-crm-full.mjs",
     "test:e2e:crm-work-reports": "npm run build -w @codexsun/framework && tsx --test tools/e2e/crm-work-reports.e2e.ts",
     "test:e2e:crm-whatsapp": "npm run build -w @codexsun/framework && tsx --test tools/e2e/crm-whatsapp.e2e.ts",
     "test:e2e:crm-task-contact": "npm run build -w @codexsun/framework && tsx --test tools/e2e/crm-task-contact.e2e.ts",

@@ -1,4 +1,3 @@
-import { useCrmFrappeSyncEnabled } from "../frappe-sync/frappe-sync.hooks";
 import { ClosurePendingBadge } from "../closure";
 import { WorkChargesWorkspace, WorkReportWorkspace } from "../work-report/index";
 import { TaskComments } from "./task.comments";
@@ -58,7 +57,6 @@ export function TaskShow({
   onEdit: (row: TaskRecord) => void;
   onEditActionChange?: (action: { run: () => void } | null) => void;
 }) {
-  const frappeSyncEnabled = useCrmFrappeSyncEnabled();
   const client = useQueryClient();
   const [tab, setTab] = useState<Tab>("actions");
   const [reason, setReason] = useState("");
@@ -335,15 +333,10 @@ export function TaskShow({
   ];
   return (
     <WorkspacePage title="" technicalName="page.crm.tasks.show">
-      {frappeSyncEnabled ? (
-        <p className="inline-flex rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-800">
-          Frappe sync: Not configured
-        </p>
-      ) : null}
       <section
         className={`rounded-xl border border-border/70 bg-card px-3 py-3 shadow-sm ring-2 sm:rounded-md sm:px-4 sm:py-4 ${statusRing(row.status)}`}
       >
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
           <h1 className="min-w-0 flex-1 break-words text-lg font-semibold">
             #{row.id} - {row.title}
           </h1>

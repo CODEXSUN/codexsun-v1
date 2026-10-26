@@ -46,11 +46,20 @@ export class EnquiryService {
     const pendingIds = this.pendingClosureLookup
       ? await this.pendingClosureLookup(page.items.map((record) => record.id))
       : new Set<number>();
+    const contacts = new Map<number, ReturnType<EnquiryRelations["contact"]>>();
+    for (const record of page.items) {
+      if (record.contactId && !contacts.has(record.contactId)) {
+        contacts.set(record.contactId, this.relations.contact(record.contactId));
+      }
+    }
     return {
       ...page,
       items: await Promise.all(
         page.items.map(async (record) => ({
-          ...(await this.withContact(record)),
+          ...record,
+          contactName: record.contactId
+            ? ((await contacts.get(record.contactId))?.name ?? null)
+            : null,
           closurePending: pendingIds.has(record.id)
         }))
       )

@@ -5,7 +5,6 @@ import { WorkspaceRowActions } from "@codexsun/ui/workspace/row-actions";
 import { CrmStatusBadge, prioritySwatch } from "../../crm-colors";
 import { EnquiryInlineFilter } from "./enquiry.inline-filter";
 import { enquiryTableText } from "./enquiry.table-text";
-import { FrappeSyncIndicator, verifyFrappeRecord } from "../frappe-sync/frappe-sync.indicator";
 import { formatListDueDate } from "./enquiry.view-utils";
 import type { EnquiryColumnFilters, EnquiryLookup, EnquiryRecord } from "./enquiry.types";
 
@@ -25,7 +24,6 @@ export function EnquiryList({
   users,
   userColumnMode,
   showActions = true,
-  showFrappeSync = false,
   visibleColumns,
   showInlineFilters,
   columnFilters,
@@ -44,7 +42,6 @@ export function EnquiryList({
   users: EnquiryLookup[];
   userColumnMode: "creator" | "allocatedTo" | "both";
   showActions?: boolean;
-  showFrappeSync?: boolean;
   visibleColumns: Record<string, boolean>;
   showInlineFilters: boolean;
   columnFilters: EnquiryColumnFilters;
@@ -157,22 +154,7 @@ export function EnquiryList({
         </span>
       )
     },
-    {
-      id: "frappeSync",
-      header: "Frappe sync",
-      accessorFn: (record) => record.frappeSyncStatus ?? "not-synced",
-      cell: ({ row }) => {
-        const status = row.original.frappeSyncStatus ?? null;
-        return (
-          <FrappeSyncIndicator
-            error={row.original.frappeSyncError}
-            remoteName={row.original.frappeRemoteName}
-            status={status === "retry" ? "pending" : status}
-            onVerify={() => verifyFrappeRecord("enquiries", Number(row.original.id))}
-          />
-        );
-      }
-    },
+
     {
       id: "creator",
       header: "Creator",
@@ -226,8 +208,6 @@ export function EnquiryList({
         if (column.id === "creator" && userColumnMode === "allocatedTo") return false;
         if (column.id === "assignedTo" && userColumnMode === "creator") return false;
         if (column.id === "actions") return showActions;
-        if (column.id === "frappeSync")
-          return showFrappeSync && visibleColumns[column.id] !== false;
         return column.id === "enquiryNo" || visibleColumns[column.id ?? ""] !== false;
       })}
       data={records}

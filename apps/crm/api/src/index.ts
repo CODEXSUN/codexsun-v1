@@ -9,6 +9,7 @@ export { callLogModule } from "./modules/call-log/index.js";
 export type { ActivitiesDatabase } from "./modules/activities/index.js";
 export type { EnquiryRequestContext, EnquiryDatabase } from "./modules/enquiry/index.js";
 export { EnquiryRepository } from "./modules/enquiry/index.js";
+export { EnquiryContactLookup } from "./modules/enquiry/index.js";
 export { lookupAssignedEnquirySummary } from "./modules/enquiry/index.js";
 export type { EnquiryListOptions, EnquiryRecord } from "./modules/enquiry/index.js";
 export type {

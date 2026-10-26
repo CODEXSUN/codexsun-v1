@@ -1,27 +1,24 @@
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
-import { useCrmFrappeSyncEnabled } from "../frappe-sync/frappe-sync.hooks";
+
 import { WorkspaceTable } from "@codexsun/ui/workspace/table";
 import type { DutyReport } from "./duty-report.types";
-import { FrappeSyncIndicator, type FrappeSyncStatus } from "../frappe-sync/frappe-sync.indicator";
+
 export function DutyReportList({
   items,
   loading,
-  onOpen,
-  onVerify
+  onOpen
 }: {
   items: DutyReport[];
   loading: boolean;
   onOpen: (row: DutyReport) => void;
-  onVerify: (row: DutyReport) => Promise<FrappeSyncStatus>;
 }) {
-  const frappeSyncEnabled = useCrmFrappeSyncEnabled();
   return (
     <WorkspaceTable<DutyReport>
       data={items}
       isLoading={loading}
       onRowClick={onOpen}
       emptyState="No duty reports found."
-      columns={(
+      columns={
         [
           {
             id: "sop",
@@ -69,20 +66,9 @@ export function DutyReportList({
                 {row.original.actions}
               </span>
             )
-          },
-          {
-            id: "frappeSync",
-            header: "Frappe sync",
-            cell: ({ row }) => (
-              <FrappeSyncIndicator
-                status={row.original.frappeSyncStatus}
-                error={row.original.frappeSyncError}
-                onVerify={() => onVerify(row.original)}
-              />
-            )
           }
         ] satisfies ColumnDef<DutyReport>[]
-      ).filter((column) => column.id !== "frappeSync" || frappeSyncEnabled)}
+      }
     />
   );
 }

@@ -4,7 +4,6 @@ import type {
   EnquiryAttention,
   EnquiryComment,
   EnquiryEstimate,
-  EnquiryFrappeSyncEvent,
   EnquiryEstimateSavePayload,
   EnquiryJob,
   EnquiryJobSavePayload,
@@ -83,8 +82,6 @@ export const readEnquiryAlert = (id: number) =>
   request<{ read: boolean }>(`/crm/enquiries/alerts/${id}/read`, { method: "POST" });
 export const getEnquiry = (id: string) =>
   request<EnquiryRecord>(`/crm/enquiries/${encodeURIComponent(id)}`);
-export const listEnquiryFrappeSync = (id: string) =>
-  request<EnquiryFrappeSyncEvent[]>(`/crm/enquiries/${encodeURIComponent(id)}/frappe-sync`);
 export const listEnquiryComments = (id: string) =>
   request<EnquiryComment[]>(`/crm/enquiries/${id}/comments`);
 export const createEnquiryComment = (

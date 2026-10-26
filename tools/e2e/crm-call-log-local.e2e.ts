@@ -27,7 +27,7 @@ function openDatabase() {
   });
 }
 
-test("Call Logs persist locally with exactly one outbound event", async () => {
+test("Call Logs persist locally without an outbound Frappe event", async () => {
   const first = openDatabase();
   let id: number | null = null;
   try {
@@ -65,7 +65,7 @@ test("Call Logs persist locally with exactly one outbound event", async () => {
       }>`SELECT COUNT(*) AS count FROM crm_call_log_sync_events WHERE call_log_id=${id}`.execute(
         reopened
       );
-      assert.equal(Number(events.rows[0]?.count), 1);
+      assert.equal(Number(events.rows[0]?.count), 0);
     } finally {
       if (id) {
         await sql`DELETE FROM crm_call_log_sync_events WHERE call_log_id=${id}`.execute(reopened);
@@ -95,13 +95,10 @@ test("mobile call logs and comments persist locally without a Frappe event", asy
       sourceReference: marker,
       occurredAt: "2026-10-13T10:30:00.000Z"
     };
-    const created = await repository.create(input, "mobile-test@local.invalid", false);
+    const created = await repository.create(input, "mobile-test@local.invalid");
     id = Number(created.name.slice(3));
     assert.ok(Number.isSafeInteger(id) && id > 0);
-    assert.equal(
-      (await repository.create(input, "mobile-test@local.invalid", false)).name,
-      created.name
-    );
+    assert.equal((await repository.create(input, "mobile-test@local.invalid")).name, created.name);
     const comment = await repository.addComment(
       id,
       "Saved from the mobile call log.",
@@ -130,7 +127,7 @@ test("mobile call logs and comments persist locally without a Frappe event", asy
   }
 });
 
-test("mobile enquiries create local activity without a Frappe event", async () => {
+test("mobile enquiries retain durable pending events without Frappe delivery", async () => {
   const database = openDatabase() as unknown as Kysely<EnquiryDatabase>;
   let id: number | null = null;
   try {
@@ -171,8 +168,7 @@ test("mobile enquiries create local activity without a Frappe event", async () =
         closedReason: null
       },
       "mobile-test@local.invalid",
-      undefined,
-      false
+      undefined
     );
     id = created?.id ?? null;
     assert.ok(id);
@@ -189,13 +185,23 @@ test("mobile enquiries create local activity without a Frappe event", async () =
       )
     ]);
     assert.equal(Number(activities.rows[0]?.count), 1);
-    assert.equal(Number(events.rows[0]?.count), 0);
+    assert.equal(Number(events.rows[0]?.count), 2);
+    const attempts = await sql<{ attempts: number; status: string }>`
+      SELECT attempts,status FROM crm_enquiry_sync_events WHERE enquiry_id=${id}
+    `.execute(database);
+    assert.ok(attempts.rows.every((event) => event.attempts === 0 && event.status === "pending"));
   } finally {
-    if (id) {
-      await sql`DELETE FROM crm_enquiry_activity WHERE enquiry_id=${id}`.execute(database);
-      await sql`DELETE FROM crm_enquiry_comments WHERE enquiry_id=${id}`.execute(database);
-      await sql`DELETE FROM crm_enquiries WHERE id=${id}`.execute(database);
+    try {
+      if (id) {
+        await sql`DELETE FROM crm_enquiry_sync_validation WHERE event_id IN
+          (SELECT id FROM crm_enquiry_sync_events WHERE enquiry_id=${id})`.execute(database);
+        await sql`DELETE FROM crm_enquiry_sync_events WHERE enquiry_id=${id}`.execute(database);
+        await sql`DELETE FROM crm_enquiry_activity WHERE enquiry_id=${id}`.execute(database);
+        await sql`DELETE FROM crm_enquiry_comments WHERE enquiry_id=${id}`.execute(database);
+        await sql`DELETE FROM crm_enquiries WHERE id=${id}`.execute(database);
+      }
+    } finally {
+      await database.destroy();
     }
-    await database.destroy();
   }
 });

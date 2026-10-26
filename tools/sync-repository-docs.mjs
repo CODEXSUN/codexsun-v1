@@ -8,11 +8,11 @@ export class RepositoryDocumentation {
     this.content = join(root, "apps/docs/content");
     this.excluded = new Set([
       ".container",
+      ".codex-runtime",
       ".git",
       ".idea",
       ".turbo",
       ".cache",
-      ".codex-runtime",
       ".next",
       ".vite",
       "node_modules",

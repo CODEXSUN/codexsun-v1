@@ -1,4 +1,4 @@
-import { canDispatchCrmFrappeSync } from "../../crm-frappe-sync-access.js";
+import { canDispatchCrmFrappeSync, readCrmFrappeSyncAccess } from "../../crm-frappe-sync-access.js";
 import { createHash } from "node:crypto";
 import { sql, type Kysely } from "kysely";
 import { EnquirySyncRepository, type EnquiryDatabase } from "@codexsun/crm-api/enquiry-sync";
@@ -31,7 +31,8 @@ export async function enqueueCrmEnquirySync(
     correlationId?: string;
   }
 ) {
-  if (!(await canDispatchCrmFrappeSync(getTenantDatabaseByName(input.tenantDatabase)))) return null;
+  if (!(await readCrmFrappeSyncAccess(getTenantDatabaseByName(input.tenantDatabase))).outbound)
+    return null;
   const sync = new EnquirySyncRepository(
     getTenantDatabaseByName(input.tenantDatabase) as unknown as Kysely<EnquiryDatabase>
   );
@@ -42,7 +43,7 @@ export async function enqueueCrmEnquirySync(
   )
     return null;
   return queue.enqueue({
-    dispatchImmediately: true,
+    dispatchImmediately: false,
     actorEmail: input.actorEmail,
     correlationId: event.correlation_id,
     idempotencyKey: crmEnquiryDeliveryKey(input.tenantId, event),
