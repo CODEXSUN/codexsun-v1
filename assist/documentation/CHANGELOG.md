@@ -41,6 +41,7 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Keep provider workers disabled during local acceptance. Local fixtures and ignored evidence do not migrate or modify production data.
 - Preserve the explicit external Frappe and Platform fixture exclusions in the CRM suite. Local acceptance does not certify a production deployment.
 - Update compatible locked dependency versions for DOMPurify, Zod, Nodemailer, Mailparser, and ip-address. The installed dependency audit reports zero vulnerabilities.
+- Make POP3 text retrieval explicit and use the parser's exported message type for compatibility with its current declarations.
 - Generate a marked synthetic Sites publication only for repository CI build verification. Production snapshot identity and checksum checks remain required.
 
 ## v-1.1.72
