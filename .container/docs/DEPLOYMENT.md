@@ -96,6 +96,7 @@ Missing or malformed expected SHAs fail before configuration loading or backup c
 This guard does not convert the updater into immutable image promotion.
 
 Use [Staging preparation](STAGING-PREPARATION.md) for read-only candidate input checks.
+Use [Immutable promotion](IMMUTABLE-PROMOTION.md) for the separate five-service digest-only executor and its mandatory recovery gates.
 The update acquires a host lock shared with setup and cleanup.
 It creates and verifies database, application-storage, configuration, and rollback backups before pulling source or building images.
 After building, it stops selected application writers gracefully and creates a second verified backup before migrations.
