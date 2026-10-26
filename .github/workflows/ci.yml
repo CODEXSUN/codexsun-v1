@@ -32,5 +32,9 @@ jobs:
       - run: npm run test:docs
       - name: Verify diagnostic and site-content isolation
         run: node --import tsx --test devkits/zuno/api/src/modules/diagnostics/*.test.ts devkits/zuno/api/src/modules/watch/*.test.ts apps/sites/clients/runtime/content/content-store.test.mjs
+      - name: Verify synthetic Sites build fixture
+        run: node --import tsx --test tools/ci-sites-publication-fixture.test.ts
+      - name: Prepare synthetic Sites publication for build verification only
+        run: node --import tsx tools/ci-sites-publication-fixture.ts
       - run: npm run build
       - run: npm run dependencies:check

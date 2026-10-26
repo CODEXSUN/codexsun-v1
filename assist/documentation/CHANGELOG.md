@@ -40,6 +40,8 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Record 2,000 successful sustained reads with 20 concurrent readers: p95 129 ms across five tenants and 270 ms on the 20,001-record dataset.
 - Keep provider workers disabled during local acceptance. Local fixtures and ignored evidence do not migrate or modify production data.
 - Preserve the explicit external Frappe and Platform fixture exclusions in the CRM suite. Local acceptance does not certify a production deployment.
+- Update compatible locked dependency versions for DOMPurify, Zod, Nodemailer, Mailparser, and ip-address. The installed dependency audit reports zero vulnerabilities.
+- Generate a marked synthetic Sites publication only for repository CI build verification. Production snapshot identity and checksum checks remain required.
 
 ## v-1.1.72
 

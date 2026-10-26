@@ -28,6 +28,9 @@ Private buyer and seller workspaces remain in TConnect and open on `https://code
 The public site remains `https://tirupurconnect.com`. Its Worker lives in `clients/cloudflare/tirupurconnect.mjs`.
 Deploy with `wrangler deploy --config apps/sites/clients/cloudflare/wrangler.tirupurconnect.jsonc --keep-vars`.
 Build with `npm run build:tirupurconnect -w @codexsun/sites-clients`. Development uses `dev:tirupurconnect` in the same workspace.
+
+Repository CI creates a marked synthetic publication through `tools/ci-sites-publication-fixture.ts` for build verification only. This output is not published or deployed.
+Production builds still require the authenticated publication export described below. The builder has no automatic fixture fallback.
 The former TConnect development command forwards to this Sites client. All output stays under root `dist/apps/sites/clients/tirupurconnect`.
 
 Public business data must come from Corporate ID `TIRUPURCONNECT`. The fixed upstream is `https://codexsun.com/api/platform`.
