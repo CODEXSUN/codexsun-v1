@@ -5,7 +5,7 @@ import type { Connection } from "mysql2/promise";
 import { LegacyPreparationRepository } from "./legacy-cxapp.repository.js";
 import { LegacyPreparationService } from "./legacy-cxapp.service.js";
 import { hydrateLegacyPreparation } from "./legacy-cxapp.sync.js";
-import { prepareLegacyPhase } from "./legacy-cxapp.worker.js";
+import { processLegacyPreparationPhase } from "./legacy-cxapp.worker.js";
 import { legacyPreparationModule } from "./legacy-cxapp.module.js";
 import type { CommonTableImportHost } from "../import-review/index.js";
 
@@ -64,7 +64,7 @@ test("worker rolls back a failed phase and clears uncommitted in-memory state", 
     rollback: async () => calls.push("rollback"),
     query: async () => [[]]
   });
-  await assert.rejects(prepareLegacyPhase(repo, "billing"), /Prepare core/);
+  await assert.rejects(processLegacyPreparationPhase(repo, "billing"), /Prepare core/);
   assert.deepEqual(calls, ["begin", "rollback"]);
   assert.deepEqual(repo.rows, []);
 });

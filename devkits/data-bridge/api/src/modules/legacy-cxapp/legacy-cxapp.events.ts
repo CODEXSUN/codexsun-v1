@@ -1,6 +1,6 @@
 import type { LegacyPhase, LegacyPrepared } from "./legacy-cxapp.types.js";
 
-export function legacyPreparationCompleted(phase: LegacyPhase, rows: readonly LegacyPrepared[]) {
+export function createLegacyPreparationCompleted(phase: LegacyPhase, rows: readonly LegacyPrepared[]) {
   const own = rows.filter((row) => row.phase === phase);
   return {
     type: "data-bridge.legacy-preparation.completed" as const,

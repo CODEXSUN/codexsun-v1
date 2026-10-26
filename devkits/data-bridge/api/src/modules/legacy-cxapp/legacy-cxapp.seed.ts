@@ -1,6 +1,6 @@
 import type { Connection, RowDataPacket } from "mysql2/promise";
 
-export async function bindLegacyPreparationContext(
+export async function seedLegacyPreparationContext(
   stage: Connection,
   sourceDatabase: string,
   targetDatabase: string

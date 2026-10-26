@@ -1,5 +1,5 @@
 import { migrateLegacyPreparation } from "./legacy-cxapp.migration.js";
-import { bindLegacyPreparationContext } from "./legacy-cxapp.seed.js";
+import { seedLegacyPreparationContext } from "./legacy-cxapp.seed.js";
 import { createHash } from "node:crypto";
 import type { Connection, RowDataPacket } from "mysql2/promise";
 import { identifier } from "../transfer-session/index.js";
@@ -21,7 +21,7 @@ export class LegacyPreparationRepository {
   ) {}
 
   async bindContext(sourceDatabase: string, targetDatabase: string) {
-    await bindLegacyPreparationContext(this.stage, sourceDatabase, targetDatabase);
+    await seedLegacyPreparationContext(this.stage, sourceDatabase, targetDatabase);
   }
 
   async initialize() {

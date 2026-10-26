@@ -1,7 +1,7 @@
 import { LegacyCorePreparation } from "./legacy-cxapp.core.js";
 import { LegacyMasterPreparation } from "./legacy-cxapp.masters.js";
 import { LegacyBillingPreparation } from "./legacy-cxapp.billing.js";
-import { legacyPreparationCompleted } from "./legacy-cxapp.events.js";
+import { createLegacyPreparationCompleted } from "./legacy-cxapp.events.js";
 import type { LegacyPreparationRepository } from "./legacy-cxapp.repository.js";
 import type { LegacyPhase } from "./legacy-cxapp.types.js";
 
@@ -22,6 +22,6 @@ export class LegacyPreparationService {
       billing: LegacyBillingPreparation
     };
     await new preparers[phase](this.repository).run();
-    return legacyPreparationCompleted(phase, this.repository.rows);
+    return createLegacyPreparationCompleted(phase, this.repository.rows);
   }
 }

@@ -7,4 +7,4 @@ export type * from "./legacy-cxapp.types.js";
 export { legacyPreparationModule } from "./legacy-cxapp.module.js";
 export { LegacyPreparationService } from "./legacy-cxapp.service.js";
 export { hydrateLegacyPreparation } from "./legacy-cxapp.sync.js";
-export { prepareLegacyPhase } from "./legacy-cxapp.worker.js";
+export { processLegacyPreparationPhase } from "./legacy-cxapp.worker.js";
