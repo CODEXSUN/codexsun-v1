@@ -1,4 +1,5 @@
 export { enquiryModule } from "./enquiry.module.js";
+export { authorizeEnquiryWrite } from "./enquiry.write-access.js";
 export {
   enquiryMigrationBatch,
   migrateCrmTenantDatabase,

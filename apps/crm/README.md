@@ -83,6 +83,7 @@ Assigned users can pin enquiry locations, submit check-in/out, post comments, an
 The enquiry permission seed grants this permission to the standard active role set.
 Enquiry edits, reports, charges, and collections honor the persisted `crm.enquiry.update` grant for assigned users.
 Creator-only visibility does not permit field actions or edits. Assignment changes and tenant-wide access retain administrator checks.
+The composed API applies the owner enquiry write guard to every numeric enquiry mutation route, including job actions.
 Existing tenants need the enquiry permission seed after the API update to receive the new grant.
 
 Tenant Admin and Super Admin retain tenant-wide enquiry and task reads. Other roles see only
