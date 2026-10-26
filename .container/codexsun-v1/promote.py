@@ -64,6 +64,8 @@ class ImagePromotion:
             self.check_private_inputs()
             self.compose("production", "config", "--quiet")
             self.compose("rollback", "config", "--quiet")
+            if hasattr(self.policy, "consume_exception"):
+                self.policy.consume_exception()
             self.save_status("promoting")
             try:
                 self.compose("production", "up", "-d", "--no-build", "--pull", "never",
@@ -83,6 +85,8 @@ class ImagePromotion:
         path = self.policy.path.parent / "promotion-status.json"
         payload = {"status": status, "source": self.policy.record["source"], "images": self.policy.images,
                    "at": datetime.now(timezone.utc).isoformat(), "databaseRollback": False}
+        if hasattr(self.policy, "exception_status"):
+            payload["releaseException"] = self.policy.exception_status()
         with tempfile.NamedTemporaryFile(mode="w", dir=path.parent, prefix=".promotion-", delete=False) as stream:
             json.dump(payload, stream, indent=2)
             temporary = stream.name
@@ -102,6 +106,8 @@ class ImagePromotion:
             return
         files = [self.policy.path] + [self.policy.reference_path(name) for name in [
             "staging", "migrations", "adoption", "recovery", "production", "rollback"]]
+        if hasattr(self.policy, "extra_private_paths"):
+            files += self.policy.extra_private_paths()
         for path in files:
             mode = path.stat()
             require(mode.st_uid == os.geteuid() and not mode.st_mode & 0o077,
@@ -168,16 +174,27 @@ def main():
     parser.add_argument("--expected-revision", required=True)
     parser.add_argument("--expected-operator-revision")
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--release172-exception", action="store_true")
+    parser.add_argument("--release172-local-verification-sha256")
     args = parser.parse_args()
     try:
         if args.apply:
             verify_operator_checkout(args.expected_operator_revision)
-        policy = PromotionPolicy(args.manifest, args.expected_revision).validate()
+        if args.release172_exception:
+            from promotion172 import Release172PromotionPolicy
+            policy = Release172PromotionPolicy(args.manifest, args.expected_revision,
+                                               args.release172_local_verification_sha256).validate()
+        else:
+            require(args.release172_local_verification_sha256 is None, "Local verification flag requires the pinned release exception")
+            policy = PromotionPolicy(args.manifest, args.expected_revision).validate()
         runtime = ImagePromotion(policy).inspect()
         if args.apply:
             runtime.apply()
-        print(json.dumps({"status": "promoted" if args.apply else "inputs-checked", "source": policy.record["source"],
-                          "limit": "External browser acceptance and database recovery remain separate."}))
+        result = {"status": "promoted" if args.apply else "inputs-checked", "source": policy.record["source"],
+                  "limit": "External browser acceptance and database recovery remain separate."}
+        if hasattr(policy, "exception_status"):
+            result["releaseException"] = policy.exception_status()
+        print(json.dumps(result))
         return 0
     except PromotionError as error:
         print("Promotion blocked: " + str(error), file=sys.stderr)

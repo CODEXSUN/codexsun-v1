@@ -64,6 +64,11 @@ Unresolved interpolation fails. Existing secret comparisons decode only that sin
 
 ## Recovery scope
 
+The human authorized one release-specific exception for the exact tested 1.1.72 application.
+See [the bounded operator contract](OPERATOR-1.1.72-EXCEPTION.md).
+It is opt-in, pins the exact release/images/models/authorization/scope, expires, and is single-use on the host.
+The default rules below remain unchanged. Future releases receive no exception.
+
 New tenant databases are exactly `techmedia_db` and `rainbow_db`.
 Do not invoke the existing updater backup helper because it dumps all databases and archives shared storage.
 The recovery receipt's `coveredTargets` must cover every actual migration target, not only the two new backups.
