@@ -21,7 +21,7 @@ export class LegacyPreparationRepository {
   ) {}
 
   async bindContext(sourceDatabase: string, targetDatabase: string) {
-    await bindLegacyPreparationContext(this.stage,sourceDatabase,targetDatabase);
+    await bindLegacyPreparationContext(this.stage, sourceDatabase, targetDatabase);
   }
 
   async initialize() {

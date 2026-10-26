@@ -120,7 +120,9 @@ try {
       }
       await hydrateLegacyPreparation(repository);
       if (phase !== "report") {
-        await new LegacyPreparationService(repository).prepare(phase.replace("-refresh", "") as "core" | "masters" | "billing");
+        await new LegacyPreparationService(repository).prepare(
+          phase.replace("-refresh", "") as "core" | "masters" | "billing"
+        );
       }
       await stage.commit();
     } catch (error) {

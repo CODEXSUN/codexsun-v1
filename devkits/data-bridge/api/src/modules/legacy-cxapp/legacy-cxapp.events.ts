@@ -4,7 +4,9 @@ export function legacyPreparationCompleted(phase: LegacyPhase, rows: readonly Le
   const own = rows.filter((row) => row.phase === phase);
   return {
     type: "data-bridge.legacy-preparation.completed" as const,
-    phase, total: own.length, blocked: own.filter((row) => row.issues.length > 0).length,
+    phase,
+    total: own.length,
+    blocked: own.filter((row) => row.issues.length > 0).length,
     executionAuthorized: false as const
   };
 }

@@ -4,7 +4,10 @@ import { hydrateLegacyPreparation } from "./legacy-cxapp.sync.js";
 import type { LegacyPhase } from "./legacy-cxapp.types.js";
 
 // Explicit local preparation only. This worker is never registered as a business-import job.
-export async function prepareLegacyPhase(repository: LegacyPreparationRepository, phase: LegacyPhase) {
+export async function prepareLegacyPhase(
+  repository: LegacyPreparationRepository,
+  phase: LegacyPhase
+) {
   await repository.stage.beginTransaction();
   try {
     await hydrateLegacyPreparation(repository);

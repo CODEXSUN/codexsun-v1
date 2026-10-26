@@ -9,7 +9,8 @@ export class LegacyPreparationService {
   constructor(private readonly repository: LegacyPreparationRepository) {}
 
   async prepare(phase: LegacyPhase) {
-    const required = phase === "billing" ? ["core", "masters"] : phase === "masters" ? ["core"] : [];
+    const required =
+      phase === "billing" ? ["core", "masters"] : phase === "masters" ? ["core"] : [];
     for (const prior of required) {
       if (!this.repository.mappings.some((mapping) => mapping.phase === prior)) {
         throw new Error(`Prepare ${prior} before ${phase}.`);
@@ -21,6 +22,6 @@ export class LegacyPreparationService {
       billing: LegacyBillingPreparation
     };
     await new preparers[phase](this.repository).run();
-    return legacyPreparationCompleted(phase,this.repository.rows);
+    return legacyPreparationCompleted(phase, this.repository.rows);
   }
 }
