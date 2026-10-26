@@ -28,6 +28,34 @@ export const leadMigrationBatch = {
       description: "CRM Leads with source receipt and follow-up link.",
       version: 1,
       up: createLeadSchema
+    },
+    {
+      name: "crm.lead.workspace.v2",
+      checksum: "crm.lead.workspace.v2:1",
+      description: "Lead editing, contact linking, conversion, and audit history.",
+      version: 2,
+      up: async (database: Kysely<LeadDatabase>) => {
+        await sql
+          .raw(
+            `ALTER TABLE crm_leads
+          ADD COLUMN IF NOT EXISTS contact_id INT NULL,
+          ADD COLUMN IF NOT EXISTS enquiry_id INT NULL,
+          ADD COLUMN IF NOT EXISTS revision INT NOT NULL DEFAULT 1,
+          ADD INDEX IF NOT EXISTS crm_lead_workspace (company_id,assigned_to,status,id)`
+          )
+          .execute(database);
+        await sql
+          .raw(
+            `CREATE TABLE IF NOT EXISTS crm_lead_activity (
+          id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          lead_uuid CHAR(8) NOT NULL, company_id INT NOT NULL,
+          action VARCHAR(32) NOT NULL, actor VARCHAR(191) NOT NULL, details TEXT NOT NULL,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          INDEX crm_lead_activity_record(company_id,lead_uuid,id)
+        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+          )
+          .execute(database);
+      }
     }
   ]
 };

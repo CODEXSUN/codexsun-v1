@@ -50,6 +50,12 @@ export function registerSchedulerRoutes(
   });
   registerContractRoute(app, {
     method: "GET",
+    url: "/crm/schedules/reminders/count",
+    schemas: { response: z.object({ total: z.number().int().nonnegative() }) },
+    handler: async ({ request }) => (await service(request)).reminderCount()
+  });
+  registerContractRoute(app, {
+    method: "GET",
     url: "/crm/schedules/reminders",
     schemas: { response: z.array(row) },
     handler: async ({ request }) => (await service(request)).reminders()
@@ -101,6 +107,17 @@ export function registerSchedulerRoutes(
               reminderAt: body.reminderAt
             }
       )
+  });
+  registerContractRoute(app, {
+    method: "POST",
+    url: "/crm/schedules/:id/reschedule",
+    schemas: {
+      params: idParams,
+      body: z.object({ scheduledAt: z.iso.datetime({ offset: true }) }).strict(),
+      response: row
+    },
+    handler: async ({ params, body, request }) =>
+      (await service(request)).reschedule(params.id, body.scheduledAt)
   });
   registerContractRoute(app, {
     method: "POST",

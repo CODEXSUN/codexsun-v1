@@ -1,7 +1,8 @@
 /** Administrative mutations and tenant-wide reads require persisted administrator roles. */
 export function crmRecordReadRoles(permission: string): readonly string[] | null {
-  if (permission === "crm.enquiry.update") return null;
+  if (permission === "crm.enquiry.update" || permission === "crm.lead.update") return null;
   return permission === "crm.enquiry.view-all" ||
+    permission === "crm.lead.view-all" ||
     permission === "crm.task.view-all" ||
     (permission.startsWith("crm.") &&
       /\.(update(?:-own)?|delete|remove|manage|assign|cancel|restore|suspend|close|deactivate|publish|force-delete)(?:\.|$)/u.test(

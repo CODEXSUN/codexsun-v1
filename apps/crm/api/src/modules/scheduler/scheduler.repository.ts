@@ -124,6 +124,14 @@ export class SchedulerRepository {
     return query.rows.map(mapSchedule);
   }
 
+  async reminderCount(scope: Scope) {
+    const result = await sql<{ total: number | string }>`SELECT COUNT(*) AS total
+      FROM crm_schedules s JOIN app_users u ON u.id=s.assigned_user_id
+      WHERE (${scope.viewAll} OR s.assigned_user_id=${scope.userId})
+        AND s.status='scheduled' AND s.acknowledged_at IS NULL`.execute(this.database);
+    return Number(result.rows[0]?.total ?? 0);
+  }
+
   async reminders(scope: Scope) {
     const query = await sql<RawSchedule>`SELECT s.id, s.uuid, s.notes, s.title, s.details,
       s.source_type AS sourceType, s.source_id AS sourceId, s.source_label AS sourceLabel,
@@ -142,6 +150,21 @@ export class SchedulerRepository {
   async updateStatus(id: number, status: Exclude<ScheduleStatus, "scheduled">, scope: Scope) {
     let query = this.database.updateTable("crm_schedules").set({ status });
     query = query.where("id", "=", id);
+    if (!scope.viewAll) query = query.where("assigned_user_id", "=", scope.userId);
+    const result = await query.executeTakeFirst();
+    return Number(result.numUpdatedRows) > 0 ? this.get(id) : null;
+  }
+
+  async reschedule(id: number, scheduledAt: string, scope: Scope) {
+    let query = this.database
+      .updateTable("crm_schedules")
+      .set({
+        scheduled_at: utcDateTime(scheduledAt),
+        reminder_at: utcDateTime(scheduledAt),
+        acknowledged_at: null
+      })
+      .where("id", "=", id)
+      .where("status", "=", "scheduled");
     if (!scope.viewAll) query = query.where("assigned_user_id", "=", scope.userId);
     const result = await query.executeTakeFirst();
     return Number(result.numUpdatedRows) > 0 ? this.get(id) : null;

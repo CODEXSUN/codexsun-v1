@@ -128,9 +128,9 @@ export function useCrmNavigationCounts(_email: string, enabled: boolean) {
     enabled
   });
   return {
-    assigned: summary.data?.assigned.total ?? 0,
-    created: summary.data?.created.total ?? 0,
-    all: summary.data?.allCount ?? 0
+    assigned: summary.data?.assigned.active ?? 0,
+    created: summary.data?.created.active ?? 0,
+    all: summary.data?.all.active ?? 0
   };
 }
 export const useEnquiryDetail = (id: string) =>

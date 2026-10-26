@@ -26,6 +26,16 @@ export async function getActiveContactForDatabase(databaseName: string, id: numb
   return result.rows[0] ?? null;
 }
 
+export async function lookupActiveContactsForDatabase(databaseName: string, search: string) {
+  const term = `%${search.trim().replace(/[\\%_]/g, "\\$&")}%`;
+  return (
+    await sql<{ id: number; name: string; primaryPhone: string | null }>`
+    SELECT id,name,primary_phone AS primaryPhone FROM core_contacts
+    WHERE status='active' AND (name LIKE ${term} OR primary_phone LIKE ${term})
+    ORDER BY name,id LIMIT 30`.execute(getCoreDatabase(databaseName))
+  ).rows;
+}
+
 export function resolveOrCreateCustomerForDatabase(
   databaseName: string,
   input: { name: string | null; mobile: string | null },

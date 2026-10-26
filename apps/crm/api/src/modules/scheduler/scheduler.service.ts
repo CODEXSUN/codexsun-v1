@@ -23,6 +23,12 @@ export class SchedulerService {
     });
   }
 
+  async reminderCount() {
+    await this.context.authorize("crm.schedule.view");
+    const canViewAll = await this.context.hasPermission("crm.schedule.view-all");
+    return { total: await this.repository.reminderCount(this.scope(canViewAll)) };
+  }
+
   async reminders() {
     await this.context.authorize("crm.schedule.view");
     const canViewAll = await this.context.hasPermission("crm.schedule.view-all");
@@ -64,6 +70,16 @@ export class SchedulerService {
     if (!canManage) await this.context.authorize("crm.schedule.update-own");
     const record = await this.repository.updateStatus(id, status, this.scope(canManage));
     if (!record) throw AppError.notFound("Schedule not found.");
+    return record;
+  }
+
+  async reschedule(id: number, scheduledAt: string) {
+    const canManage = await this.context.hasPermission("crm.schedule.manage");
+    if (!canManage) await this.context.authorize("crm.schedule.update-own");
+    if (!Number.isFinite(Date.parse(scheduledAt)))
+      throw AppError.validation("The schedule time must be a valid date.");
+    const record = await this.repository.reschedule(id, scheduledAt, this.scope(canManage));
+    if (!record) throw AppError.notFound("Open reminder not found.");
     return record;
   }
 

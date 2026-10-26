@@ -8,6 +8,7 @@ export async function crmRequest<T>(path: string, options: RequestInit = {}): Pr
   if (!baseUrl) throw new Error("Missing VITE_PLATFORM_API_URL for CRM.");
   const database = sessionStorage.getItem("codexsun_tenant_db_name");
   const tenantId = sessionStorage.getItem("codexsun_tenant_id");
+  const companyId = sessionStorage.getItem("codexsun.tenant.company-id");
   const response = await fetch(`${baseUrl}${path}`, {
     ...options,
     credentials: "include",
@@ -16,6 +17,7 @@ export async function crmRequest<T>(path: string, options: RequestInit = {}): Pr
       ...(options.body ? { "Content-Type": "application/json" } : {}),
       ...(database ? { "x-tenant-db": database } : {}),
       ...(tenantId ? { "x-tenant-id": tenantId } : {}),
+      ...(companyId ? { "x-company-id": companyId } : {}),
       ...options.headers
     }
   });

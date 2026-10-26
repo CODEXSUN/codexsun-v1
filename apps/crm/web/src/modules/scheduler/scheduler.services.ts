@@ -56,3 +56,12 @@ export const sourceLabels: Record<ScheduleSourceType, string> = {
   duty: "Duty",
   sop: "SOP"
 };
+
+export const getReminderCount = () =>
+  crmRequest<{ total: number }>("/crm/schedules/reminders/count");
+
+export const rescheduleReminder = (id: number, scheduledAt: string) =>
+  crmRequest<ScheduleRecord>(`/crm/schedules/${id}/reschedule`, {
+    method: "POST",
+    body: JSON.stringify({ scheduledAt })
+  });

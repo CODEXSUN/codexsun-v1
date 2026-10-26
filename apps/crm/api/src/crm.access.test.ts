@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { crmRecordReadRoles, isContact360Permission } from "./crm.access.js";
 
 test("tenant-wide enquiry and task reads require an administrator role", () => {
-  for (const permission of ["crm.enquiry.view-all", "crm.task.view-all"]) {
+  for (const permission of ["crm.enquiry.view-all", "crm.task.view-all", "crm.lead.view-all"]) {
     const roles = crmRecordReadRoles(permission)!;
     assert.deepEqual(roles, ["admin", "super-admin"]);
     for (const role of ["user", "manager", "team-head", "auditor", "custom-role"])
@@ -16,6 +16,7 @@ test("ordinary permissions retain their existing permission checks", () => {
     "crm.enquiry.view",
     "crm.enquiry.work",
     "crm.enquiry.update",
+    "crm.lead.update",
     "crm.task.work",
     "core.application.records.view"
   ])

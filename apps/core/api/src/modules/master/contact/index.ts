@@ -4,6 +4,7 @@ export { seedContactModule } from "./contact.seed.js";
 export {
   contactIdsForEmailPolicy,
   getActiveContactForDatabase,
+  lookupActiveContactsForDatabase,
   findContactIdentityForDatabase,
   findContactIdentityByIdForDatabase,
   resolveExternalContactForDatabase,

@@ -145,11 +145,13 @@ export function WorkspaceTable<T extends RowData>({
         </table>
       </div>
       {table.getRowModel().rows.length === 0 ? (
-        isLoading ? (
-          <WorkspaceTableLoadingState />
-        ) : (
-          <WorkspaceTableEmptyState>{emptyState ?? "No records found."}</WorkspaceTableEmptyState>
-        )
+        <div className={mobileRow ? "hidden md:block" : undefined}>
+          {isLoading ? (
+            <WorkspaceTableLoadingState />
+          ) : (
+            <WorkspaceTableEmptyState>{emptyState ?? "No records found."}</WorkspaceTableEmptyState>
+          )}
+        </div>
       ) : null}
     </WorkspaceTablePanel>
   );

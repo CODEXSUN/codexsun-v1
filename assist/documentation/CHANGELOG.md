@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.75
+Current version: 1.1.76
 
-Release tag: v-1.1.75
+Release tag: v-1.1.76
 
-Changelog label: v 1.1.75
+Changelog label: v 1.1.76
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -20,7 +20,40 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
 
+## v-1.1.76
+
+### [v 1.1.76] 2026-10-26 10:08 pm - Complete CRM Leads and Reminder workflows
+
+#### Database Changes
+
+- Database update: Yes. Apply `crm.lead.workspace.v2` and Lead permission seeds for existing tenants.
+- Add Lead contact/conversion links, revisions, scoped list index, and activity history. Preserve existing intake records.
+
+#### App Codebase Changes
+
+- Complete Lead list, show, create, update, campaign lookup/defaults, filters, and atomic Enquiry conversion.
+- Add app-header Lead actions and Ctrl+S. Allow blank contact names and enquiry details.
+- Flatten Reminder navigation, count open work, distinguish sidebar icons, and add reminder popup creation and rescheduling.
+- Keep rescheduling limited to assigned users or schedule managers. Exclude dismissed and completed reminders from counts.
+- Format Enquiry age for humans, keep due dates on one line, and center priority and Created cells.
+- Validate five-tenant Lead isolation, conversion rollback, optional fields, and lookup scope through 16 integration tests.
+- Bump all workspace versions to 1.1.76. Production deployment remains separate.
+
 ## v-1.1.75
+
+### [v 1.1.75] 2026-10-26 - Complete the local CRM Leads workspace
+
+#### Database Changes
+
+- Add Lead contact and Enquiry links, optimistic revisions, a list index, and an owned activity table through migration `crm.lead.workspace.v2`.
+- Add Lead create/update/conversion grants. Keep ordinary-user writes assigned to their own leads and administrator-only tenant-wide reads.
+
+#### App Codebase Changes
+
+- Register the missing Leads routes in the Platform API and match the Enquiry list, details, upsert, filters, pagination, and responsive layout.
+- Convert a Lead to one Enquiry transactionally, preserving its assignee and Marketing receipt. Prevent duplicate conversion and stale edits.
+- Send the selected company with CRM requests and scope Lead caches and delayed requests by tenant/company.
+- Verify the disposable-database Leads suite and the full 17-stage CRM suite locally. Production migration and rollout remain pending.
 
 ### [v 1.1.75] 2026-10-26 6:22 pm - Finalize CRM pin comments and web creation age
 
@@ -84,7 +117,6 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Allow assigned users to post enquiry location pins and check-in/check-out with the dedicated work permission.
 - Keep record editing, charges, collections, creator-only writes, and unassigned writes restricted by existing checks.
 - Verify positive and negative actions with the real database record-scope suite. CRM and Platform API type checks pass.
-
 
 ### [v 1.1.73] 2026-10-26 3:02 pm - Make CRM independent and verify mobile tenant isolation
 

@@ -1,0 +1,91 @@
+# CRM Leads local verification - 2026-10-26
+
+## Scope and source
+
+Worktree: `D:\workspace\codexsun-worktrees\crm`, branch `codex/crm`, baseline `4c6b3778` (1.1.75).
+This report covers uncommitted local Leads implementation and validation. It does not report a production release.
+The earlier Enquiry Created formatting and alignment edits remain preserved.
+
+## Implemented behavior
+
+- Register Leads in the composed Platform API, removing the missing-route condition.
+- Use the Enquiry workspace primitives for a searchable, paginated list, full-page details, and create/edit form.
+- Show Contact, Mobile, Enquiry details, Campaign, conversion, and Status. Keep column visibility and row actions usable on mobile cards.
+- Support new prospects and explicit active Core contact selection. Manual campaign labels do not create Marketing campaigns.
+- Preserve Marketing submission identities, duplicate intake checks, and the assigned follow-up Task.
+- Convert under a Lead row lock. Resolve the Core customer, create the Enquiry with its original assignee, and persist the Lead link and audit entry in one transaction.
+- Return the existing Enquiry on repeated conversion. Block edits after conversion, Lost conversion, and stale revision updates.
+- Keep Enquiry creation's durable local outbox. Do not call Frappe or a provider during conversion.
+- Show the visible Enquiry number in the conversion audit, independently of its database ID.
+- Hide the duplicate shared table empty/loading state at mobile widths when mobile cards supply their own state.
+
+## Authorization and isolation audit
+
+- Platform validates authentication, CRM activation, and an active company before constructing the Lead context.
+- Apply persisted permission grants for reads, create, update, conversion, and Enquiry creation.
+- Require the contact read grant for explicit contact links and lookup.
+- Scope records and activity to the authenticated database, selected company, and assignee. Tenant-wide reads require both a grant and an administrator role.
+- Strict request schemas reject forged conversion/company fields. SQL predicates use bound values.
+- Scope browser query keys and delayed request headers by tenant and company. Discard mutation completion after a context switch.
+- Render text through React; do not render Lead content as raw HTML.
+- Preserve existing disabled grants when adding Lead seed defaults.
+
+## Executed checks
+
+| Check                                                           | Result                                                             |
+| --------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Full `npm run test:crm:full`                                    | All 17 stages passed, including 151 unit tests and 84 mobile tests |
+| Final `npm run test:e2e:crm-leads`                              | 13 tests passed across five disposable tenant databases            |
+| Lead cache/form and CRM role regression tests                   | 5 tests passed                                                     |
+| CRM Web, CRM API, Core API, Platform API, shared UI type checks | Passed                                                             |
+| CRM Web, CRM API, Core API lint                                 | Passed                                                             |
+| Repository module boundaries                                    | Passed                                                             |
+| `npm audit --json`                                              | Zero vulnerabilities                                               |
+
+The final Lead database run adds identical-UUID isolation across five tenants, a populated v1 upgrade preserving Marketing receipts and timestamps, and a visible-number regression after the full-suite run. The final focused browser-scope tests cover company switches and delayed requests.
+
+Database checks cover required fields, persisted reads/updates, bounded pagination, stale updates, unrelated users, company boundaries, forged/missing authentication, concurrent conversion, contact reuse, rollback after a forced database failure, live grant revocation, assignee preservation, and Marketing replay.
+
+## Authenticated browser acceptance
+
+Use the isolated source API at `http://127.0.0.1:28310` and web at `http://127.0.0.1:28320` with local tenant `CRMSTAGE1`.
+Its master database is `codexsun_crm_leads_ui_master`. All browser writes use the existing disposable staging tenant database, not production.
+
+Executed as the standard local user:
+
+- Sign in and load the Leads list without the former 404.
+- Submit an empty form and verify field errors and the shared banner.
+- Create a fresh-contact Lead; reopen, edit, and qualify it.
+- Convert it and follow Open enquiry. Verify contact, mobile, details, assignee, opening comment, and creation activity.
+- At 390 x 844, verify responsive cards, the form, existing-contact lookup and population, save, details, and conversion.
+- Verify the mobile conversion audit uses Enquiry number 4 while its database ID is 5.
+- Verify search and Lost filtering return the proper empty result once.
+- Verify column hiding and Show all update the mobile cards, and keep keyboard-accessible View/Edit actions available.
+
+The older manually inserted staging Enquiries had not advanced their number sequence. Reconcile only that local fixture before browser conversion. No production data was changed.
+
+Evidence is under `.codex-runtime/crm/rollout/`: `leads-five-tenant-final.log`, `leads-full-suite.log`, `leads-dependency-audit.json`, `leads-desktop-proof.png`, and `leads-mobile-proof.png`.
+Full-suite stage receipts are in `.codex-runtime/crm/tenancy/full-suite/results.json`.
+
+## Leads toolbar follow-up
+
+- Add the creation-date picker, column-search toggle with active search count, and selected-status badge with result count.
+- Match the Enquiry toolbar. Active excludes Converted and Lost; clearing the badge selects All leads.
+- Verify combined searches, date inclusivity/exclusive end, malformed/reversed ranges, and record scope in the expanded Leads E2E run: 14 tests passed.
+- Verify local date-to-UTC boundaries in `lead.filters.test.ts`. CRM API/Web type checks and lint pass.
+- In the authenticated browser, select 26-10-2026, enable column filters, choose Converted, and filter Campaign. The result and badge both change from 2 to 1. Evidence: `.codex-runtime/crm/rollout/leads-toolbar-proof.png`.
+
+## Release gates
+
+Existing production tenants need migration `crm.lead.workspace.v2` and the reviewed Lead permission seed before using the new API.
+Core schemas and normal reference seeds remain prerequisites.
+Commit/review, a frozen candidate, production migration, and cloud deployment are not part of this local verification result.
+No external provider or Frappe behavior is claimed as verified by these local tests.
+
+## Version 1.1.76 follow-up
+
+- Optional Contact and Enquiry details pass create and reload API tests. Lead integration suite: 16 passed.
+- Campaign lookup preserves company and assignee scope, escapes search wildcards, and adds default choices. New labels persist with saved leads.
+- Reminder count excludes dismissed/completed/cancelled records. Rescheduling checks own-user or manager authority. Scheduler service suite: 8 passed.
+- Header actions, Ctrl+S, sidebar labels/icons/counts, and human-readable Enquiry ages are included.
+- Evidence: `leads-optional-e2e.log` and `leads-campaign-e2e.log` under the local rollout evidence directory.
