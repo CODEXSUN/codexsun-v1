@@ -13,7 +13,7 @@ Current app work is separate: CXMobile, Marketing, CRM, and Billing.
 Use the selected app's assigned worktree and task chat.
 Do not ask again when the user already names the app or explicitly requests all four.
 Do not combine app changes, installs, or runtime resources merely because the repository is shared.
-Fresh app worktrees start as code-only checkouts. Do not install npm dependencies without authorization.
+App development tasks may install locked root dependencies in their assigned worktree when needed.
 
 ## Prompt Manager Role
 
@@ -26,13 +26,13 @@ No npm installation or deployment is authorized by prompt drafting or this polic
 
 ## Supervisor And App Chat Roles
 
-The `CODEXSUN release supervisor` owns Git staging, commits, pushes, pulls, merges, version updates, and release checkouts.
-App chats edit and check code only in their assigned worktrees. They leave a handoff for supervisor review.
-App chats must not run Git helpers, change main, or manage release branches unless the human explicitly reassigns that role.
+App chats may stage, commit, pull, and push their own app work in their assigned worktrees.
+Preserve unrelated work and avoid destructive Git operations.
+The release supervisor owns integration into main, version updates, and release checkouts.
 Read the shared role at `D:\workspace\codexsun\assist\agents\release-supervisor.md` when available.
 Otherwise, read `assist/agents/release-supervisor.md` from the reviewed repository copy.
-This role policy overrides older app-chat integration instructions. Only the human can grant exceptions.
-No npm installation or deployment is authorized. Writing these rules does not trigger Git or release operations.
+This role policy overrides older app-chat integration instructions.
+A policy change alone does not trigger Git operations, installation, or deployment.
 
 ## Shared Worktree And Release Rules
 

@@ -5,7 +5,7 @@
 The human assigns release supervision to the `CODEXSUN release supervisor` chat.
 Current supervisor chat: `01a1742f-cc59-7b21-9699-3ea4ca4cb185`.
 Only the human can reassign this role or grant an exception.
-This role overrides older instructions that let app chats perform integration or release Git operations.
+App chats manage their own app worktree. The supervisor owns main integration and releases.
 
 Use the shared canonical policy on this workstation: `D:\workspace\codexsun\assist\agents\release-supervisor.md`.
 On another workstation, use the reviewed repository copy.
@@ -16,7 +16,7 @@ Read [the workflow](../operations/worktree-release-workflow.md), [versioning](..
 [Prompt Manager](prompt-manager.md) may analyze requests and draft prompts for this role.
 It cannot authorize a Git batch, version update, or release by drafting a prompt.
 Require a concrete human-authorized task. Do not run Git commands merely to acknowledge an unfilled starter template.
-The supervisor retains Git ownership. Prompt Manager does not commit, push, pull, merge, or create release checkouts.
+Prompt Manager does not commit, push, pull, merge, or create release checkouts when drafting.
 
 ## App Chat Responsibilities
 
@@ -25,10 +25,10 @@ The supervisor retains Git ownership. Prompt Manager does not commit, push, pull
 - Ask which app to use when the user has not identified one.
 - Implement the requested app change and run focused checks with available tooling.
 - Preserve unrelated changes and keep business code within its owner module.
-- Leave Git staging, commits, pushes, pulls, merges, rebases, branch updates, and release checkouts to the supervisor.
+- Stage, commit, pull, and push only the app work in the assigned worktree. Preserve unrelated changes.
 - Do not edit main, change package versions, publish tags, or create another worktree.
-- Do not run repository Git helpers that stage, commit, pull, push, or bump versions.
-- Do not install dependencies, borrow another worktree's dependency tree, or start runtime services under the current restrictions.
+- Do not use Git helpers that include unrelated changes or modify release versions.
+- Install locked root dependencies in the assigned worktree when needed. Do not borrow another worktree's dependency tree.
 - Report missing tooling or unverified checks. Do not describe an unrun check as passed.
 - Provide the handoff in the app chat for the supervisor to read.
 - Do not message another chat without direct human authorization.
@@ -55,14 +55,14 @@ An app handoff is evidence for review. It does not independently authorize integ
 2. Inspect the exact worktree, branch, diff, upstream state, and app handoff.
 3. Coordinate a pause in the affected app's edits before staging or merging its files.
 4. Review relevant checks and preserve unfinished changes, untracked files, and existing stashes.
-5. Stage and commit only the reviewed batch in its owning app branch.
+5. Review the scoped app commits and preserve any unfinished work.
 6. Fetch and compare history before a safe pull or merge. Never pull over unpreserved work.
 7. Integrate completed app commits into main through the required review and check gates.
 8. Push approved integration changes and verify the remote commit.
 9. Prepare an authorized version checkout from an exact reviewed main commit.
 10. Perform requested version and changelog updates, then record candidate provenance and check results.
 
-The supervisor owns these Git operations in both app worktrees and main.
+The supervisor owns integration operations in main and release checkouts.
 An identified, authorized batch does not need repeated permission for each necessary Git command.
 Do not infer a new batch or version from a passing test, folder reservation, or role initialization.
 Keep main as the only persistent GitHub branch under the current user policy.
@@ -82,7 +82,7 @@ Existing application data and shared infrastructure remain protected.
 
 ## Current Restrictions
 
-No npm installation, dependency copying, deployment, Docker update, server startup, migration, seed, reset, or restore.
+Deployment, Docker updates, migrations, seeds, resets, and restores require separate task authorization.
 An integration role does not grant those permissions. A later explicit human instruction must authorize a change.
 Writing these rules does not authorize a commit, push, pull, merge, version bump, tag, or release checkout now.
 Keep the coordinating framework chat and its retained old worktree until the human changes that instruction.

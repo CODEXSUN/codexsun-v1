@@ -15,7 +15,7 @@ Current app work is separate: CXMobile, Marketing, CRM, and Billing.
 Use the selected app's assigned worktree and task chat.
 Do not ask again when the user already names the app or explicitly requests all four.
 Do not combine app changes, installs, or runtime resources merely because the repository is shared.
-Fresh app worktrees start as code-only checkouts. Do not install npm dependencies without authorization.
+App development tasks may install locked root dependencies in their assigned worktree when needed.
 
 ## Prompt Manager Boundaries
 
@@ -30,10 +30,10 @@ No npm installation or deployment is authorized by this role definition.
 
 Follow [Release Supervisor Role](../agents/release-supervisor.md).
 App chats own implementation and focused checks within their assigned worktrees.
-Only the designated supervisor performs Git staging, commits, pushes, pulls, merges, version updates, and release checkouts.
-The human can explicitly reassign this role. Older app-chat Git instructions do not override this policy.
+App chats may stage, commit, pull, and push their own work in their assigned worktree.
+The supervisor owns integration into main, version updates, and release checkouts.
 An app handoff does not authorize integration. The supervisor must identify the authorized batch and verify its exact diff.
-No npm installation or deployment is currently authorized. A role description does not grant additional operational permissions.
+Deployment and live data operations require separate authorization.
 
 ## Worktree And Release Rules
 
@@ -179,7 +179,7 @@ Passing TypeScript or lint alone does not prove module ownership. The ownership 
 - Frontend CRUD modules use the eight-file frontend contract documented above. Add `{module}.settings.tsx` and `{module}.print.tsx` only when those behaviors exist.
 - Role files must not be one-line aliases, empty arrays, metadata-only placeholders, “reserved for future” declarations, or exports of another role under a new name. A list owns list rendering, a form owns form rendering and validation display, events own typed event construction, workers own executable job dispatch, sync owns an explicit sync policy and decision behavior, and seeds/migrations execute or expose callable database behavior.
 - A module that intentionally has no UI or no lifecycle concern must document the exemption in its module definition and must not create fake role files merely to satisfy naming.
-- `npm run check:module-boundaries` is mandatory and must reject missing required files, alias-only wrappers, placeholder roles, and cross-module placement.
+- For boundary changes, run the relevant module boundary check. The full check remains required for CI and releases.
 - New modules, refactors, ownership changes, permission or tenant changes, releases, and explicit audits must pass a full backend/frontend ownership audit. Focused fixes inspect the changed owner and direct callers only. Use `node tools/check-module-boundaries.mjs <app>` when the task changes an application boundary or explicitly requests it.
 - Shared infrastructure is limited to transport/session API context, environment access, observability, and reusable design-system controls. Module fields, validation, persistence, lifecycle, routes, workflows, forms, lists, workspaces, print behavior, settings, and tests are business logic and must not be centralized under `shared`, `common`, `foundation`, `helpers`, or `utils` merely for reuse.
 - Composition roots are references only. They may register modules and orchestrate module-owned migrations, seeds, and exports, but must not own generic repositories, services, CRUD routes, record types, forms, lists, schemas, hooks, or workspaces.
@@ -279,29 +279,12 @@ Passing TypeScript or lint alone does not prove module ownership. The ownership 
 - Request tenant headers are inputs only at the edge; authenticated server claims and registry data must overwrite them before module routes execute.
 - Safe per-session metadata may be cached, but permissions, authorization outcomes, credentials, and secrets must always be resolved from authoritative server state.
 
-## Required component documentation
+## Component documentation
 
-Every app, developer kit, shared package, workspace tool, and add-on integration guide owns this structure:
-
-```text
-<component>/
-  README.md
-  agent/
-    TASK.md
-    PLAN.md
-    SKILLS.md
-```
-
-- `README.md` describes purpose, supported scope, source layout, public contracts, dependencies, and verification commands.
-- `TASK.md` records work items, acceptance criteria, and exact completion evidence. Preserve existing task states.
-- `PLAN.md` records ownership, current implementation limits, delivery order, and verification gates.
-- `SKILLS.md` records component-specific working rules. Documentation never grants runtime permissions.
-- Use exact uppercase filenames so Linux and Windows resolve the same files.
-- Keep component details accurate. A source folder or passing build does not prove a deployed feature.
-- Read these files only for documentation, contract, architecture, ownership, operations, release, or audit work. Keep existing detailed plans and supporting documents when they remain useful.
-- External npm add-on integration guides live under `addons/<name>`. Vendor code remains in its published package.
-- Zetro is a deliberate runtime distinction: `apps/zetro/agent/SKILLS.md` remains its versioned business rule file.
-  Keep developer task instructions in its other documents. Its loader, build collector, backend permissions, and tests must agree.
-
-Run `npm run check:component-docs` and `npm run test:component-docs` only when component documentation changes or when release or repository-wide checks are requested.
-The root `npm run check` remains the CI and release gate.
+Each component and external add-on integration guide has a README that explains its purpose and public contract.
+Add plans, tasks, and agent guidance only when they help the work. Preserve useful existing documents.
+Update documentation when contracts, ownership, operations, or documented behavior change.
+Documentation does not grant runtime permissions. Zetro's runtime `apps/zetro/agent/SKILLS.md` remains required.
+Keep its loader, build collector, backend permissions, and tests in agreement.
+Run component documentation checks for documentation changes and repository-wide verification.
+The root `npm run check` remains the full CI and release gate.
