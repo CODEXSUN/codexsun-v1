@@ -29,7 +29,6 @@ RUN npm run build -w @codexsun/framework \
   && npm run build -w @codexsun/frappe-api \
   && npm run build -w @codexsun/himsx-api \
   && npm run build -w @codexsun/hrms-api \
-  && npm run build -w @codexsun/logicx-erp-api \
   && npm run build -w @codexsun/mail-api \
   && npm run build -w @codexsun/marketing-api \
   && npm run build -w @codexsun/notes-api \
