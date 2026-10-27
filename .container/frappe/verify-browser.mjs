@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { BrowserPage } from "./browser-client.mjs";
 
 const directory = fileURLToPath(new URL(".", import.meta.url));
-const source = await readFile(resolve(directory, "frappe.env"), "utf8");
+const source = await readFile(process.env.CODEXSUN_FRAPPE_ENV_FILE || resolve(directory, "frappe.env"), "utf8");
 const settings = Object.fromEntries(source.split(/\r?\n/).filter((line) => line.startsWith("CODEXSUN_")).map((line) => {
   const index = line.indexOf("=");
   const raw = line.slice(index + 1).trim();
@@ -98,7 +98,7 @@ try {
         const packet = String(event.data);
         if (packet.startsWith('0')) socket.send('40/' + site + ',');
         else if (packet.startsWith('40/' + site + ',')) finish('passed');
-        else if (packet.startsWith('44')) finish('authentication denied');
+        else if (packet.startsWith('44')) finish(packet);
         else if (packet === '2') socket.send('3');
       };
     })`);
@@ -106,7 +106,7 @@ try {
   }
   const suite = {};
   if (process.argv.includes("--suite")) {
-    for (const app of ["hrms", "raven", "crm", "helpdesk", "insights"]) {
+    for (const app of ["hrms", "crm"]) {
       const problemOffset = browserProblems.length;
       await page.send("Page.navigate", { url: origin + "/" + app });
       await page.waitFor(`location.pathname.startsWith('/${app}') && document.readyState === 'complete' && (document.querySelector('#app')?.children.length > 0 || document.querySelector('#root')?.children.length > 0) && document.body.innerText.trim().length > 30`, "rendered " + app);

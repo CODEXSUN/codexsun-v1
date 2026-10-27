@@ -3,29 +3,22 @@ FROM ${CODEXSUN_FRAPPE_SUITE_BASE}
 USER frappe
 WORKDIR /home/frappe/frappe-bench
 COPY --chown=frappe:0 hrms apps/hrms
-COPY --chown=frappe:0 telephony apps/telephony
-COPY --chown=frappe:0 raven apps/raven
 COPY --chown=frappe:0 crm apps/crm
-COPY --chown=frappe:0 helpdesk apps/helpdesk
-COPY --chown=frappe:0 insights apps/insights
 USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc libc6-dev libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 USER frappe
-RUN env/bin/pip install --no-cache-dir -e apps/hrms -e apps/telephony -e apps/raven -e apps/crm -e apps/helpdesk -e apps/insights \
+RUN env/bin/pip install --no-cache-dir -e apps/hrms -e apps/crm \
     && env/bin/pip check \
-    && env/bin/python -c 'import hrms, telephony, raven, crm, helpdesk, insights, sqlalchemy, ibis, duckdb'
+    && env/bin/python -c 'import hrms, crm'
 ENV NODE_OPTIONS="--max-old-space-size=3072"
 RUN bash -e -lc 'export PATH="$(dirname "$(find /home/frappe/.nvm/versions/node -name node -type f | head -1)"):$PATH"; cd apps/hrms; yarn install --non-interactive --network-timeout 600000'
-RUN bash -e -lc 'export PATH="$(dirname "$(find /home/frappe/.nvm/versions/node -name node -type f | head -1)"):$PATH"; cd apps/raven; yarn install --non-interactive --network-timeout 600000'
 RUN bash -e -lc 'export PATH="$(dirname "$(find /home/frappe/.nvm/versions/node -name node -type f | head -1)"):$PATH"; cd apps/crm; yarn install --non-interactive --network-timeout 600000'
-RUN bash -e -lc 'export PATH="$(dirname "$(find /home/frappe/.nvm/versions/node -name node -type f | head -1)"):$PATH"; cd apps/helpdesk; yarn install --non-interactive --network-timeout 600000'
-RUN bash -e -lc 'export PATH="$(dirname "$(find /home/frappe/.nvm/versions/node -name node -type f | head -1)"):$PATH"; cd apps/insights; yarn install --non-interactive --network-timeout 600000'
 COPY --chown=frappe:0 suite_compat.py /home/frappe/suite_compat.py
 RUN env/bin/python /home/frappe/suite_compat.py
-RUN printf '\nhrms\ntelephony\nraven\ncrm\nhelpdesk\ninsights\n' >> sites/apps.txt \
-    && bash -e -lc 'export PATH="$(dirname "$(find /home/frappe/.nvm/versions/node -name node -type f | head -1)"):$PATH"; bench build --apps hrms,telephony,raven,crm,helpdesk,insights' \
+RUN printf '\nhrms\ncrm\n' >> sites/apps.txt \
+    && bash -e -lc 'export PATH="$(dirname "$(find /home/frappe/.nvm/versions/node -name node -type f | head -1)"):$PATH"; bench build --apps hrms,crm' \
     && mkdir -p /home/frappe/suite-assets assets \
     && cp -a sites/assets/. /home/frappe/suite-assets/ \
     && cp -a /home/frappe/suite-assets/. assets/

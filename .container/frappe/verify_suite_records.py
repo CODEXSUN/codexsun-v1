@@ -18,30 +18,18 @@ def main():
     frappe.connect()
     frappe.set_user("Administrator")
     try:
-        required = {"hrms", "raven", "crm", "helpdesk", "insights", "telephony"}
+        required = {"hrms", "crm"}
         if not required.issubset(frappe.get_installed_apps()):
             raise RuntimeError("Install the full suite before running record checks.")
         token = "codexsun-install-smoke-" + uuid.uuid4().hex[:12]
         checks = [
             ("Shift Type", {"start_time": "09:00:00", "end_time": "18:00:00", "enable_auto_attendance": 0}, "start_time"),
             ("CRM Lead", {"first_name": token, "status": "New"}, "first_name"),
-            ("Insights Workbook", {"title": token}, "title"),
         ]
         results = {}
         for doctype, fields, read_field in checks:
             check_record(doctype, token, fields, read_field)
             results[doctype] = "create/read/delete passed; fixture removed"
-        if not frappe.db.exists("Raven User", {"user": "Administrator"}):
-            raise RuntimeError("Raven did not create its Administrator user.")
-        results["Raven"] = "Administrator user exists; no messages sent"
-        if not frappe.db.exists("HD Service Level Agreement", {"default_sla": 1}):
-            raise RuntimeError("Helpdesk did not create its default service level agreement.")
-        if not frappe.db.exists("HD Ticket Priority", "Medium"):
-            raise RuntimeError("Helpdesk did not create its default ticket priorities.")
-        results["Helpdesk"] = "default service level agreement and ticket priorities exist"
-        if not frappe.db.exists("Insights Team", "Admin"):
-            raise RuntimeError("Insights did not create its Admin team.")
-        results["Insights"] = "Admin team exists"
         print(json.dumps({"record_checks": results, "temporary_records_remaining": 0}, indent=2))
     finally:
         frappe.db.rollback()

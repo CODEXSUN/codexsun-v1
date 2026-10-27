@@ -26,8 +26,7 @@ class SuiteTests(unittest.TestCase):
 
     def test_dependencies_install_before_their_consumers(self):
         order = list(APPS)
-        self.assertLess(order.index("telephony"), order.index("helpdesk"))
-        self.assertEqual(len(order), 6)
+        self.assertEqual(order, ["hrms", "crm"])
         self.assertTrue(all(repository(name).startswith("https://github.com/frappe/") for name in order))
         compile(bootstrap(), "suite-bootstrap", "exec")
         with self.assertRaises(ValueError):

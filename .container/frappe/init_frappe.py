@@ -28,6 +28,8 @@ def initialize():
               "redis_queue": settings["CODEXSUN_FRAPPE_REDIS_QUEUE"],
               "redis_socketio": settings["CODEXSUN_FRAPPE_REDIS_QUEUE"],
               "socketio_port": 9000,
+              "webserver_host": "127.0.0.1",
+              "webserver_port": 8000,
               "chromium_path": "/usr/lib/chromium/chromium-headless-shell"}
     Path("sites/common_site_config.json").write_text(json.dumps(config, indent=2) + "\n")
     os.chmod("sites/common_site_config.json", 0o600)

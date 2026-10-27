@@ -22,7 +22,8 @@ from configuration import secrets
 from verify import LocalRedirect
 
 
-APPS = {"logicx_biz": "https://github.com/CODEXSUN/logicx-biz.git"}
+APPS = {"logicx_app": "https://github.com/CODEXSUN/logicx-app.git",
+        "logicx_biz": "https://github.com/CODEXSUN/logicx-biz.git"}
 BENCH = "/home/frappe/frappe-bench"
 
 
@@ -52,6 +53,8 @@ class AppSetup:
             installer.save(self.record, "apps-verified")
             print("LogicX Biz is already installed. No upgrade was attempted.")
             return
+        if set(APPS).intersection(state["apps"]):
+            raise ValueError("A partial LogicX installation exists. Review it before continuing.")
         if state["maintenance"]:
             raise ValueError("The site is already in maintenance mode. Review it before installation.")
         installer.verify()
@@ -119,9 +122,20 @@ class AppSetup:
             installer.save(self.record, "apps-installing")
             code = r"""import pathlib,subprocess,sys
 subprocess.run(['cp','-a','/home/frappe/logicx-assets/.','sites/assets/'],check=True)
+import json,re
+root=pathlib.Path('sites/assets')
+manifest=root/'assets.json'
+entries=json.loads(manifest.read_text()) if manifest.exists() else {}
+for asset in root.glob('*/dist/*/*'):
+ match=re.fullmatch(r'(.+\.bundle)\.([A-Z0-9]+)\.(js|css)',asset.name)
+ if match and asset.parent.name in ('js','css'):
+  key=match[1]+'.'+match[3]; value='/assets/'+asset.relative_to(root).as_posix()
+  if key in entries and entries[key]!=value: raise ValueError('Ambiguous asset: '+key)
+  entries[key]=value
+manifest.write_text(json.dumps(entries,indent=2)+'\n')
 p=pathlib.Path('sites/apps.txt')
-p.write_text('\n'.join(dict.fromkeys(p.read_text().split()+['logicx_biz']))+'\n')
-for app in ('logicx_biz',):
+p.write_text('\n'.join(dict.fromkeys(p.read_text().split()+['logicx_app', 'logicx_biz']))+'\n')
+for app in ('logicx_app', 'logicx_biz'):
  subprocess.run(['bench','--site',sys.argv[1],'install-app',app],check=True)
 subprocess.run(['bench','--site',sys.argv[1],'migrate'],check=True)
 subprocess.run(['bench','--site',sys.argv[1],'clear-cache'],check=True)
@@ -185,8 +199,9 @@ def main():
             stream.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--env-file", default=str(Path(__file__).with_name("frappe.env")))
+    parser.add_argument("--logicx-app-ref", default="main", help="Branch, tag, or commit to install")
     parser.add_argument("--logicx-biz-ref", default="main", help="Branch, tag, or commit to install")
-    parser.add_argument("--with-suite", action="store_true", help="Also install HRMS, Raven, CRM, Helpdesk, Insights and Telephony")
+    parser.add_argument("--with-suite", action="store_true", help="Also install HRMS and CRM")
     parser.add_argument("--suite-source", help="Optional clean local source checkouts at the selected refs")
     from suite_catalog import APPS as SUITE_APPS
     for name in SUITE_APPS:

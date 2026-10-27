@@ -7,8 +7,6 @@ from pathlib import Path
 SOCKET_FILES = (
     "hrms/frontend/src/socket.js",
     "crm/frontend/src/socket.js",
-    "helpdesk/desk/src/socket.ts",
-    "insights/frontend/src/socket.js",
 )
 OLD_URL = "let url = `${protocol}://${host}${port}/${siteName}`"
 PROXY_URL = "let url = import.meta.env.DEV ? `${protocol}://${host}${port}/${siteName}` : `${window.location.origin}/${siteName}`"

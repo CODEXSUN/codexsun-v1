@@ -59,7 +59,7 @@ class SuiteSetup:
             if before["Id"] != after["Id"] or before["Mounts"] != after["Mounts"]:
                 self.installer.save(self.record, "suite-needs-review")
                 raise ValueError("Shared infrastructure changed: " + name)
-        print("PASS: all five requested apps and the Telephony dependency are installed.")
+        print("PASS: CRM and HRMS are installed.")
 
     def check_unchanged(self, original, state, shared):
         current = inspect("codexsun-frappe")
@@ -200,6 +200,17 @@ def bootstrap():
     return r'''import pathlib,subprocess,sys,json
 apps=json.loads(sys.argv[2])
 subprocess.run(['cp','-a','/home/frappe/suite-assets/.','sites/assets/'],check=True)
+import json,re
+root=pathlib.Path('sites/assets')
+manifest=root/'assets.json'
+entries=json.loads(manifest.read_text()) if manifest.exists() else {}
+for asset in root.glob('*/dist/*/*'):
+ match=re.fullmatch(r'(.+\.bundle)\.([A-Z0-9]+)\.(js|css)',asset.name)
+ if match and asset.parent.name in ('js','css'):
+  key=match[1]+'.'+match[3]; value='/assets/'+asset.relative_to(root).as_posix()
+  if key in entries and entries[key]!=value: raise ValueError('Ambiguous asset: '+key)
+  entries[key]=value
+manifest.write_text(json.dumps(entries,indent=2)+'\n')
 p=pathlib.Path('sites/apps.txt')
 p.write_text('\n'.join(dict.fromkeys(p.read_text().split()+apps))+'\n')
 for app in apps:

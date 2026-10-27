@@ -53,15 +53,24 @@ class AppSetupTests(unittest.TestCase):
         bootstrap = next(command for command in commands if "run" in command)
         code = bootstrap[bootstrap.index("-c") + 1]
         compile(code, "app-bootstrap", "exec")
-        self.assertEqual(set(module.APPS), {"logicx_biz"})
-        self.assertIn("['logicx_biz']", code)
+        self.assertEqual(set(module.APPS), {"logicx_app", "logicx_biz"})
+        self.assertIn("['logicx_app', 'logicx_biz']", code)
         self.assertEqual(self.setup.bench.call_args.args, ("set-maintenance-mode", "off"))
         self.assertTrue(all("--no-deps" in command for command in commands if "run" in command or "up" in command))
+
+    def test_partial_logicx_installation_stops_before_build(self):
+        info = {"Config": {"Image": "old", "Labels": {"com.docker.compose.project": "codexsun-frappe"}},
+                "State": {"Health": {"Status": "healthy"}}}
+        self.setup.site_state = Mock(return_value={"apps": ["frappe", "erpnext", "logicx_biz"], "employee": True})
+        self.setup.build = Mock()
+        with patch.object(module, "inspect", return_value=info), self.assertRaisesRegex(ValueError, "partial"):
+            self.setup.run()
+        self.setup.build.assert_not_called()
 
     def test_repeated_run_only_verifies_existing_apps(self):
         info = {"Config": {"Image": "old", "Labels": {"com.docker.compose.project": "codexsun-frappe"}},
                 "State": {"Health": {"Status": "healthy"}}}
-        self.setup.site_state = Mock(return_value={"apps": ["frappe", "erpnext", "logicx_biz"],
+        self.setup.site_state = Mock(return_value={"apps": ["frappe", "erpnext", "logicx_app", "logicx_biz"],
                                                   "employee": True})
         self.setup.verify = Mock()
         self.setup.build = Mock()

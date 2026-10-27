@@ -119,7 +119,7 @@ ssh -L 18088:127.0.0.1:8088 user@your-server
 Then open `http://localhost:18088` on your computer.
 Configure a reviewed HTTPS proxy or tunnel separately for public access.
 
-## Install LogicX Biz
+## Install LogicX App and LogicX Biz
 
 Run this command after the base Frappe and ERPNext installation passes verification:
 
@@ -129,12 +129,12 @@ py -3 setup-app.py
 
 On Linux, use `python3 setup-app.py` or `bash setup-app.sh`.
 The host also needs Git and access to GitHub, PyPI, and the npm registry.
-This command installs `logicx_biz` from its CODEXSUN repository.
+This command installs `logicx_app` and then `logicx_biz` from their CODEXSUN repositories.
 It uses `main` by default and records the resolved commit.
 To select reviewed commits, use:
 
 ```bash
-python3 setup-app.py --logicx-biz-ref BIZ_COMMIT
+python3 setup-app.py --logicx-app-ref APP_COMMIT --logicx-biz-ref BIZ_COMMIT
 ```
 
 The script builds a persistent app image before it closes the site for maintenance.
@@ -170,23 +170,18 @@ python3 setup-app.py --with-suite
 ```
 
 On Windows, use `py -3 setup-app.py --with-suite`.
-This installs LogicX first when needed, then adds the following reviewed upstream releases:
+This installs both LogicX apps first when needed, then adds these reviewed upstream releases:
 
 | App | Release | Local route |
 | --- | --- | --- |
 | Frappe HR | 16.52.0 | `/hrms` |
-| Raven | 3.0.0 | `/raven` |
 | Frappe CRM | 1.89.1 | `/crm` |
-| Helpdesk | 1.31.0 | `/helpdesk` |
-| Insights | 3.15.1 | `/insights` |
-| Telephony | Recorded dependency commit | No separate frontend |
 
-Helpdesk requires Telephony. The installer installs that dependency first.
 Use the existing Administrator login for all routes on the configured Frappe port.
-Employee records, email accounts, phone providers, and AI integrations need their own business configuration.
+Employee records and other business settings need their own configuration.
 Installing the apps does not configure those services.
 
-The suite image retains ERPNext and LogicX Biz.
+The suite image retains ERPNext, LogicX App, and LogicX Biz.
 The script builds and checks Python dependencies before it closes the live site.
 It then backs up the database and files, checks backup integrity, installs the apps, and runs migration.
 It preserves shared MariaDB, Redis, networks, and persistent site volumes.
@@ -199,8 +194,7 @@ A partial installation stops for review and preserves its backup and volumes.
 Do not rerun the fresh installer or delete data to repair a partial installation.
 
 The default refs are in `suite_catalog.py`.
-Review compatibility before overriding a ref with `--hrms-ref`, `--raven-ref`, `--crm-ref`, `--helpdesk-ref`, or `--insights-ref`.
-Use `--telephony-ref` only when reviewing its dependency update.
+Review compatibility before overriding a ref with `--hrms-ref` or `--crm-ref`.
 The optional `--suite-source` accepts clean local checkouts at those exact refs.
 
 ## Commands for operators
