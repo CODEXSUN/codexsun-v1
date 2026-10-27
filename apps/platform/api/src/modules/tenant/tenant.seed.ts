@@ -8,6 +8,7 @@ import {
 } from "../../database/tenant-database.js";
 import type { TenantDatabase } from "../../database/schema.js";
 import { env } from "../../env.js";
+import { syncCrmTenantPermissions } from "@codexsun/crm-api";
 import {
   migrateSelectedTenantApps,
   rollbackSelectedTenantApps,
@@ -72,6 +73,15 @@ export async function seedTenantDatabase(tenant: Tenant) {
     await migrateSelectedTenantApps(database, tenant);
     await seedTenantRuntimeModule(database, tenant);
     return await seedSelectedTenantApps(database, tenant);
+  } finally {
+    await closeTenantDatabase(tenant);
+  }
+}
+
+export async function syncTenantCrmPermissions(tenant: Tenant) {
+  const database = getTenantDatabase(tenant);
+  try {
+    await syncCrmTenantPermissions(database as never);
   } finally {
     await closeTenantDatabase(tenant);
   }

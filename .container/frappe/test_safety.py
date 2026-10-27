@@ -22,6 +22,13 @@ import init_frappe
 
 
 class ConfigurationTests(unittest.TestCase):
+    def test_existing_site_credentials_do_not_change_fresh_install_password_policy(self):
+        values = settings()
+        values["CODEXSUN_FRAPPE_ADMIN_PASSWORD"] = "admin@123"
+        with self.assertRaisesRegex(ValueError, "at least 16"):
+            validate_settings(values)
+        validate_settings(values, existing=True)
+
     def test_special_characters_round_trip_without_shell_interpolation(self):
         values = settings()
         password = "quotes'\" dollars$literal backslash\\ end"

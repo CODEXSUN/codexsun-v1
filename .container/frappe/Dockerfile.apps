@@ -1,0 +1,16 @@
+ARG CODEXSUN_FRAPPE_APP_BASE
+FROM ${CODEXSUN_FRAPPE_APP_BASE}
+USER frappe
+WORKDIR /home/frappe/frappe-bench
+COPY --chown=frappe:0 logicx_app apps/logicx_app
+COPY --chown=frappe:0 logicx_biz apps/logicx_biz
+RUN env/bin/pip install --no-cache-dir -e apps/logicx_app -e apps/logicx_biz
+COPY --chown=frappe:0 logicx_compat.py /home/frappe/logicx_compat.py
+RUN env/bin/python /home/frappe/logicx_compat.py
+RUN bash -e -lc 'export PATH="$(dirname "$(find /home/frappe/.nvm/versions/node -name node -type f | head -1)"):$PATH"; cd apps/logicx_app; npm install --no-audit --no-fund; npm run build'
+RUN printf '\nlogicx_app\nlogicx_biz\n' >> sites/apps.txt \
+    && bash -e -lc 'export PATH="$(dirname "$(find /home/frappe/.nvm/versions/node -name node -type f | head -1)"):$PATH"; bench build --apps logicx_app,logicx_biz' \
+    && mkdir -p /home/frappe/logicx-assets \
+    && cp -a sites/assets/. /home/frappe/logicx-assets/ \
+    && mkdir -p assets \
+    && cp -a /home/frappe/logicx-assets/. assets/

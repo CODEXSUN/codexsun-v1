@@ -10,3 +10,11 @@ export function tenantMigrationTargets<T extends Pick<Tenant, "dbName" | "status
     return true;
   });
 }
+
+export function crmPermissionTargets<
+  T extends Pick<Tenant, "dbName" | "status" | "tenantCode" | "enabledModuleKeys">
+>(tenants: T[]): T[] {
+  return tenantMigrationTargets(
+    tenants.filter((tenant) => tenant.status === "active" && tenant.enabledModuleKeys.includes("crm"))
+  );
+}

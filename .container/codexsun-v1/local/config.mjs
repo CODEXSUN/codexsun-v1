@@ -84,7 +84,13 @@ export function inspectDeployment(docker, config, mode) {
   for (const item of containers) {
     const actual = snapshot([item], process.cwd()).services[item.Name.slice(1)];
     const expected = model.services[item.Name.slice(1)];
-    for (const key of ["environment", "volumes", "networks", "ports"]) {
+    const changedEnvironment = environmentChanges(actual.environment, expected.environment);
+    assert.deepEqual(
+      changedEnvironment,
+      [],
+      `${item.Name} environment changed (${changedEnvironment.join(", ")}). Review the local configuration before update.`
+    );
+    for (const key of ["volumes", "networks", "ports"]) {
       assert.deepEqual(
         actual[key],
         expected[key],
@@ -94,6 +100,12 @@ export function inspectDeployment(docker, config, mode) {
     expected.image = item.Image;
   }
   return { model, containers, database, redis };
+}
+
+export function environmentChanges(actual, expected) {
+  return [...new Set([...Object.keys(actual), ...Object.keys(expected)])]
+    .filter((key) => actual[key] !== expected[key])
+    .sort();
 }
 
 export function snapshot(containers, root) {
@@ -132,6 +144,7 @@ export async function buildModel(root, model, stamp) {
     return value;
   };
   const candidate = structuredClone(model);
+  candidate.services["codexsun-api"].environment.CODEXSUN_VERSION = version;
   for (const name of applications) {
     const target = name.replace("codexsun-", "");
     candidate.services[name].image = `codexsun/${target}:local-${version}-${stamp}`;

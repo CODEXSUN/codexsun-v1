@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.79
+Current version: 1.1.80
 
-Release tag: v-1.1.79
+Release tag: v-1.1.80
 
-Changelog label: v 1.1.79
+Changelog label: v 1.1.80
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,23 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.80
+
+### [v 1.1.80] 2026-10-27 10:57 am - Update local deployment and Frappe tooling
+
+#### Database Changes
+
+- Database update: Yes (manual).
+- Add a CRM permission sync command for active CRM tenants with configured databases.
+- Parse tenant module keys before selecting permission sync targets. No database operation was run for this commit.
+
+#### App Codebase Changes
+
+- Add local update planning, configuration checks, and CRM permission sync.
+- Remove automatic local backups before application replacement. Recovery restores application configuration without restoring database data.
+- Add Frappe suite and app image setup, compatibility helpers, record verification, and tests.
+- Synchronize workspace versions and internal dependencies to 1.1.80.
 
 ## v-1.1.79
 

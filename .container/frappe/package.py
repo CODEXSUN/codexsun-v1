@@ -16,6 +16,9 @@ FILES = (
     "init_frappe.py", "healthcheck.py", "Dockerfile", "supervisord.conf", "compose.env",
     "docker-compose.yml", "docker-compose.entry.yml", "docker-compose.init.yml",
     "frappe.env.sample", ".gitignore", ".dockerignore", "test_install.py", "test_safety.py", "test_workflow.py",
+    "setup-app.py", "setup-app.sh", "Dockerfile.apps", "logicx_compat.py", "test_apps.py", "test_compat.py",
+    "frappe_suite.py", "suite_catalog.py", "Dockerfile.suite", "test_suite.py", "SUITE-AUDIT.md", "verify_suite_records.py",
+    "suite_compat.py",
 )
 
 

@@ -39,6 +39,10 @@ export async function seedCrmTenantDatabase(database: Kysely<EnquiryDatabase>) {
     database as unknown as Kysely<import("./modules/scheduler/index.js").SchedulerDatabase>
   );
   await seedContact360Database(database);
-  await seedLead(database as never);
+  await syncCrmTenantPermissions(database);
   await seedCrmUserAccess(database as unknown as Kysely<unknown>);
+}
+
+export async function syncCrmTenantPermissions(database: Kysely<EnquiryDatabase>) {
+  await seedLead(database as never);
 }

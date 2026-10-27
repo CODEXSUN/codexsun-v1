@@ -10,6 +10,7 @@ import {
   TenantDomainRepository
 } from "../tenant-domain/tenant-domain.repository.js";
 import { seedTenantDomain } from "../tenant-domain/tenant-domain.seed.js";
+import { parseTenantModuleKeys } from "./tenant-module-keys.js";
 import {
   tenantPrivateStorageRoot,
   tenantPublicStorageRoot,
@@ -344,7 +345,7 @@ function toTenant(row: TenantRow): Tenant {
     dbType: row.db_type,
     dbUser: row.db_user,
     defaultLandingApp: row.default_landing_app,
-    enabledModuleKeys: parseStringArray(row.enabled_module_keys),
+    enabledModuleKeys: parseTenantModuleKeys(row.enabled_module_keys),
     id: Number(row.id),
     mobile: row.mobile,
     payloadSettings: parseRecord(row.payload_settings),
@@ -360,21 +361,6 @@ function toTenant(row: TenantRow): Tenant {
     tenantName: row.tenant_name,
     uuid: row.uuid
   };
-}
-
-function parseStringArray(value: unknown) {
-  if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === "string");
-  }
-  if (typeof value !== "string") return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed)
-      ? parsed.filter((item): item is string => typeof item === "string")
-      : [];
-  } catch {
-    return [];
-  }
 }
 
 function parseRecord(value: unknown): Record<string, unknown> {

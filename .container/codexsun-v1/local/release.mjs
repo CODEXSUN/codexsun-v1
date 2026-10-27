@@ -4,18 +4,17 @@ import { join } from "node:path";
 import {
   applications,
   buildModel,
+  capture,
   configurationName,
   inspectDeployment,
   literal,
   sourceChecksum
 } from "./config.mjs";
-import { backup, verifyBackup } from "./backup.mjs";
 import { digest, privateDirectory, privateWrite } from "./files.mjs";
 import { createSourceSnapshot, verifySourceSnapshot } from "./source-snapshot.mjs";
 import { currentRelease } from "./current-release.mjs";
-import { recentBackup } from "./recent-backup.mjs";
 
-export async function release(docker, root, config, mode, base) {
+export async function release(docker, root, config, mode, base, options = {}) {
   const stamp = `${Date.now()}-${randomBytes(3).toString("hex")}`;
   const directory = await privateDirectory(join(base, stamp));
   const initial = inspectDeployment(docker, config, mode);
@@ -23,33 +22,37 @@ export async function release(docker, root, config, mode, base) {
     const checksum = await sourceChecksum(root);
     const previous = await currentRelease(base, initial.model, checksum);
     if (previous) {
+      const candidateFile = join(directory, "candidate.private.json");
+      await privateWrite(candidateFile, initial.model);
+      if (options.fix) {
+        console.log("Syncing CRM permissions for active existing tenants.");
+        await syncCrmPermissions(docker, config.project, candidateFile, directory);
+      }
       await verifyRuntime(docker, initial.model);
-      await privateWrite(join(directory, "candidate.private.json"), initial.model);
       await privateWrite(join(directory, "result.json"), {
         success: true,
         noChanges: true,
+        crmPermissionsSynchronized: Boolean(options.fix),
         sourceChecksum: checksum,
         reusedRelease: previous,
         databasePreserved: initial.database.Id,
         redisPreserved: initial.redis.Id
       });
       console.log(
-        "No new source changes. All five running app images and health checks are current. No build, backup, or restart was needed."
+        options.fix
+          ? "CRM permission sync passed. No rebuild or restart was needed."
+          : "No new source changes. All five running app images and health checks are current. No build or restart was needed."
       );
       return;
     }
   }
-  const existingBackup = await recentBackup(base, initial);
-  if (existingBackup)
-    console.log(
-      `Reusing recent checksum-verified pre-build backup: ${existingBackup}. A fresh quiesced backup is still required before replacement.`
-    );
-  else {
-    console.log("Backing up local SQL, Redis, storage, and configuration before build.");
-    await backup(docker, initial, join(directory, "before-build"));
-  }
   console.log("Capturing and verifying a fixed snapshot of the current build sources.");
   const snapshot = await createSourceSnapshot(root, directory);
+  assert.equal(
+    snapshot.workspaceChangedDuringCapture,
+    false,
+    "Source changed during snapshot. Retry the update."
+  );
   const candidate = await buildModel(snapshot.root, initial.model, stamp);
   const candidateFile = join(directory, "candidate.private.json");
   await privateWrite(candidateFile, candidate);
@@ -90,23 +93,24 @@ export async function release(docker, root, config, mode, base) {
   await privateWrite(candidateFile, candidate);
   const stopped = [];
   let replaced = false;
-  const finalBackup = join(directory, "before-replacement");
+  const previousFile = join(directory, "previous.private.json");
   try {
-    console.log(
-      "Stopping app writers gracefully for the final backup. MariaDB and Redis remain running."
-    );
+    await privateWrite(previousFile, current.model);
+    console.log("Stopping only the five app containers. MariaDB and Redis remain running.");
     for (const item of current.containers) {
       stopped.push(item.Id);
       await docker.stop(item.Id);
     }
-    await backup(docker, current, finalBackup);
-    await verifyBackup(finalBackup);
     assertRetainedState(docker, current);
     assert.deepEqual(
       await bindingChecksums(initial.model),
       bindings,
       "Local proxy configuration changed before replacement."
     );
+    if (mode === "update") {
+      console.log("Syncing CRM permissions for active existing tenants.");
+      await syncCrmPermissions(docker, config.project, candidateFile, directory);
+    }
     replaced = true;
     await replaceApplications(
       docker,
@@ -116,20 +120,47 @@ export async function release(docker, root, config, mode, base) {
     );
     await verifyRuntime(docker, candidate);
     docker.assertActive?.();
-    const next = { ...config, model: candidate };
+    const next = capture(docker, root);
+    inspectDeployment(docker, next, "update");
     await privateWrite(join(root, configurationName), next);
     await privateWrite(join(directory, "result.json"), {
       success: true,
       sourceChecksum: fingerprint,
       workingTreeChangedDuringBuild,
+      crmPermissionsSynchronized: mode === "update",
       databasePreserved: current.database.Id,
       redisPreserved: current.redis.Id
     });
-    console.log(`Local deployment passed. Backups and logs: ${directory}`);
+    console.log(`Local deployment passed. Private logs: ${directory}`);
   } catch (error) {
-    await recover(docker, config, mode, replaced, candidate, finalBackup, stopped, directory);
+    await recover(docker, config, mode, replaced, candidate, previousFile, stopped, directory);
     throw error;
   }
+}
+
+export async function syncCrmPermissions(docker, project, file, directory) {
+  await docker.logged(
+    [
+      "compose",
+      "-p",
+      project,
+      "-f",
+      file,
+      "run",
+      "--rm",
+      "--no-deps",
+      "--pull",
+      "never",
+      "--entrypoint",
+      "node",
+      "codexsun-api",
+      "--import",
+      "./tools/register-production-package-resolution.mjs",
+      "dist/apps/platform/api/database/db-cli.js",
+      "crm:permissions:sync"
+    ],
+    join(directory, "crm-permissions.log")
+  );
 }
 
 export async function replaceApplications(docker, project, file, log) {
@@ -185,18 +216,17 @@ export async function recover(
   mode,
   replaced,
   candidate,
-  finalBackup,
+  previousFile,
   stopped,
   directory
 ) {
   docker.resumeForRecovery?.();
   try {
     if (replaced && mode === "update") {
-      await verifyBackup(finalBackup);
       await replaceApplications(
         docker,
         config.project,
-        join(finalBackup, "previous.private.json"),
+        previousFile,
         join(directory, "rollback.log")
       );
     } else if (replaced) {
@@ -233,7 +263,7 @@ export async function recover(
     );
   } catch {
     throw new Error(
-      `Local recovery needs attention. Keep all volumes and review private logs in ${directory}`
+      `Local app recovery needs attention. Keep all volumes and review private logs in ${directory}`
     );
   }
 }
@@ -272,8 +302,8 @@ function assertRetainedState(docker, state) {
     if (!previous) assert.ok(!docker.exists(name), "An app appeared during fresh deployment.");
     else {
       const current = docker.inspect(name);
-      assert.equal(current.Id, previous.Id, "An app changed during the final backup.");
-      assert.equal(current.State.Running, false, "An app writer resumed during the final backup.");
+      assert.equal(current.Id, previous.Id, "An app changed before replacement.");
+      assert.equal(current.State.Running, false, "An app writer resumed before replacement.");
     }
   }
 }

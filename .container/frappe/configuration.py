@@ -43,7 +43,7 @@ def write_settings(path, settings):
             stream.write(f"{key}={json.dumps(str(value), ensure_ascii=True)}\n")
 
 
-def validate_settings(settings):
+def validate_settings(settings, *, existing=False):
     if any(not isinstance(value, str) or any(char in value for char in ("\n", "\r", "\0")) for value in settings.values()):
         raise ValueError("Settings must be single-line strings without null characters.")
     required = ("SITE", "NETWORK", "DB_HOST", "DB_NAME", "DB_PASSWORD", "REDIS_HOST",
@@ -62,7 +62,7 @@ def validate_settings(settings):
             raise ValueError(f"CODEXSUN_FRAPPE_{key} must be a port between 1 and 65535.")
     if not re.fullmatch(r"codexsun_[a-z0-9_]{1,50}", settings["CODEXSUN_FRAPPE_DB_NAME"]):
         raise ValueError("Use a new codexsun_ database name with lowercase letters, digits, or underscores.")
-    if len(settings["CODEXSUN_FRAPPE_ADMIN_PASSWORD"]) < 16:
+    if not existing and len(settings["CODEXSUN_FRAPPE_ADMIN_PASSWORD"]) < 16:
         raise ValueError("Use an Administrator password of at least 16 characters.")
     if settings.get("CODEXSUN_FRAPPE_ENTRY_NETWORK") == settings["CODEXSUN_FRAPPE_NETWORK"]:
         raise ValueError("Remove the duplicate entry network setting when using one non-internal network.")

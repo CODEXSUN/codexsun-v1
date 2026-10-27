@@ -68,7 +68,7 @@ class Installer:
         record = json.loads(self.record_path.read_text())
         if record.get("site") != self.settings.get("CODEXSUN_FRAPPE_SITE"):
             raise ValueError("Deployment metadata belongs to another site. Do not copy private metadata between machines.")
-        if not re.fullmatch(r"codexsun/frappe:v16\.\d+\.\d+", record.get("image", "")):
+        if not re.fullmatch(r"codexsun/frappe:v16\.\d+\.\d+(?:-(?:logicx|suite)-[a-f0-9]{12})?", record.get("image", "")):
             raise ValueError("Invalid recorded image. Inspect deployment.private.json before continuing.")
         if not re.fullmatch(r"frappe/erpnext@sha256:[a-f0-9]{64}", record.get("base_image", "")):
             raise ValueError("Invalid recorded upstream image digest.")
@@ -79,7 +79,7 @@ class Installer:
     def validate(self):
         if not self.env_file.is_file():
             raise ValueError("Run setup.py or configure frappe.env before installation.")
-        validate_settings(self.settings)
+        validate_settings(self.settings, existing=self.record_path.is_file())
         model = json.loads(self.run(self.compose + ["config", "--format", "json"], True, timeout=60).stdout)
         if set(model["services"]) != {"frappe"}:
             raise ValueError("Only the Frappe container may be declared.")
@@ -239,7 +239,7 @@ def main():
             return 0
         installer = Installer(args.env_file)
         if args.show_login:
-            validate_settings(installer.settings)
+            validate_settings(installer.settings, existing=installer.record_path.is_file())
             print("URL: http://localhost:" + installer.settings.get("CODEXSUN_FRAPPE_PORT", "8088"))
             print("Username: Administrator\nPassword: " + installer.settings["CODEXSUN_FRAPPE_ADMIN_PASSWORD"])
             return 0

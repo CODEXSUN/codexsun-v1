@@ -1,4 +1,4 @@
-import { tenantMigrationTargets } from "./migration-targets.js";
+import { crmPermissionTargets, tenantMigrationTargets } from "./migration-targets.js";
 import { createConnection } from "mysql2/promise";
 import { closeAllBillingDatabases } from "@codexsun/billing-api";
 import { closeAllAccountsDatabases } from "@codexsun/accounts-api";
@@ -18,7 +18,8 @@ import {
   migrateTenantDatabase,
   rollbackTenantDatabase,
   seedDefaultTenant,
-  seedTenantDatabase
+  seedTenantDatabase,
+  syncTenantCrmPermissions
 } from "../modules/tenant/tenant.seed.js";
 import { env } from "../env.js";
 import { assertDatabaseName, quoteIdentifier } from "./database-utils.js";
@@ -26,6 +27,7 @@ import { assertDatabaseName, quoteIdentifier } from "./database-utils.js";
 type DbCommand =
   | "migrate"
   | "seed"
+  | "crm:permissions:sync"
   | "drop"
   | "fresh"
   | "migrations:list"
@@ -41,6 +43,7 @@ type DbCommand =
 const validCommands: DbCommand[] = [
   "migrate",
   "seed",
+  "crm:permissions:sync",
   "drop",
   "fresh",
   "migrations:list",
@@ -71,6 +74,10 @@ async function main() {
 
     if (command === "seed") {
       await seedAll();
+    }
+
+    if (command === "crm:permissions:sync") {
+      await syncExistingCrmPermissions();
     }
 
     if (command === "drop") {
@@ -178,6 +185,15 @@ async function seedTenantAppDatabases() {
       `[seeder] seeding tenant app modules for "${tenant.tenantCode}" (${tenant.dbName})`
     );
     await seedTenantDatabase(tenant);
+  }
+}
+
+async function syncExistingCrmPermissions() {
+  const tenants = crmPermissionTargets(await new TenantRepository().list());
+  console.info(`[database] CRM permission targets: ${tenants.length}`);
+  for (const tenant of tenants) {
+    console.info(`[database] syncing CRM permissions for "${tenant.tenantCode}"`);
+    await syncTenantCrmPermissions(tenant);
   }
 }
 
@@ -347,6 +363,7 @@ CODEXSUN database CLI
 Usage:
   tsx src/database/db-cli.ts migrate
   tsx src/database/db-cli.ts seed
+  tsx src/database/db-cli.ts crm:permissions:sync
   tsx src/database/db-cli.ts drop
   tsx src/database/db-cli.ts fresh
   tsx src/database/db-cli.ts migrations:list

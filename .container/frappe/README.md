@@ -119,6 +119,93 @@ ssh -L 18088:127.0.0.1:8088 user@your-server
 Then open `http://localhost:18088` on your computer.
 Configure a reviewed HTTPS proxy or tunnel separately for public access.
 
+## Install LogicX apps
+
+Run this command after the base Frappe and ERPNext installation passes verification:
+
+```powershell
+py -3 setup-app.py
+```
+
+On Linux, use `python3 setup-app.py` or `bash setup-app.sh`.
+The host also needs Git and access to GitHub, PyPI, and the npm registry.
+This command installs `logicx_app` and `logicx_biz` from their CODEXSUN repositories.
+It uses `main` by default and records each resolved commit.
+To select reviewed commits, use:
+
+```bash
+python3 setup-app.py --logicx-app-ref APP_COMMIT --logicx-biz-ref BIZ_COMMIT
+```
+
+The script builds a persistent app image before it closes the site for maintenance.
+It then stops background workers, backs up the database and files, and copies backups to the host.
+It replaces only the Frappe container and retains its site and log volumes.
+It installs both apps, runs migration, and verifies login, workers, frontend assets, and APIs.
+MariaDB, Redis, and networks remain in place.
+
+The image applies a compatibility patch when Frappe uses the current module Sidebar API.
+It selects the current desktop-icon helper and converts LogicX Biz's three curated sidebars.
+It also skips obsolete legacy-sidebar cache repairs on that API.
+Older supported Frappe builds retain the original hooks and fixtures.
+The patch changes app files inside the image. It does not change framework code or upstream repositories.
+
+Open `http://localhost:8088/logicx-app` after installation.
+Use the configured port when it differs.
+LogicX Biz workspaces appear in Desk according to user permissions.
+For a browser login and LogicX screenshot check, run `node verify-browser.mjs --logicx`.
+
+The deployment record contains the app revisions, previous image, and backup path.
+Copy the portable source package to another server, install base ERPNext, then run `setup-app.py` there.
+Create new private settings on that server. Do not copy existing credentials or deployment records.
+
+A repeated run verifies an installation that already contains both apps. It does not update app code.
+A partial installation stops for operator review.
+An installation failure preserves data and can leave the site closed for maintenance.
+Do not delete volumes or rerun the fresh installer to repair it.
+The script supplies no automatic schema rollback or app upgrade procedure.
+
+## Install the optional Frappe suite
+
+After base ERPNext installation, run:
+
+```bash
+python3 setup-app.py --with-suite
+```
+
+On Windows, use `py -3 setup-app.py --with-suite`.
+This installs LogicX first when needed, then adds the following reviewed upstream releases:
+
+| App | Release | Local route |
+| --- | --- | --- |
+| Frappe HR | 16.52.0 | `/hrms` |
+| Raven | 3.0.0 | `/raven` |
+| Frappe CRM | 1.89.1 | `/crm` |
+| Helpdesk | 1.31.0 | `/helpdesk` |
+| Insights | 3.15.1 | `/insights` |
+| Telephony | Recorded dependency commit | No separate frontend |
+
+Helpdesk requires Telephony. The installer installs that dependency first.
+Use the existing Administrator login for all routes on the configured Frappe port.
+Employee records, email accounts, phone providers, and AI integrations need their own business configuration.
+Installing the apps does not configure those services.
+
+The suite image retains ERPNext and both LogicX apps.
+The script builds and checks Python dependencies before it closes the live site.
+It then backs up the database and files, checks backup integrity, installs the apps, and runs migration.
+It preserves shared MariaDB, Redis, networks, and persistent site volumes.
+It verifies app registration, authenticated pages, frontend assets, and DocType metadata.
+Run `node verify-browser.mjs --logicx --suite` for browser login and screenshots of all app frontends.
+
+The deployment record stores the suite image, commit revisions, previous apps, backup path, and verification results.
+A repeated run verifies a complete installation without upgrading it.
+A partial installation stops for review and preserves its backup and volumes.
+Do not rerun the fresh installer or delete data to repair a partial installation.
+
+The default refs are in `suite_catalog.py`.
+Review compatibility before overriding a ref with `--hrms-ref`, `--raven-ref`, `--crm-ref`, `--helpdesk-ref`, or `--insights-ref`.
+Use `--telephony-ref` only when reviewing its dependency update.
+The optional `--suite-source` accepts clean local checkouts at those exact refs.
+
 ## Commands for operators
 
 Run these inside the installer directory.

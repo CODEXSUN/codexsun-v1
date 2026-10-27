@@ -5,20 +5,34 @@ import { fileURLToPath } from "node:url";
 import { capture, configurationName, inspectDeployment } from "./config.mjs";
 import { LocalDocker } from "./docker.mjs";
 import { privateWrite, readJson, withLock } from "./files.mjs";
+import { parseLocalOptions } from "./options.mjs";
 import { release } from "./release.mjs";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
-const [mode, ...options] = process.argv.slice(2);
+const [mode, ...arguments_] = process.argv.slice(2);
 try {
-  assert.ok(["deploy", "update"].includes(mode), "Choose deploy or update.");
-  assert.ok(
-    options.length <= 1 &&
-      options.every((item) => ["--check", "--configure", "--help", "-h"].includes(item)),
-    "Use one of --check, --configure, or --help."
-  );
-  if (options.includes("--help") || options.includes("-h")) {
+  const options = parseLocalOptions(mode, arguments_);
+  if (options.help) {
+    const usage =
+      mode === "update"
+        ? "Usage: bash update-local.sh [--plan] [--check] [--fix] [--configure]\n" +
+          "  update: build and update the five apps; sync CRM permissions\n" +
+          "  --plan: show the actions without changing anything\n" +
+          "  --check: check the configuration without changes\n" +
+          "  --fix: repeat CRM permission sync when images are current\n" +
+          "  --configure: capture initial configuration"
+        : "Usage: bash deploy-local.sh [--check | --configure]\n" +
+          "  --check: check the configuration without changes\n" +
+          "  --configure: capture the existing local configuration";
+    console.log(usage);
+  } else if (options.plan) {
     console.log(
-      `Usage: bash ${mode}-local.sh [--check | --configure]\nLocal Docker Desktop only. Build the current working tree and preserve local MariaDB and Redis.\n--configure captures the existing five-app local configuration without changing containers.\n--check validates configuration and ownership without writing, building, or replacing containers.\nDeploy requires no app containers. Update requires all five healthy app containers.\nNo Git pull, version bump, database reset, image pruning, or VPS operations.`
+      options.fix
+        ? "If a matching release is recorded: sync CRM permissions and check health. Otherwise: build, sync CRM permissions, update five apps, and check health."
+        : "If a matching release is recorded: check health. Otherwise: build five images, sync CRM permissions, update five apps, and check health."
+    );
+    console.log(
+      "API startup may run platform database migrations. No backup or environment-file update is performed."
     );
   } else {
     process.chdir(root);
@@ -36,7 +50,7 @@ try {
     process.on("SIGTERM", interrupt);
     try {
       const path = resolve(root, configurationName);
-      if (options.includes("--check")) {
+      if (options.check) {
         const config = existsSync(path) ? await readJson(path) : capture(docker, root);
         inspectDeployment(docker, config, mode);
         console.log(`Local ${mode} preflight passed. No files or containers changed.`);
@@ -44,16 +58,16 @@ try {
         await withLock(root, async (base) => {
           const saved = existsSync(path);
           assert.ok(
-            !options.includes("--configure") || !saved,
+            !options.configure || !saved,
             "Local configuration already exists. Review and back it up before changing it."
           );
           const config = saved ? await readJson(path) : capture(docker, root);
           // Configuration capture validates the running stack, even before a future fresh deployment.
-          inspectDeployment(docker, config, options.includes("--configure") ? "update" : mode);
+          inspectDeployment(docker, config, options.configure ? "update" : mode);
           if (!saved) await privateWrite(path, config);
-          if (options.includes("--configure"))
+          if (options.configure)
             console.log(`Captured private local configuration: ${path}. Containers unchanged.`);
-          else await release(docker, root, config, mode, base);
+          else await release(docker, root, config, mode, base, options);
         });
     } finally {
       process.removeListener("SIGINT", interrupt);

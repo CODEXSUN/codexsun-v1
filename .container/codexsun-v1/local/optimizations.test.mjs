@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import test from "node:test";
-import { applications } from "./config.mjs";
+import { applications, buildModel } from "./config.mjs";
 import { currentRelease } from "./current-release.mjs";
 import { deploymentSources } from "./source-snapshot.mjs";
 
@@ -49,8 +49,34 @@ test("fast update requires a successful matching checksum and every exact runnin
   assert.equal(await currentRelease(root, model, "current"), null);
 });
 
+test("local candidate updates the API runtime version with the built source", async () => {
+  const root = await temporary();
+  await writeFile(
+    join(root, "package.json"),
+    JSON.stringify({ version: "1.1.76", engines: { node: ">=26.5.0", npm: ">=12.2.0" } })
+  );
+  const model = {
+    services: Object.fromEntries(
+      applications.map((name) => [name, { environment: { PLATFORM_API_PORT: "18010" } }])
+    )
+  };
+  model.services["codexsun-api"].environment.CODEXSUN_VERSION = "1.1.59";
+  const candidate = await buildModel(root, model, "test");
+  assert.equal(candidate.services["codexsun-api"].environment.CODEXSUN_VERSION, "1.1.76");
+  assert.equal(model.services["codexsun-api"].environment.CODEXSUN_VERSION, "1.1.59");
+});
+
 async function temporary() {
   const base = resolve(import.meta.dirname, "../../../dist/deployment-local-optimization-tests");
   await mkdir(base, { recursive: true });
   return mkdtemp(join(base, "case-"));
 }
+
+
+test("environment drift reports only changed names, never values", async () => {
+  const { environmentChanges } = await import("./config.mjs");
+  assert.deepEqual(
+    environmentChanges({ SECRET: "new-secret", ADDED: "value" }, { SECRET: "old-secret", REMOVED: "value" }),
+    ["ADDED", "REMOVED", "SECRET"]
+  );
+});

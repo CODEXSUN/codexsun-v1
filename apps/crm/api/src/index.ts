@@ -30,7 +30,7 @@ export {
   migrateCrmTenantDatabase,
   rollbackCrmTenantDatabase
 } from "./crm.migration.js";
-export { seedCrmTenantDatabase } from "./crm.seed.js";
+export { seedCrmTenantDatabase, syncCrmTenantPermissions } from "./crm.seed.js";
 export { registerContact360Modules } from "./contact-360.module.js";
 export { crmContactModule } from "./modules/contact/index.js";
 export {

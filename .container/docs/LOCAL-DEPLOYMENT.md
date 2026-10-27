@@ -39,43 +39,56 @@ It leaves Frappe, Media, and unrelated containers unchanged.
 ## Daily development update
 
 ```bash
+bash update-local.sh --plan
 bash update-local.sh --check
 bash update-local.sh
+bash update-local.sh --fix
 ```
 
+`--plan` describes the possible actions without inspecting Docker or changing data.
 Update requires all five local app containers to be healthy and owned by `codexsun-local-cloud`.
 The script copies tracked and non-ignored build sources into a private snapshot before building.
 It checks source consistency during capture and validates every copied file with SHA-256 after building.
 Later working-tree edits go into the next update. They do not alter the captured build.
 It builds the snapshot with the shared `codexsun-v1/Dockerfile` and Docker cache.
 Changed sources create unique local image tags, then pin their immutable image IDs.
+Before replacing existing containers, the updater applies new CRM permissions to active CRM tenants.
+The permission sync adds missing catalog entries and role grants. It does not run the full tenant seed.
+The tenant reader accepts older comma-separated module lists as well as current JSON lists.
+The sync processes tenants one at a time. A retry revisits tenants completed before a failure.
+Use `--fix` to repeat the CRM permission sync when the images are already current.
+Use `--check --fix` to check configuration without applying the fix.
 If the checksum and running images match a successful release, update checks health and exits without rebuilding or restarting.
 Only workspaces recorded in the root lockfile enter the build. Unregistered drafts remain in the checkout and are reported.
 No clean Git checkout, release version bump, or GitHub push is required.
 The existing `setup.sh`, `update.sh`, and VPS deployment implementation keep their current behavior.
 
-## Backup and recovery
+## Local replacement and app recovery
 
 Both commands share an atomic local operation lock under `.container/backups/local`.
-They save complete SQL, Redis RDB, app volume archives, container metadata, and bind-file copies before building.
-A retry can reuse a verified pre-build backup less than 30 minutes old when configuration and infrastructure identities still match.
-Updates then stop only app writers gracefully and take another backup before container replacement.
-SQL dumps require a completion marker. Redis snapshots require a valid header. Volume archives must pass gzip validation.
-The scripts verify every backup file against its SHA-256 checksum.
-SQL backup freezes the permanent database list and excludes the reserved `codexsun_cxtest_*` acceptance-test schemas.
-SQL backup credentials come from the local API configuration and must permit a complete server dump.
+They do not create SQL, Redis, storage, or configuration backups.
+Updates stop only the five app containers before replacement.
+The script saves the previous app Compose model for an application-only rollback.
+It keeps MariaDB, Redis, and their volumes running and unchanged.
 
 The API keeps normal startup migration behavior. Reset and bootstrap-seeding flags must remain disabled.
-Review data migrations before testing them against your local snapshot.
-App rollback does not reverse database migrations. Restore SQL, Redis, or volume archives only through a separate reviewed recovery operation.
+Review data migrations before applying a new local image. App rollback does not reverse database migrations.
+Production backup and migration gates remain separate and unchanged.
 
 Failed updates restore the captured app images and configuration.
 Failed fresh deployments remove only newly created app containers. They retain all volumes and images.
-Failed backups abort before replacement and resume any app writers stopped by the operation.
 No command prunes images, removes volumes, deletes backups, or force-kills an app.
 Ctrl+C cancels active Docker CLI work and attempts app recovery. Wait for recovery before interrupting again.
 An interrupted process can leave a lock directory. Confirm no deployment is active before removing that lock.
 
 After replacement, checks cover container health, immutable images, API readiness, runtime configuration, and storefront bootstrap.
-Backups and logs remain private under `.container/backups/local/<run-id>`.
+Operation logs and the previous app model remain private under `.container/backups/local/<run-id>`.
 These checks do not replace browser tests for application features or prove VPS deployment behavior.
+
+## Future update add-ons
+
+Add a migration, seeder, configuration change, or patch only when its requirements are defined.
+Each add-on should declare its version, target tenants, retry behavior, and verification.
+Record progress per tenant so a failed run can resume without repeating completed work.
+Show configuration changes for review without printing secrets. Stop on unsupported or failed actions.
+These add-ons are not implemented by the current command.
