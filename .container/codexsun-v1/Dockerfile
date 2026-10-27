@@ -48,7 +48,7 @@ RUN npm run build -w @codexsun/framework \
 FROM dependencies AS shop-build
 RUN npm run build -w @codexsun/ecommerce-storefront
 
-FROM dependencies AS worker-build
+FROM api-build AS worker-build
 RUN npm run build -w @codexsun/worker-api
 
 FROM dependencies AS chatb-build
@@ -88,20 +88,18 @@ EXPOSE ${PLATFORM_API_PORT}
 HEALTHCHECK --interval=15s --timeout=5s --start-period=45s --retries=10 CMD node -e "fetch('http://127.0.0.1:'+process.env.PLATFORM_API_PORT+'/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 ENTRYPOINT ["codexsun-api-entrypoint"]
 
-FROM node:${NODE_RUNTIME_VERSION}-bookworm-slim AS worker
+FROM api AS worker
 ARG CODEXSUN_VERSION
 ARG CODEXSUN_REVISION
 LABEL org.opencontainers.image.version="$CODEXSUN_VERSION" org.opencontainers.image.revision="$CODEXSUN_REVISION"
 WORKDIR /app
-COPY --from=realtime-dependencies /app/node_modules ./node_modules
-COPY --from=worker-build /app/apps/worker/api/package.json ./package.json
 COPY --from=worker-build /app/dist/apps/worker/api ./dist/apps/worker/api
 USER node
 ENV NODE_ENV=production
 ENV CODEXSUN_WORKER_PORT=17040
 EXPOSE 17040
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 CMD node -e "fetch('http://127.0.0.1:'+process.env.CODEXSUN_WORKER_PORT+'/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
-ENTRYPOINT ["node", "dist/apps/worker/api/server.js"]
+ENTRYPOINT ["node", "--import", "./tools/register-production-package-resolution.mjs", "dist/apps/worker/api/server.js"]
 
 FROM node:${NODE_RUNTIME_VERSION}-bookworm-slim AS chatb
 ARG CODEXSUN_VERSION

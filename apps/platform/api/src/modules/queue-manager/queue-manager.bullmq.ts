@@ -1,10 +1,10 @@
 import { QueueJobHeld } from "./queue-manager.worker.js";
-import { createHash } from "node:crypto";
 import { Queue, Worker, DelayedError, type JobsOptions } from "bullmq";
 import { env } from "../../env.js";
 import type { QueueJobRecord } from "./queue-manager.types.js";
 import {
   queueDeliveryDelay,
+  queueDeliveryId,
   readQueueDelivery,
   redisQueuePrefix
 } from "./queue-manager.delivery.js";
@@ -19,11 +19,13 @@ const queues = new Map<string, Queue>();
 const workers = new Map<string, Worker>();
 
 export async function publishBullMqJob(job: QueueJobRecord) {
+  if (job.status !== "pending") return;
   const queue = queueFor(job.queueName);
+  if (await hasLivePriorDelivery(queue, job)) return;
   const options: JobsOptions = {
     attempts: job.maxAttempts,
     backoff: { delay: 5000, type: "exponential" },
-    jobId: bullMqJobId(job),
+    jobId: queueDeliveryId(job),
     priority: job.priority,
     delay: queueDeliveryDelay(job.availableAt),
     removeOnComplete: false,
@@ -34,12 +36,6 @@ export async function publishBullMqJob(job: QueueJobRecord) {
     { ...job.payload, queueJobId: job.id, queueJobUuid: job.uuid },
     options
   );
-}
-
-function bullMqJobId(job: QueueJobRecord) {
-  return createHash("sha256")
-    .update(`${job.idempotencyKey ?? job.uuid}:${job.attempts}`)
-    .digest("hex");
 }
 
 export function startBullMqWorker(
@@ -113,4 +109,20 @@ function redisConnectionOptions() {
     port: url.port ? Number(url.port) : 6379,
     username: url.username ? decodeURIComponent(url.username) : undefined
   };
+}
+
+async function hasLivePriorDelivery(queue: Queue, job: QueueJobRecord) {
+  const liveStates = new Set([
+    "waiting",
+    "active",
+    "delayed",
+    "prioritized",
+    "waiting-children",
+    "paused"
+  ]);
+  for (let attempts = 0; attempts < job.attempts; attempts++) {
+    const previous = await queue.getJob(queueDeliveryId({ uuid: job.uuid, attempts }));
+    if (previous && liveStates.has(await previous.getState())) return true;
+  }
+  return false;
 }

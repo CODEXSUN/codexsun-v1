@@ -92,12 +92,35 @@ test("quoted credentials retain escaped characters and literal dollar signs", ()
   assert.equal(config(["env", file, "DB_PASSWORD"]).stdout.trimEnd(), "fixture$literal'apostrophe");
 });
 
+test("Worker execution requires its control token even when Chatb is disabled", () => {
+  const directory = fixture();
+  const file = join(directory, "deploy.env");
+  const sample = read(".container/deploy.env.sample")
+    .replace(/change_this_[a-z_]+/gu, "fixture-secret")
+    .replace("CODEXSUN_QUEUE_EXECUTION_HOST=platform", "CODEXSUN_QUEUE_EXECUTION_HOST=worker")
+    .replace("CODEXSUN_REALTIME_ENABLED=1", "CODEXSUN_REALTIME_ENABLED=0");
+  writeFileSync(file, sample);
+  const denied = config(["validate", file]);
+  assert.notEqual(denied.status, 0);
+  assert.match(denied.stderr, /control token/u);
+  writeFileSync(
+    file,
+    sample.replace(
+      "CODEXSUN_WORKER_CONTROL_TOKEN=",
+      `CODEXSUN_WORKER_CONTROL_TOKEN=${"f".repeat(32)}`
+    )
+  );
+  assert.equal(config(["validate", file]).status, 0);
+});
+
 test("MariaDB mounts and differing live application storage block destructive adoption", () => {
   const database = [{ Mounts: [{ Name: "codexsun-db", Destination: "/var/lib/mysql" }] }];
   assert.notEqual(config(["protect", "codexsun-db"], JSON.stringify(database)).status, 0);
   assert.equal(config(["protect", "codexsun-data"], JSON.stringify(database)).status, 0);
   assert.notEqual(config(["adoption", "codexsun-data"], JSON.stringify(database)).status, 0);
-  const application = [{ Mounts: [{ Type: "volume", RW: true, Name: "codexsun-data", Destination: "/storage" }] }];
+  const application = [
+    { Mounts: [{ Type: "volume", RW: true, Name: "codexsun-data", Destination: "/storage" }] }
+  ];
   assert.equal(config(["adoption", "codexsun-data"], JSON.stringify(application)).status, 0);
 });
 

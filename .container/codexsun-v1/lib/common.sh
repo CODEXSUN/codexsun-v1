@@ -81,6 +81,9 @@ load_config() {
   if [ "$(env_value CODEXSUN_REALTIME_ENABLED)" = 1 ]; then
     SERVICES+=(codexsun-worker codexsun-chatb)
     PROFILE_ARGS=(--profile realtime)
+  elif [ "$(env_value CODEXSUN_QUEUE_EXECUTION_HOST)" = worker ]; then
+    SERVICES+=(codexsun-worker)
+    PROFILE_ARGS=(--profile realtime)
   fi
 }
 

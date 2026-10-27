@@ -10,6 +10,7 @@
     "start": "node dist/apps/worker/api/server.js"
   },
   "dependencies": {
+    "@codexsun/platform-api": "^1.1.76",
     "bullmq": "^6.3.11",
     "fastify": "^5.12.7",
     "ioredis": "^6.0.0"

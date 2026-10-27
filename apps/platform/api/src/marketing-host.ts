@@ -180,6 +180,10 @@ export async function registerMarketingHost(app: FastifyInstance, queue: QueueMa
         releaseProviderAccount(provider, account, ctx.tenantId, connection)
     };
   });
+  registerMarketingBackground(app, queue);
+}
+
+export function registerMarketingBackground(app: FastifyInstance, queue: QueueManagerService) {
   registerQueueJobProcessor("marketing.submission.handoff", async (job) => {
     if (
       !job.tenantId ||
@@ -201,8 +205,9 @@ export async function registerMarketingHost(app: FastifyInstance, queue: QueueMa
       return new LeadService(context).intake(row);
     });
   });
-  if (env.CODEXSUN_QUEUE_WORKER_ENABLED !== "1") return;
+  if (!queue.canExecute()) return;
   let running = false;
+  let activeRelay: Promise<void> | undefined;
   const relayCursors = new Map<string, number>();
   const relay = async () => {
     if (running) return;
@@ -223,7 +228,7 @@ export async function registerMarketingHost(app: FastifyInstance, queue: QueueMa
           for (const row of pending) {
             try {
               const context = await companyScope(tenant.uuid, row.actorEmail, row.companyId);
-              await submissions.enqueue(context, row.uuid);
+              await queue.enqueue(createSubmissionHandoffJob(context, row.uuid));
             } catch {
               app.log.warn(
                 { tenantId: tenant.uuid, submissionUuid: row.uuid },
@@ -241,10 +246,16 @@ export async function registerMarketingHost(app: FastifyInstance, queue: QueueMa
     }
   };
   const timer = setInterval(() => {
-    void relay().catch(() => app.log.error("Marketing handoff relay failed."));
+    if (!activeRelay)
+      activeRelay = relay()
+        .catch(() => app.log.error("Marketing handoff relay failed."))
+        .finally(() => {
+          activeRelay = undefined;
+        });
   }, 15000);
   timer.unref();
   app.addHook("onClose", async () => {
     clearInterval(timer);
+    await activeRelay;
   });
 }

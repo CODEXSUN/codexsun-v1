@@ -1,7 +1,9 @@
-import { randomBytes } from "node:crypto";
-import { sql } from "kysely";
+import { createHash, randomBytes } from "node:crypto";
+import { sql, type Kysely } from "kysely";
+import type { PlatformDatabase } from "../../database/schema.js";
 import { getPlatformDatabase } from "../../database/platform-database.js";
 import { env } from "../../env.js";
+import { queueExecutionAllowed } from "./queue-manager.execution.js";
 import type {
   QueueJobFilters,
   QueueJobPayload,
@@ -27,6 +29,18 @@ export class QueueManagerRepository {
     return rows.map(toQueueJob);
   }
 
+  async pendingDeliveries(afterId: number) {
+    const rows = await getPlatformDatabase()
+      .selectFrom("queue_jobs")
+      .selectAll()
+      .where("status", "=", "pending")
+      .where("id", ">", afterId)
+      .orderBy("id", "asc")
+      .limit(100)
+      .execute();
+    return rows.map(toQueueJob);
+  }
+
   async settings(): Promise<QueueRuntimeSettings> {
     const jobs = await this.list();
     const selected = await getPlatformDatabase()
@@ -39,7 +53,7 @@ export class QueueManagerRepository {
       availableBackends: ["database", "bullmq-redis"],
       backend,
       backendLabel: backend === "bullmq-redis" ? "BullMQ + Redis" : "Database queue",
-      canRunInline: backend !== "bullmq-redis",
+      canRunInline: backend !== "bullmq-redis" && queueExecutionAllowed(env, "platform"),
       completed: jobs.filter((job) => job.status === "completed").length,
       failed: jobs.filter((job) => job.status === "failed").length,
       pending: jobs.filter((job) => job.status === "pending").length,
@@ -73,39 +87,28 @@ export class QueueManagerRepository {
   }
 
   async enqueue(input: QueueJobPayload) {
-    const payloadJson = JSON.stringify(input.payload);
-    if (input.idempotencyKey) {
-      const existing = await getPlatformDatabase()
-        .selectFrom("queue_jobs")
-        .selectAll()
-        .where("idempotency_key", "=", input.idempotencyKey)
-        .where("status", "in", ["pending", "running", "completed"])
-        .executeTakeFirst();
-      if (existing) return toQueueJob(existing);
-    }
-
-    const result = await getPlatformDatabase()
-      .insertInto("queue_jobs")
-      .values({
-        actor_email: input.actorEmail ?? null,
-        attempts: 0,
-        available_at: input.availableAt ? new Date(input.availableAt) : new Date(),
-        correlation_id: input.correlationId ?? null,
-        idempotency_key: input.idempotencyKey ?? null,
-        job_name: input.jobName,
-        max_attempts: input.maxAttempts ?? 3,
-        payload_json: payloadJson,
-        priority: input.priority ?? 100,
-        queue_name: input.queueName,
-        result_json: JSON.stringify({}),
-        source_module: input.sourceModule,
-        status: "pending",
-        tenant_id: input.tenantId ?? null,
-        uuid: randomBytes(4).toString("hex")
-      })
-      .executeTakeFirst();
-
-    return this.find(Number(result.insertId));
+    const database = getPlatformDatabase();
+    if (!input.idempotencyKey) return this.enqueueOnDatabase(database, input);
+    // SQL collation equates keys that JavaScript hashing cannot normalize safely.
+    // Serialize keyed enqueues for this master to retain the existing SQL semantics.
+    const lock = createHash("sha256")
+      .update(JSON.stringify(["codexsun.queue.enqueue", env.DB_MASTER_NAME]))
+      .digest("hex");
+    return database.connection().execute(async (connection) => {
+      const acquired = await sql<{ acquired: number | null }>`
+        SELECT GET_LOCK(${lock}, 10) AS acquired
+      `.execute(connection);
+      if (Number(acquired.rows[0]?.acquired) !== 1)
+        throw new Error("Queue enqueue could not acquire its idempotency lock.");
+      try {
+        // Commit before unlocking so the next producer sees the persisted identity.
+        return await connection
+          .transaction()
+          .execute((transaction) => this.enqueueOnDatabase(transaction, input));
+      } finally {
+        await sql`SELECT RELEASE_LOCK(${lock})`.execute(connection);
+      }
+    });
   }
 
   async find(id: number) {
@@ -187,6 +190,7 @@ export class QueueManagerRepository {
       })
       .where("id", "=", id)
       .where("status", "in", ["pending", "failed"])
+      .where("available_at", "<=", new Date())
       .executeTakeFirst();
     if (!Number(claim.numUpdatedRows)) return null;
     return this.find(id);
@@ -288,6 +292,47 @@ export class QueueManagerRepository {
       completedDeleted: Number(completed.numDeletedRows ?? 0),
       failedDeleted: Number(failed.numDeletedRows ?? 0)
     };
+  }
+
+  private async enqueueOnDatabase(database: Kysely<PlatformDatabase>, input: QueueJobPayload) {
+    const payloadJson = JSON.stringify(input.payload);
+    if (input.idempotencyKey) {
+      const existing = await database
+        .selectFrom("queue_jobs")
+        .selectAll()
+        .where("idempotency_key", "=", input.idempotencyKey)
+        .where("status", "in", ["pending", "running", "completed"])
+        .executeTakeFirst();
+      if (existing) return toQueueJob(existing);
+    }
+
+    const result = await database
+      .insertInto("queue_jobs")
+      .values({
+        actor_email: input.actorEmail ?? null,
+        attempts: 0,
+        available_at: input.availableAt ? new Date(input.availableAt) : new Date(),
+        correlation_id: input.correlationId ?? null,
+        idempotency_key: input.idempotencyKey ?? null,
+        job_name: input.jobName,
+        max_attempts: input.maxAttempts ?? 3,
+        payload_json: payloadJson,
+        priority: input.priority ?? 100,
+        queue_name: input.queueName,
+        result_json: JSON.stringify({}),
+        source_module: input.sourceModule,
+        status: "pending",
+        tenant_id: input.tenantId ?? null,
+        uuid: randomBytes(4).toString("hex")
+      })
+      .executeTakeFirst();
+
+    const row = await database
+      .selectFrom("queue_jobs")
+      .selectAll()
+      .where("id", "=", Number(result.insertId))
+      .executeTakeFirst();
+    return row ? toQueueJob(row) : null;
   }
 }
 

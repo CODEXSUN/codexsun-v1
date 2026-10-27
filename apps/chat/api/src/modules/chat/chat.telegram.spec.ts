@@ -93,7 +93,7 @@ test("unknown Telegram exceptions never expose their raw messages", () => {
 });
 test("Telegram realtime delivery rejects tenant collisions and revoked subscribers", async () => {
   const manager = new ChatConnectionManager();
-  const bus = new ChatRealtimeBus(manager);
+  const bus = new ChatRealtimeBus(manager, async () => {});
   const context: ChatRuntimeContext = {
     actorEmail: "admin@test.invalid",
     authorize: async () => {},

@@ -11,15 +11,28 @@ import type {
   QueueJobRecord
 } from "./queue-manager.types.js";
 import { processMailJob } from "@codexsun/mail-api";
-import { getTenantDatabaseByName } from "../../database/tenant-database.js";
+import { getTenantDatabase } from "../../database/tenant-database.js";
+import { TenantRepository } from "../tenant/index.js";
+import { resolveMailJobTenant } from "./queue-manager.mail.js";
+import { queueExecutionAllowed, type QueueExecutionHost } from "./queue-manager.execution.js";
 import { queueJobProcessor, queueJobReadiness, QueueJobHeld } from "./queue-manager.worker.js";
-import { verifyQueueDelivery } from "./queue-manager.delivery.js";
+import {
+  publishPendingDeliveries,
+  queueDeliveryDelay,
+  verifyQueueDelivery
+} from "./queue-manager.delivery.js";
 
 export class QueueManagerService {
   constructor(
     private readonly repository = new QueueManagerRepository(),
-    private readonly activity = new PlatformActivityService()
+    private readonly activity = new PlatformActivityService(),
+    private readonly executor: QueueExecutionHost = "platform",
+    private readonly prepareJob?: (job: QueueJobRecord) => Promise<void>
   ) {}
+
+  canExecute() {
+    return queueExecutionAllowed(env, this.executor);
+  }
 
   listJobs(filters: QueueJobFilters = {}) {
     return this.repository.list(filters);
@@ -39,22 +52,9 @@ export class QueueManagerService {
 
   async enqueue(input: QueueJobPayload) {
     const job = await this.repository.enqueue(input);
-    if (job) {
+    if (job?.status === "pending") {
       const backend = await this.repository.backend();
       if (backend === "bullmq-redis") await publishBullMqJob(job);
-      else if (
-        input.dispatchImmediately &&
-        env.CODEXSUN_QUEUE_WORKER_ENABLED === "1" &&
-        job.status === "pending" &&
-        Date.parse(job.availableAt) <= Date.now()
-      ) {
-        void this.runJob(job.id).catch((error) => {
-          console.warn("[queue] immediate dispatch deferred to worker", {
-            jobId: job.id,
-            message: error instanceof Error ? error.message : "Dispatch failed."
-          });
-        });
-      }
     }
     return job;
   }
@@ -85,7 +85,18 @@ export class QueueManagerService {
       verifyQueueDelivery(options.expectedUuid, job);
     }
     if (!job) return null;
+    if (!this.canExecute()) {
+      if (options.fromWorker) throw new Error("This process does not own queue execution.");
+      const deferred = job.status === "failed" ? await this.repository.retry(id) : job;
+      if (deferred?.status === "pending" && (await this.repository.backend()) === "bullmq-redis")
+        await publishBullMqJob(deferred);
+      return deferred;
+    }
     if (job.status === "pending" || job.status === "failed") {
+      if (queueDeliveryDelay(job.availableAt) > 0) {
+        if (options.fromWorker) throw new QueueJobHeld(job.availableAt);
+        return job;
+      }
       const readiness = await queueJobReadiness(job);
       if (readiness && !readiness.ready) {
         const held = await this.repository.hold(id, readiness.retryAt, readiness.reason);
@@ -106,8 +117,18 @@ export class QueueManagerService {
     }
 
     const claimed = await this.repository.markRunning(id);
-    if (!claimed) return this.repository.find(id);
+    if (!claimed) {
+      const current = await this.repository.find(id);
+      if (
+        options.fromWorker &&
+        current?.status === "pending" &&
+        queueDeliveryDelay(current.availableAt) > 0
+      )
+        throw new QueueJobHeld(current.availableAt);
+      return current;
+    }
     try {
+      await this.prepareJob?.(claimed);
       const result = await this.dispatch(job);
       const readiness = await queueJobReadiness(job, undefined, result);
       if (readiness && !readiness.ready) {
@@ -116,7 +137,7 @@ export class QueueManagerService {
         return held;
       }
       const completed = await this.repository.markCompleted(id, result);
-      await this.activity.recordActivity({
+      await this.recordExecutionActivity({
         action: "queue.job.completed",
         details: { jobName: job.jobName, queueName: job.queueName },
         moduleKey: "platform.queue-manager",
@@ -136,7 +157,7 @@ export class QueueManagerService {
       const message = error instanceof Error ? error.message : "Queue job failed.";
       const progress = await this.repository.find(id);
       const failed = await this.repository.markFailed(id, message, progress?.result ?? {});
-      await this.activity.recordActivity({
+      await this.recordExecutionActivity({
         action: "queue.job.failed",
         details: { error: message, jobName: job.jobName, queueName: job.queueName },
         moduleKey: "platform.queue-manager",
@@ -157,6 +178,7 @@ export class QueueManagerService {
   }
 
   async runNextJob() {
+    if (!this.canExecute()) return null;
     const backend = await this.repository.backend();
     if (backend === "bullmq-redis") return null;
     const job = await this.repository.nextRunnable();
@@ -164,15 +186,19 @@ export class QueueManagerService {
   }
 
   async reconcilePendingDeliveries() {
-    const jobs = await this.repository.list({ status: "pending" });
-    for (const job of jobs) await publishBullMqJob(job);
+    await publishPendingDeliveries(
+      (afterId) => this.repository.pendingDeliveries(afterId),
+      publishBullMqJob
+    );
   }
 
   async retryJob(id: number) {
     const job = await this.repository.retry(id);
     if (!job) return null;
-    const backend = await this.repository.backend();
-    if (backend === "bullmq-redis") await publishBullMqJob(job);
+    if (job.status === "pending") {
+      const backend = await this.repository.backend();
+      if (backend === "bullmq-redis") await publishBullMqJob(job);
+    }
     await this.activity.recordActivity({
       action: "queue.job.retried",
       moduleKey: "platform.queue-manager",
@@ -210,8 +236,7 @@ export class QueueManagerService {
     if (backend === "bullmq-redis") await probeBullMq();
     const settings = await this.repository.setBackend(backend, actorEmail);
     if (backend === "bullmq-redis") {
-      const pending = await this.repository.list({ status: "pending" });
-      for (const job of pending) await publishBullMqJob(job);
+      await this.reconcilePendingDeliveries();
     }
     await this.activity.recordActivity({
       action: "queue.backend.switched",
@@ -225,6 +250,19 @@ export class QueueManagerService {
 
   currentBackend() {
     return this.repository.backend();
+  }
+
+  private async recordExecutionActivity(
+    input: Parameters<PlatformActivityService["recordActivity"]>[0]
+  ) {
+    try {
+      await this.activity.recordActivity(input);
+    } catch {
+      console.warn("[queue] execution activity could not be recorded", {
+        jobId: input.recordId,
+        action: input.action
+      });
+    }
   }
 
   private async dispatch(job: QueueJobRecord) {
@@ -252,10 +290,11 @@ export class QueueManagerService {
       });
     }
     if (jobName === "mail.send" || jobName === "mail.sync") {
-      const tenantDatabase = String(payload.tenantDatabase ?? "").trim();
-      if (!tenantDatabase) throw new Error("Mail job is missing tenantDatabase.");
+      const tenant = await resolveMailJobTenant(job, (id) =>
+        new TenantRepository().findByIdOrCode(id)
+      );
       return processMailJob(jobName, payload, {
-        database: getTenantDatabaseByName(tenantDatabase) as never,
+        database: getTenantDatabase(tenant) as never,
         fallback: mailFallback(),
         secretKey: env.JWT_SECRET
       });

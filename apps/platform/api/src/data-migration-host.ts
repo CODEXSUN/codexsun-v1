@@ -15,7 +15,13 @@ const tenants = new TenantRepository();
 export async function registerDataMigrationHost(
   app: Parameters<typeof registerDataMigrationApi>[0]
 ): Promise<DataMigrationHost> {
-  const host: DataMigrationHost = {
+  const host = createDataMigrationHost();
+  await registerDataMigrationApi(app, host);
+  return host;
+}
+
+export function createDataMigrationHost(): DataMigrationHost {
+  return {
     database: getPlatformDatabase() as unknown as Kysely<unknown>,
     secretKey: env.JWT_SECRET,
     masterDatabase: { host: env.DB_HOST, port: env.DB_PORT, database: env.DB_MASTER_NAME },
@@ -63,6 +69,4 @@ export async function registerDataMigrationHost(
       };
     }
   };
-  await registerDataMigrationApi(app, host);
-  return host;
 }

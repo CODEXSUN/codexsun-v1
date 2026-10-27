@@ -71,7 +71,9 @@ def validate(path, fresh=False):
                     raise ValueError(f"Fresh installation requires {key}")
     if values.get("CODEXSUN_REALTIME_ENABLED", "0") not in {"0", "1"}:
         raise ValueError("CODEXSUN_REALTIME_ENABLED must be 0 or 1")
-    if values.get("CODEXSUN_REALTIME_ENABLED", "0") == "1":
+    if values.get("CODEXSUN_QUEUE_EXECUTION_HOST", "platform") not in {"platform", "worker"}:
+        raise ValueError("CODEXSUN_QUEUE_EXECUTION_HOST must be platform or worker")
+    if values.get("CODEXSUN_REALTIME_ENABLED", "0") == "1" or values.get("CODEXSUN_QUEUE_EXECUTION_HOST") == "worker":
         if len(values.get("CODEXSUN_WORKER_CONTROL_TOKEN", "")) < 32:
             raise ValueError("Realtime Worker requires a control token of at least 32 characters")
         if not values.get("CODEXSUN_REDIS_URL", "").startswith(("redis://", "rediss://")):

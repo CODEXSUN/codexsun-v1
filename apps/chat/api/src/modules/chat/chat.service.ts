@@ -145,8 +145,9 @@ export class ChatService {
       replyToUuid?: string | undefined;
     }
   ) {
-    const message = await this.repository.createMessage(await this.context(request), input);
-    this.events?.messageCreated(message.channelUuid, message);
+    const context = await this.context(request);
+    const message = await this.repository.createMessage(context, input);
+    await this.events?.messageCreated(context, message.channelUuid, message);
     return message;
   }
 
@@ -155,8 +156,9 @@ export class ChatService {
     id: string,
     input: { body: string }
   ) {
-    const message = await this.repository.updateMessage(await this.context(request), id, input);
-    this.events?.messageChanged(message.channelUuid, message);
+    const context = await this.context(request);
+    const message = await this.repository.updateMessage(context, id, input);
+    await this.events?.messageChanged(context, message.channelUuid, message);
     return message;
   }
 
@@ -164,12 +166,9 @@ export class ChatService {
     request: Parameters<ChatModuleDependencies["resolveContext"]>[0],
     id: string
   ) {
-    const message = await this.repository.setMessageStatus(
-      await this.context(request),
-      id,
-      "inactive"
-    );
-    this.events?.messageChanged(message.channelUuid, message);
+    const context = await this.context(request);
+    const message = await this.repository.setMessageStatus(context, id, "inactive");
+    await this.events?.messageChanged(context, message.channelUuid, message);
     return message;
   }
 
@@ -177,12 +176,9 @@ export class ChatService {
     request: Parameters<ChatModuleDependencies["resolveContext"]>[0],
     id: string
   ) {
-    const message = await this.repository.setMessageStatus(
-      await this.context(request),
-      id,
-      "active"
-    );
-    this.events?.messageChanged(message.channelUuid, message);
+    const context = await this.context(request);
+    const message = await this.repository.setMessageStatus(context, id, "active");
+    await this.events?.messageChanged(context, message.channelUuid, message);
     return message;
   }
 
@@ -193,7 +189,7 @@ export class ChatService {
     const context = await this.context(request);
     const before = await this.repository.requireMessage(context, id);
     const removed = await this.repository.forceDeleteMessage(context, id);
-    this.events?.messageDeleted(before.channelUuid, removed.uuid);
+    await this.events?.messageDeleted(context, before.channelUuid, removed.uuid);
     return removed;
   }
 
@@ -202,8 +198,9 @@ export class ChatService {
     id: string,
     emoji: string
   ) {
-    const message = await this.repository.toggleReaction(await this.context(request), id, emoji);
-    this.events?.messageChanged(message.channelUuid, message);
+    const context = await this.context(request);
+    const message = await this.repository.toggleReaction(context, id, emoji);
+    await this.events?.messageChanged(context, message.channelUuid, message);
     return message;
   }
 }

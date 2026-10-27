@@ -1,3 +1,4 @@
+import { startQueueRelay } from "./queue-manager.relay.js";
 import { readCrmFrappeSyncAccess, crmFrappeAvailability } from "../../crm-frappe-sync-access.js";
 import type { Kysely } from "kysely";
 import {
@@ -69,10 +70,7 @@ export function startFrappeLiveSyncScheduler(queue: QueueManagerService) {
       running = false;
     }
   };
-  const timer = setInterval(() => void dispatch(), 10_000);
-  timer.unref?.();
-  void dispatch();
-  return () => clearInterval(timer);
+  return startQueueRelay(dispatch, 10_000, () => queue.canExecute());
 }
 
 async function enqueueInboundEnquiries(

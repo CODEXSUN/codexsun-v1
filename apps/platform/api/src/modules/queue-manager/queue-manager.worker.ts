@@ -53,7 +53,11 @@ export async function processQueueManagerJob(
 }
 
 export type QueueReadiness = { ready: boolean; retryAt: string; reason: string | null };
-type QueueReadinessCheck = (job: QueueJobRecord, error?: unknown, result?: Record<string, unknown>) => Promise<QueueReadiness>;
+type QueueReadinessCheck = (
+  job: QueueJobRecord,
+  error?: unknown,
+  result?: Record<string, unknown>
+) => Promise<QueueReadiness>;
 const readinessChecks = new Map<string, QueueReadinessCheck>();
 export function registerQueueJobReadiness(jobName: string, check: QueueReadinessCheck) {
   readinessChecks.set(jobName, check);

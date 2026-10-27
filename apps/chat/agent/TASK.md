@@ -63,3 +63,13 @@ Do not treat documentation, a build, or a model response as proof of live persis
 Migration `chat.008_read_cursor` adds nullable `chat_channel_reads.last_message_id` and backfills existing rows from their saved read timestamp. It changes only Chat read tracking; no message rows are removed. The migration is repeatable and was applied twice on the local test tenant.
 Unread counts compare message IDs, which avoids timezone and same-second timestamp ambiguity. HTTP read requests accept an optional messageId and advance the cursor monotonically. Membership and company checks remain required. Existing clients without a cursor retain mark-current-channel-read behavior. New messages use UTC, and newest-message queries use ID order.
 Validation: the isolated work-report E2E covers assignment unread, new messages after read, old cursor retries, and read clearing. Apply the tracked migration to each target tenant before deploying this code. Production migration was not run.
+
+## Realtime isolation phase - 2026-10-26
+
+- [x] Scope all message, typing, and presence publication by authenticated tenant, database, and company.
+- [x] Recheck recipient membership and live permissions before delivery.
+- [x] Require typing sender membership and close sockets with revoked Chat permission on their next valid frame.
+- [x] Add focused cases for tenant/company collisions, access revocation, denied typing, and unsubscribe races.
+- [ ] Execute focused checks and record the integration owner's results.
+- [ ] Prove real tenant database membership changes and authenticated socket revocation in isolated integration fixtures.
+- [ ] Browser and deployment acceptance.

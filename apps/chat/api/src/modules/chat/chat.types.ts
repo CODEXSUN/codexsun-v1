@@ -22,15 +22,27 @@ export type ChatRuntimeContext = {
 
 export type ChatModuleDependencies = {
   telegram?: TelegramDependencies;
+  telegramExecution?: boolean;
+  subscribeExternalMessages?: (
+    publish: (context: ChatRuntimeContext, message: ChatMessage) => Promise<void>
+  ) => Promise<() => Promise<void>>;
   audit?: (context: ChatRuntimeContext, action: string, uuid: string) => Promise<void>;
   events?: ChatRealtimeEvents;
   resolveContext: (request: FastifyRequest) => ChatRuntimeContext | Promise<ChatRuntimeContext>;
 };
 
 export type ChatRealtimeEvents = {
-  messageChanged: (channelUuid: string, message: ChatMessage) => void;
-  messageCreated: (channelUuid: string, message: ChatMessage) => void;
-  messageDeleted: (channelUuid: string, uuid: string) => void;
+  messageChanged: (
+    context: ChatRuntimeContext,
+    channelUuid: string,
+    message: ChatMessage
+  ) => Promise<void>;
+  messageCreated: (
+    context: ChatRuntimeContext,
+    channelUuid: string,
+    message: ChatMessage
+  ) => Promise<void>;
+  messageDeleted: (context: ChatRuntimeContext, channelUuid: string, uuid: string) => Promise<void>;
 };
 
 export type ChatChannelSavePayload = {

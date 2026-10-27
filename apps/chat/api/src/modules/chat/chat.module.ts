@@ -15,7 +15,13 @@ export function createChatModule(dependencies: ChatModuleDependencies) {
       const bus = new ChatRealtimeBus(manager);
       registerChatRoutes(app, { ...dependencies, events: bus });
       registerChatTelegramRoutes(app, dependencies);
-      if (dependencies.telegram) {
+      if (dependencies.subscribeExternalMessages) {
+        const unsubscribe = await dependencies.subscribeExternalMessages((context, message) =>
+          bus.messageCreatedInScope(context, message)
+        );
+        app.addHook("onClose", unsubscribe);
+      }
+      if (dependencies.telegram && dependencies.telegramExecution !== false) {
         const stop = new ChatTelegramWorker(dependencies.telegram, (context, message) =>
           bus.messageCreatedInScope(context, message)
         ).start();
