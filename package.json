@@ -131,6 +131,8 @@
     "test:e2e:ecommerce-tenancy": "node --env-file=.env --import tsx tools/e2e/ecommerce-tenancy.e2e.ts",
     "test:e2e:ecommerce-browser": "node --env-file=.env tools/e2e/ecommerce-storefront-browser.e2e.mjs",
     "dev:uiux": "node tools/preflight.mjs uiux-web",
+    "dev:codeit": "npm run dev -w @codexsun/codeit",
+    "test:codeit": "node --import tsx --test devkits/codeit/api/src/modules/prompt-manager/prompt-manager.test.ts devkits/codeit/api/src/codex/codex-gateway.test.ts",
     "dev:sys-work:api": "npm run dev -w @codexsun/sys-work-api",
     "dev:sys-work:web": "npm run dev -w @codexsun/sys-work-web",
     "build:sys-work": "npm run build -w @codexsun/sys-work-api && npm run build -w @codexsun/sys-work-web",

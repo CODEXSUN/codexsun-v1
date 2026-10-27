@@ -10,9 +10,14 @@
     "lint": "oxlint src"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.105.0",
+    "@tanstack/react-table": "^9.3.1",
     "@codexsun/ui": "^1.1.82",
+    "fastify": "^5.12.7",
     "lucide-react": "^1.62.0",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "sonner": "^2.0.8",
+    "zod": "^4.6.7"
   }
 }
