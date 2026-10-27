@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/worker-api",
-  "version": "1.1.76",
+  "version": "1.1.78",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "start": "node dist/apps/worker/api/server.js"
   },
   "dependencies": {
-    "@codexsun/platform-api": "^1.1.76",
+    "@codexsun/platform-api": "^1.1.78",
     "bullmq": "^6.3.11",
     "fastify": "^5.12.7",
     "ioredis": "^6.0.0"

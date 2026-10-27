@@ -11,6 +11,11 @@ export type TopMenuProps = {
   addonItems?: TopMenuAppItem[];
   appItems: TopMenuAppItem[];
   applicationName: string;
+  companyBrand?: {
+    name: string;
+    logoSrc?: string;
+    logoDarkSrc?: string;
+  };
   logoutHref?: string;
   notifications: TopMenuNotification[];
   onCloseSearch: () => void;
@@ -34,6 +39,7 @@ export function TopMenu({
   addonItems = [],
   appItems,
   applicationName,
+  companyBrand,
   logoutHref,
   notifications,
   onCloseSearch,
@@ -77,9 +83,30 @@ export function TopMenu({
           >
             <MenuIcon className="size-4" />
           </Button>
-          <div className="flex min-w-0 items-center gap-2 px-5 text-sm font-semibold">
-            <CommandIcon className="size-4" />
-            <span className="truncate">{applicationName}</span>
+          <div className="flex min-w-0 items-center gap-3 px-5 text-sm font-semibold">
+            {companyBrand ? (
+              <>
+                <img
+                  alt={`${companyBrand.name} logo`}
+                  className="size-6 shrink-0 object-contain dark:hidden"
+                  src={companyBrand.logoSrc ?? "/logo/logo.svg"}
+                />
+                <img
+                  alt={`${companyBrand.name} logo`}
+                  className="hidden size-6 shrink-0 object-contain dark:block"
+                  src={companyBrand.logoDarkSrc ?? companyBrand.logoSrc ?? "/logo/logo-dark.svg"}
+                />
+                <span className="truncate" title={companyBrand.name}>
+                  {companyBrand.name}
+                </span>
+                <span aria-hidden="true" className="shrink-0 text-muted-foreground">
+                  |
+                </span>
+              </>
+            ) : (
+              <CommandIcon className="size-4 shrink-0" />
+            )}
+            <span className="shrink-0">{applicationName}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 px-4">

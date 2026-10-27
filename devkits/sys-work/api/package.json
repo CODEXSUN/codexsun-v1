@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/sys-work-api",
-  "version": "1.1.76",
+  "version": "1.1.78",
   "private": true,
   "type": "module",
   "scripts": {
