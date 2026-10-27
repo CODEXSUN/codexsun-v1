@@ -37,8 +37,6 @@ const result = spawnSync(command, commandArgs, {
   stdio: "inherit"
 });
 
-await import("./clean-workspace-artifacts.mjs");
-
 if (result.error) {
   console.error(result.error.message);
   process.exit(1);

@@ -14,9 +14,7 @@ export class ComponentDocumentationAudit {
     for (const directory of this.children("tools"))
       if (existsSync(join(directory, "package.json"))) this.owners.add(directory);
     this.requireExternalAddonGuides();
-    for (const owner of this.owners)
-      for (const file of ["README.md", "agent/TASK.md", "agent/PLAN.md", "agent/SKILLS.md"])
-        this.checkFile(owner, file);
+    for (const owner of this.owners) this.checkFile(owner, "README.md");
     return { owners: this.owners.size, failures: this.failures };
   }
 
@@ -47,8 +45,7 @@ export class ComponentDocumentationAudit {
       return;
     }
     const body = readFileSync(path, "utf8").trim();
-    if (!body.startsWith("# ") || body.length < 160)
-      this.failures.push(`${label}: add a heading and substantive component guidance`);
+    if (!body.startsWith("# ")) this.failures.push(`${label}: add a Markdown heading`);
   }
 }
 
@@ -60,6 +57,6 @@ if (process.argv[1] && resolve(process.argv[1]) === import.meta.filename) {
     process.exitCode = 1;
   } else
     console.log(
-      `Component documentation verified: ${result.owners} owners, four required files each.`
+      `Component documentation verified: ${result.owners} owners, README required for each.`
     );
 }

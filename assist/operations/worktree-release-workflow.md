@@ -35,7 +35,7 @@ Retire superseded app worktrees only after integration and verified recovery sna
 ## Prompt Manager Routing
 
 Follow [Prompt Manager Role](../agents/prompt-manager.md) for request analysis and prompt preparation.
-Route app implementation to its assigned worktree, Git/release operations to the supervisor, and deployment operations to Hostinger Deploy.
+Route app work and its Git operations to the assigned worktree, integration and releases to the supervisor, and deployment to Hostinger Deploy.
 Prompt Manager drafts only. It sends a selected prompt only after the human explicitly instructs it.
 The executing chat retains its own scope, worktree rules, and authorization boundaries.
 A prompt or starter template does not authorize a pull, install, version change, checkout, database operation, or deployment.
@@ -46,18 +46,18 @@ Ask which app to use when the task does not identify one.
 Current separate app worktrees are CXMobile, Marketing, CRM, and Billing.
 Honor an explicit request to prepare all four without asking again.
 New app chats must verify their assigned directory and branch before any work.
-Start fresh checkouts without npm installation unless installation is explicitly authorized.
+Install locked root dependencies in the assigned worktree when needed for an authorized app task.
 
 ## Supervisor And App Chat Ownership
 
 Follow the shared [Release Supervisor Role](../agents/release-supervisor.md).
 App chats implement and check code only in their assigned worktrees.
 They provide an app handoff with changed files, actual checks, remaining work, and migration or shared-contract impact.
-The supervisor owns staging, commits, pushes, pulls, merges, version updates, and release checkouts in app branches and main.
-App chats do not perform those operations unless the human explicitly reassigns the role.
-Only the supervisor updates an app branch from main after preserving its unfinished work.
+App chats may stage, commit, pull, and push their own app work in their assigned worktree.
+The supervisor owns integration into main, version updates, and release checkouts.
+Preserve unfinished work before updating an app branch from main.
 Coordinate a pause in affected app edits before Git mutations. Other app work can continue independently.
-No npm installation or deployment is currently authorized. This policy update does not trigger any Git or release operation.
+A policy update does not trigger Git, installation, or deployment operations.
 
 ## App Development To Main
 
@@ -66,7 +66,7 @@ No npm installation or deployment is currently authorized. This policy update do
 3. Keep each app's implementation within its ownership boundary.
 4. Run focused checks during daily coding.
 5. The app chat provides its handoff. The supervisor reviews the complete change before integration.
-6. The supervisor commits the reviewed batch and merges it into `main` through the required review and check gates.
+6. The supervisor integrates reviewed app commits into `main` through the required review and check gates.
 7. The supervisor leaves unfinished work on its app branch.
 
 Protect `main` with review and relevant status checks when repository administration is authorized.
@@ -78,7 +78,7 @@ Leave existing stashes untouched unless their restoration is part of the task.
 Each worktree is a repository root for its own root dependencies and root build output.
 Do not share writable `node_modules` or `dist` directories between worktrees.
 Never create dependency or build directories inside app or package folders.
-Dependency installation and runtime setup require task authorization.
+Use the lockfile for dependency installation. Runtime setup must remain scoped to the authorized task.
 Separate concurrent test ports, databases, Redis queues, storage, and credentials.
 
 ## Main To Release Candidate

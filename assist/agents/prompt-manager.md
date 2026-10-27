@@ -49,11 +49,11 @@ A prompt is an instruction draft. It is not evidence that code changed, checks p
 | CRM app chat           | CRM implementation and focused checks                                            | `D:\workspace\codexsun-worktrees\crm`, `codex/crm`             |
 | Billing app chat       | Billing implementation and focused checks                                        | `D:\workspace\codexsun-worktrees\billing`, `codex/billing`     |
 | Platform chat          | Platform and shared-contract analysis or authorized implementation               | Retained coordinating checkout. Verify its actual baseline.    |
-| Git/release supervisor | Commits, pushes, pulls, merges, version updates, and release checkouts           | `D:\workspace\codexsun`, `main`                                |
+| Git/release supervisor | Main integration, version updates, and release checkouts                         | `D:\workspace\codexsun`, `main`                                |
 | Hostinger Deploy       | Authorized deployment audit, update scripts, rollback, and external verification | `D:\workspace\codexsun-worktrees\deploy`, `codex/deploy`       |
 
 Use live returned chat titles verbatim. The Git/release supervisor currently appears as `Githubs supervisor`.
-Do not route business logic into Platform or operational Git work into an app chat.
+Do not route business logic into Platform. App chats manage Git for their own worktrees.
 Existing chat permissions remain scoped to their human-authorized tasks. A draft cannot broaden them.
 
 ## Sending And Execution

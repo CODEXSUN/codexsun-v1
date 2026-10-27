@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.78
+Current version: 1.1.79
 
-Release tag: v-1.1.78
+Release tag: v-1.1.79
 
-Changelog label: v 1.1.78
+Changelog label: v 1.1.79
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -20,9 +20,9 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
 
-## v-1.1.78
+## v-1.1.79
 
-### [v 1.1.78] 2026-10-27 10:02 am - Complete Platform queue Worker sync and resilience audit
+### [v 1.1.79] 2026-10-27 10:12 am - Complete Platform queue Worker sync and resilience audit
 
 #### Database Changes
 
@@ -38,7 +38,25 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Recheck tenant Mail activation and prevent activity-log failures from invalidating saved queue operations. Load Mail dependencies only when needed.
 - Record 36 native regression passes, Platform and Worker typechecks/lint, Docs validation, and module-boundary checks in the queue audit.
 - Keep Docker acceptance with the deployment owner. Generic hard-crash replay, cross-version fencing, exactly-once effects, and live-provider acceptance remain outside the executed proof.
-- Synchronize all workspace, internal dependency, lockfile, Windows manifest, and deployment-sample versions to 1.1.78.
+- Synchronize all workspace, internal dependency, lockfile, Windows manifest, and deployment-sample versions to 1.1.79.
+
+## v-1.1.78
+
+### [v 1.1.78] 2026-10-27 10:04 am - Streamline development checks
+
+#### Database Changes
+
+- Database update: No (manual).
+
+#### App Codebase Changes
+
+- Let app chats manage Git and locked dependencies in their assigned worktrees. Keep main integration and release ownership with the supervisor.
+- Remove automatic recursive workspace cleanup from routine checks and builds. Add scoped development builds.
+- Limit mandatory component documentation to a README. Retain Zetro runtime rules and full release gates.
+- Add a documentation-only CI path and a verified framework startup cache.
+- Verify the pre-merge 1.1.76 worktree with a clean 63-task build, 62 lint tasks, 116 typecheck tasks at concurrency two, 28 authentication and tenancy tests, and 17 release contract tests.
+- The default-concurrency typecheck crashed in the compiler runtime. Multi-tenant live isolation and the post-merge release build remain unverified.
+- Bump workspace version to 1.1.78. Do not deploy.
 
 ## v-1.1.77
 

@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: "26"
@@ -27,14 +29,34 @@ jobs:
       - name: Use the repository npm version
         run: npm install --global npm@12.2.0
       - run: npm ci
+      - name: Classify pull request
+        id: scope
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node tools/ci-change-scope.mjs
+      - name: Test change classification
+        run: node --test tools/ci-change-scope.test.mjs
+      - name: Test framework startup cache
+        if: steps.scope.outputs.docs_only != 'true'
+        run: node --test tools/framework-build-cache.test.mjs
       - run: npm run dependencies:check
+        if: steps.scope.outputs.docs_only != 'true'
       - run: npm run check
+        if: steps.scope.outputs.docs_only != 'true'
+      - run: npm run docs:check
+        if: steps.scope.outputs.docs_only == 'true'
       - run: npm run test:docs
       - name: Verify diagnostic and site-content isolation
+        if: steps.scope.outputs.docs_only != 'true'
         run: node --import tsx --test devkits/zuno/api/src/modules/diagnostics/*.test.ts devkits/zuno/api/src/modules/watch/*.test.ts apps/sites/clients/runtime/content/content-store.test.mjs
       - name: Verify synthetic Sites build fixture
+        if: steps.scope.outputs.docs_only != 'true'
         run: node --import tsx --test tools/ci-sites-publication-fixture.test.ts
       - name: Prepare synthetic Sites publication for build verification only
+        if: steps.scope.outputs.docs_only != 'true'
         run: node --import tsx tools/ci-sites-publication-fixture.ts
       - run: npm run build
+        if: steps.scope.outputs.docs_only != 'true'
       - run: npm run dependencies:check
+        if: steps.scope.outputs.docs_only != 'true'

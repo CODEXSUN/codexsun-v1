@@ -2,6 +2,11 @@
 
 import { execFileSync, spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import {
+  frameworkBuildIsCurrent,
+  frameworkInputs,
+  recordFrameworkBuild
+} from "./framework-build-cache.mjs";
 import { existsSync, readFileSync, watch } from "node:fs";
 import { rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -391,7 +396,13 @@ async function waitForApiReady(target) {
 
 function ensurePlatformApiDependencies() {
   console.log("  - Checking API package builds");
+  if (frameworkBuildIsCurrent(root)) {
+    console.log("  ok Framework build is current");
+    return;
+  }
+  const inputs = frameworkInputs(root);
   buildWorkspacePackage("@codexsun/framework", "startup contract");
+  recordFrameworkBuild(root, inputs);
 }
 
 function ensureWorkspaceLinks() {

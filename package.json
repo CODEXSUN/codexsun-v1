@@ -1,6 +1,6 @@
 {
   "name": "codexsun",
-  "version": "1.1.78",
+  "version": "1.1.79",
   "private": true,
   "packageManager": "npm@12.2.0",
   "description": "CODEXSUN",
@@ -44,7 +44,8 @@
     "test:cleanup": "node --test tools/clean-repository-cache.test.mjs",
     "dependencies:clean": "node tools/clean-workspace-artifacts.mjs",
     "dependencies:check": "node tools/check-root-node-modules.mjs",
-    "build": "node tools/clean-root-dist.mjs && node tools/clean-workspace-artifacts.mjs && node tools/run-turbo-clean.mjs build --force && node tools/collect-dist.mjs && node tools/clean-workspace-artifacts.mjs",
+    "build": "node tools/clean-root-dist.mjs && node tools/run-turbo-clean.mjs build --force && node tools/collect-dist.mjs",
+    "build:dev": "node tools/run-turbo-clean.mjs build",
     "typecheck": "node tools/run-turbo-clean.mjs typecheck",
     "lint": "node tools/run-turbo-clean.mjs lint",
     "format": "prettier . --write",
