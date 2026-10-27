@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-`npm run dev:ecommerce` starts the public Ecommerce web app at `/shop`. Its other paths redirect to the Platform staff desk. `npm run dev:storefront` starts that same web app. It proxies `/api/platform` to the Platform API. Enable Ecommerce for the tenant through Plan Access before using either app.
+`npm run dev:ecommerce` starts the public Ecommerce web app at `/shop`. Its other paths redirect to the Platform staff desk. It proxies `/api/platform` to the Platform API. Enable Ecommerce for the tenant through Plan Access before using the app.
 
 The Ecommerce app header checks the local storefront every 10 seconds. It shows **Start storefront** when stopped and **Starting storefront…** during startup. Green **Storefront live** requires the server identity, `/shop` HTML, and successful branding/catalog API responses through the storefront proxy. Checks include the current browser cookies so oversized-header failures do not show green. Failed page or tenant API checks show **Storefront unavailable** with Recheck. This does not verify every browser interaction or asset. Both local launch paths allow 64 KiB request headers, consistent with Platform development servers.
 

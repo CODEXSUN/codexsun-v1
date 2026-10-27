@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/frappe-api",
-  "version": "1.1.81",
+  "version": "1.1.82",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,8 +12,8 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/crm-api": "^1.1.81",
-    "@codexsun/framework": "^1.1.81",
+    "@codexsun/crm-api": "^1.1.82",
+    "@codexsun/framework": "^1.1.82",
     "entities": "^8.1.0",
     "fastify": "^5.12.5",
     "kysely": "^0.29.7",

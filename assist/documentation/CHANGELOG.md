@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.81
+Current version: 1.1.82
 
-Release tag: v-1.1.81
+Release tag: v-1.1.82
 
-Changelog label: v 1.1.81
+Changelog label: v 1.1.82
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -37,6 +37,23 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Update the [Thirumurugan migration guide](../../devkits/data-bridge/agent/thirumurugan-migration.md) with the completed VPS phase.
 - Add the [dated operation log](../../devkits/data-bridge/agent/THIRUMURUGAN-VPS-TRANSFER-2026-10-27.md) with verification and recovery evidence.
 - No application logic, package version, image deployment, or credential change in this documentation task.
+
+## v-1.1.82
+
+### [v 1.1.82] 2026-10-27 2:20 pm - Improve test tooling and Ecommerce tenancy coverage
+
+#### Database Changes
+
+- Database update: No (manual).
+- The database-user helper now sends escaped SQL through standard input without a credential file. No live database operation was run.
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.82.
+- Remove duplicate Ecommerce development and tenancy test aliases and document the retained commands.
+- Scope Platform verification and reuse verified Framework builds in focused tests.
+- Split Ecommerce tenancy access, browser, and query helpers while retaining the shared fixture lifecycle.
+- Update the legacy variant migration expectation to include the current final migration.
 
 ## v-1.1.81
 

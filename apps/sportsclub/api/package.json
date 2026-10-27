@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/sportsclub-api",
-  "version": "1.1.81",
+  "version": "1.1.82",
   "private": true,
   "type": "module",
   "exports": {
@@ -25,7 +25,7 @@
     "test": "node --import tsx --test src/**/*.test.ts"
   },
   "dependencies": {
-    "@codexsun/framework": "^1.1.81",
+    "@codexsun/framework": "^1.1.82",
     "fastify": "^5.12.5",
     "kysely": "^0.29.7",
     "mysql2": "^3.24.6",

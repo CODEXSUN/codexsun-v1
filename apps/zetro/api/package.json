@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/zetro-api",
-  "version": "1.1.81",
+  "version": "1.1.82",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,7 +12,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/framework": "^1.1.81",
+    "@codexsun/framework": "^1.1.82",
     "fastify": "^5.12.5",
     "kysely": "^0.29.7",
     "zod": "^4.6.7"

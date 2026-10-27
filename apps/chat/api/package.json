@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/chat-api",
-  "version": "1.1.81",
+  "version": "1.1.82",
   "private": true,
   "type": "module",
   "exports": {
@@ -14,7 +14,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/framework": "^1.1.81",
+    "@codexsun/framework": "^1.1.82",
     "@fastify/websocket": "11.3.4",
     "@types/ws": "^8.18.1",
     "big-integer": "^1.6.52",

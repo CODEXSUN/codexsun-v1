@@ -8,6 +8,7 @@ import {
   frameworkInputs,
   recordFrameworkBuild
 } from "./framework-build-cache.mjs";
+import { ensureFrameworkBuild } from "./ensure-framework-build.mjs";
 
 test("framework startup cache fails closed when inputs or outputs change", () => {
   const root = mkdtempSync(join(tmpdir(), "codexsun-framework-"));
@@ -24,6 +25,32 @@ test("framework startup cache fails closed when inputs or outputs change", () =>
     recordFrameworkBuild(root, frameworkInputs(root));
     writeFileSync(join(root, "packages/framework/src/index.ts"), "changed");
     assert.equal(frameworkBuildIsCurrent(root), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("test prerequisite builds once, then rebuilds after a source change", () => {
+  const root = mkdtempSync(join(tmpdir(), "codexsun-framework-"));
+  try {
+    mkdirSync(join(root, "packages/framework/src"), { recursive: true });
+    mkdirSync(join(root, "dist/packages/framework"), { recursive: true });
+    const source = join(root, "packages/framework/src/index.ts");
+    writeFileSync(source, "first");
+    let builds = 0;
+    const build = () => {
+      builds++;
+      writeFileSync(join(root, "dist/packages/framework/index.js"), `build ${builds}`);
+    };
+    assert.equal(ensureFrameworkBuild(root, build), "built");
+    assert.equal(ensureFrameworkBuild(root, build), "cached");
+    writeFileSync(source, "second");
+    assert.equal(ensureFrameworkBuild(root, build), "built");
+    assert.equal(builds, 2);
+    writeFileSync(source, "third");
+    assert.throws(() => ensureFrameworkBuild(root, () => {
+      writeFileSync(source, "changed while building");
+    }), /inputs or output changed/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
