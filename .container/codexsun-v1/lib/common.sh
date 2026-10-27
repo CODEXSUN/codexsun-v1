@@ -46,6 +46,7 @@ guard_inventory() (
 compose() {
   local -a media_args=()
   if [ -n "${MEDIA_VOLUME:-}" ]; then media_args=(-f "$DEPLOY_DIR/docker-compose.media.yml"); fi
+  if [ -n "${BRIDGE_VOLUME:-}" ]; then media_args+=(-f "$DEPLOY_DIR/docker-compose.bridge.yml"); fi
   docker compose --project-name codexsun --env-file "$DEPLOY_ENV" \
     -f "$DEPLOY_DIR/docker-compose.yml" "${media_args[@]}" "${PROFILE_ARGS[@]}" "$@"
 }
@@ -72,6 +73,13 @@ load_config() {
   REDIS_CONTAINER="$(env_value CODEXSUN_REDIS_CONTAINER)"
   DATA_VOLUME="$(env_value CODEXSUN_DATA_VOLUME)"
   MEDIA_VOLUME="$(env_value CODEXSUN_MEDIA_DATA_VOLUME)"
+  BRIDGE_VOLUME="$(env_value CODEXSUN_DATA_BRIDGE_VOLUME)"
+  if [ -n "$BRIDGE_VOLUME" ]; then
+    [[ "$BRIDGE_VOLUME" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$ ]] || fail 'Invalid Data Bridge volume name.'
+    volume_exists "$BRIDGE_VOLUME" || fail 'Configured Data Bridge volume must already exist.'
+    [ "$BRIDGE_VOLUME" != "$DATA_VOLUME" ] && [ "$BRIDGE_VOLUME" != "$(env_value REDIS_DATA_VOLUME)" ] && [ "$BRIDGE_VOLUME" != "$(env_value MARIADB_DATA_VOLUME)" ] && [ "$BRIDGE_VOLUME" != "$(env_value MARIADB_BACKUP_VOLUME)" ] || fail 'Data Bridge volume must not use application, Redis, or MariaDB storage.'
+    docker inspect "$DB_CONTAINER" | python3 "$CONFIG" protect "$BRIDGE_VOLUME"
+  fi
   if [ -n "$MEDIA_VOLUME" ]; then
     volume_exists "$MEDIA_VOLUME" || fail 'Configured Media volume must already exist; no Media storage is created automatically.'
   fi

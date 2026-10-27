@@ -197,9 +197,14 @@ def main():
             expected = {"/storage": args[0]}
             if len(args) > 1 and args[1]:
                 expected["/storage/media"] = args[1]
+            bridge = args[2] if len(args) > 2 else ""
+            if bridge:
+                expected["/storage/data-bridge-sources/cxapp"] = bridge
             actual = {mount["Destination"]: mount.get("Name") for mount in mounts}
-            if len(mounts) != len(expected) or actual != expected or any(mount.get("Type") != "volume" or not mount.get("RW") for mount in mounts):
-                raise ValueError("Existing application mounts differ from v1. Review storage/Media adoption before update")
+            if len(mounts) != len(expected) or actual != expected or any(mount.get("Type") != "volume" or mount.get("RW") != (mount["Destination"] != "/storage/data-bridge-sources/cxapp") for mount in mounts):
+                unexpected = sorted(set(actual) - set(expected))
+                detail = f" Unexpected destinations: {', '.join(unexpected)}." if unexpected else ""
+                raise ValueError("Existing application mounts differ from v1. Review storage/Media adoption before update." + detail)
         elif command == "metadata":
             metadata(*args)
         else:

@@ -28,6 +28,7 @@ def check(values, items, mode):
     app_volume = values["CODEXSUN_DATA_VOLUME"]
     redis_volume = values.get("REDIS_DATA_VOLUME", "")
     media_volume = values.get("CODEXSUN_MEDIA_DATA_VOLUME", "")
+    bridge_volume = values.get("CODEXSUN_DATA_BRIDGE_VOLUME", "")
     reserved = {values.get(key) for key in ["MARIADB_DATA_VOLUME", "MARIADB_BACKUP_VOLUME"]} - {None, ""}
     if db_name in APPLICATIONS or redis_name in APPLICATIONS or db_name == redis_name:
         raise ValueError("Database/Redis names must be distinct from application containers and each other")
@@ -35,12 +36,14 @@ def check(values, items, mode):
         raise ValueError("Application, Redis, and MariaDB volumes must remain distinct")
     if media_volume and media_volume in reserved | {app_volume, redis_volume}:
         raise ValueError("Media storage must remain distinct from database/application/Redis storage")
+    if bridge_volume and bridge_volume in reserved | {app_volume, redis_volume, media_volume}:
+        raise ValueError("Data Bridge storage must remain distinct from database/application/Redis/Media storage")
     for item in items:
         is_database = database(item, db_name)
         if is_database and name(item) in APPLICATIONS | {redis_name}:
             raise ValueError("A cleanup/deployment container is a database server and is protected")
         for mount in item.get("Mounts", []):
-            if is_database and mount.get("Name") in ({app_volume, redis_volume} | ({media_volume} if media_volume else set())):
+            if is_database and mount.get("Name") in ({app_volume, redis_volume} | ({media_volume} if media_volume else set()) | ({bridge_volume} if bridge_volume else set())):
                 raise ValueError("Application/Redis volume is mounted by a database server and is protected")
             if mount.get("Name") == app_volume and not (name(item) in APPLICATIONS and owner(item, "codexsun", name(item))):
                 raise ValueError("Application volume is used by another deployment")

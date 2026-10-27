@@ -30,10 +30,15 @@ check_ownership
 guard_inventory update
 require_healthy "$DB_CONTAINER"
 require_healthy "$REDIS_CONTAINER"
+for name in codexsun-worker codexsun-chatb; do
+  if container_exists "$name" && [[ ! " ${SERVICES[*]} " =~ " $name " ]]; then
+    fail "Existing $name is not enabled in deployment configuration. Preserve its realtime settings before update."
+  fi
+done
 for name in codexsun-api codexsun-web codexsun-shop; do
   docker container inspect "$name" >/dev/null || fail "Missing application container: $name. Use setup.sh for a fresh installation."
 done
-docker inspect codexsun-api | python3 "$CONFIG" adoption "$DATA_VOLUME" "${MEDIA_VOLUME:-}"
+docker inspect codexsun-api | python3 "$CONFIG" adoption "$DATA_VOLUME" "${MEDIA_VOLUME:-}" "${BRIDGE_VOLUME:-}"
 [ "$CHECK_ONLY" = false ] || { echo 'VPS update preflight passed. No changes made.'; exit 0; }
 lock_deployment
 branch="$(env_value CODEXSUN_GIT_BRANCH)"

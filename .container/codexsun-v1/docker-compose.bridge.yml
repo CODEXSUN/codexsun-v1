@@ -1,0 +1,8 @@
+services:
+  codexsun-api:
+    volumes:
+      - bridge-data:/storage/data-bridge-sources/cxapp:ro
+volumes:
+  bridge-data:
+    external: true
+    name: ${CODEXSUN_DATA_BRIDGE_VOLUME:?required}
