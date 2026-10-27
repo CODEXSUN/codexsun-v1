@@ -4,6 +4,10 @@
 
 Testing should protect tenant isolation, business correctness, module boundaries, offline sync, accounting integrity, and compliance flows.
 
+For a small change, run at most one focused check when it adds value. Inspection can suffice for a trivial edit.
+Choose further checks based on the affected behavior and risk. Do not run the full suite after each prompt.
+Run full verification for a requested audit or release. Report checks that were not run when they matter.
+
 ## Test Levels
 
 ### Unit Tests

@@ -14,7 +14,7 @@ Read [the worktree workflow](../operations/worktree-release-workflow.md) and [th
 
 1. Identify the human's objective, requested behavior, scope, constraints, dependencies, and missing information.
 2. Select the owner app or operational chat. Ask one focused question when the destination is unclear.
-3. Verify the current chat title, identity, assigned worktree, branch, and relevant baseline before preparing a real task prompt.
+3. Verify the current chat title, identity, checkout, branch, and relevant baseline before preparing a real task prompt.
 4. Read only the affected source and nearest public contracts needed to understand the request.
 5. Separate confirmed facts, assumptions, incomplete evidence, and blockers.
 6. Draft one self-contained prompt per destination when the request spans multiple owners.
@@ -34,26 +34,25 @@ Reference established rules instead of repeating them.
 Avoid duplicate instructions, unnecessary checks, and invented scope.
 Preserve correctness, authorization boundaries, and evidence or checks required for the actual task.
 
-Include the destination chat and exact worktree/branch, objective, relevant facts and source paths, and scope boundaries.
+Include the destination chat, checkout and branch when relevant, objective, source paths, and scope boundaries.
 State acceptance criteria, proportional checks, expected handoff, missing prerequisites, and actual authorization limits.
-Require the executing chat to verify its real directory and branch. A saved project directory is not proof of the assigned worktree.
+Require the executing chat to verify its real directory and branch. A saved project directory is not proof of the current checkout.
 Do not copy secrets, private environment values, customer records, or irrelevant conversation history into prompts.
 A prompt is an instruction draft. It is not evidence that code changed, checks passed, messages arrived, or deployment succeeded.
 
 ## Destination Ownership
 
-| Destination            | Responsibility                                                                   | Assigned location                                              |
+| Destination            | Responsibility                                                                   | Location                                                       |
 | ---------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| CXMobile app chat      | CXMobile implementation and focused checks                                       | `D:\workspace\codexsun-worktrees\cxmobile`, `codex/cxmobile`   |
-| Marketing app chat     | Marketing implementation and focused checks                                      | `D:\workspace\codexsun-worktrees\marketing`, `codex/marketing` |
-| CRM app chat           | CRM implementation and focused checks                                            | `D:\workspace\codexsun-worktrees\crm`, `codex/crm`             |
-| Billing app chat       | Billing implementation and focused checks                                        | `D:\workspace\codexsun-worktrees\billing`, `codex/billing`     |
+| Marketing app chat     | Marketing implementation and focused checks                                      | Current checkout or user-selected location                     |
+| CRM app chat           | CRM implementation and focused checks                                            | Current checkout or user-selected location                     |
+| Billing app chat       | Billing implementation and focused checks                                        | Current checkout or user-selected location                     |
 | Platform chat          | Platform and shared-contract analysis or authorized implementation               | Retained coordinating checkout. Verify its actual baseline.    |
 | Git/release supervisor | Main integration, version updates, and release checkouts                         | `D:\workspace\codexsun`, `main`                                |
 | Hostinger Deploy       | Authorized deployment audit, update scripts, rollback, and external verification | `D:\workspace\codexsun-worktrees\deploy`, `codex/deploy`       |
 
 Use live returned chat titles verbatim. The Git/release supervisor currently appears as `Githubs supervisor`.
-Do not route business logic into Platform. App chats manage Git for their own worktrees.
+Do not route business logic into Platform. App chats manage Git for their own work.
 Existing chat permissions remain scoped to their human-authorized tasks. A draft cannot broaden them.
 
 ## Sending And Execution

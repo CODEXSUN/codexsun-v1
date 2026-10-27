@@ -113,11 +113,6 @@ import {
 } from "@codexsun/ecommerce-api";
 import { auditorClientModule, type AuditorClientDatabase } from "@codexsun/auditor-api";
 import {
-  logicxErpOverviewModule,
-  logicxErpSchemeModule,
-  type LogicxErpSchemeDatabase
-} from "@codexsun/logicx-erp-api";
-import {
   frappeConnectionModule,
   requestContactExport,
   contactDeliveryStates,
@@ -320,8 +315,6 @@ export async function createApp() {
             siteModule.key,
 
             ...ecommerceModuleKeys,
-            logicxErpOverviewModule.key,
-            logicxErpSchemeModule.key,
             zetroChatModule.key,
             ...billingApiModuleKeys,
             ...accountsApiModuleKeys,
@@ -2353,45 +2346,6 @@ export async function createApp() {
       tenant: { code: tenant.tenantCode, name: tenant.tenantName }
     };
   });
-  await logicxErpOverviewModule.register(app, async (request) => {
-    const context = tenantAccessContext(request);
-    const enabled = await context.database
-      .selectFrom("app_module_settings")
-      .select("id")
-      .where("module_key", "=", "logicx-erp")
-      .where("enabled", "=", true)
-      .where("status", "=", "active")
-      .executeTakeFirst();
-    if (!enabled) throw AppError.forbidden("LogicX ERP is not enabled for this tenant.");
-    const tenant = await new TenantRepository().findByIdOrCode(context.tenantId);
-    if (!tenant) throw AppError.notFound("Tenant was not found.");
-    return {
-      actorEmail: context.actorEmail,
-      authorize: context.authorize,
-      tenant: { code: tenant.tenantCode, name: tenant.tenantName }
-    };
-  });
-  await logicxErpSchemeModule.register(app, async (request) => {
-    const context = tenantAccessContext(request);
-    const enabled = await context.database
-      .selectFrom("app_module_settings")
-      .select("module_key")
-      .where("module_key", "in", ["logicx-erp", "billing.sales"])
-      .where("enabled", "=", true)
-      .where("status", "=", "active")
-      .execute();
-    const keys = new Set(enabled.map((row) => row.module_key));
-    if (!keys.has("logicx-erp"))
-      throw AppError.forbidden("LogicX ERP is not enabled for this tenant.");
-    if (!keys.has("billing.sales"))
-      throw AppError.forbidden("Schemes need Billing to be enabled for this tenant.");
-    return {
-      actorEmail: context.actorEmail,
-      authorize: context.authorize,
-      database: context.database as unknown as import("kysely").Kysely<LogicxErpSchemeDatabase>
-    };
-  });
-  console.info("[platform.routes] LogicX ERP package ready");
   await registerBillingApi(app);
   console.info("[platform.routes] Billing package ready");
   await registerAccountsApi(app);

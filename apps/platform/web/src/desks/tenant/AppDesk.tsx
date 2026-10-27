@@ -1,4 +1,3 @@
-import { CodeitOverview, CodeitSettings } from "@codexsun/codeit";
 import { LeadWorkspace, useLeadNavigationCount } from "@codexsun/crm-web";
 import { marketingPageFromPath } from "../../modules/marketing/marketing-navigation";
 import { MarketingHost } from "../../modules/marketing/marketing-host";
@@ -112,10 +111,6 @@ import { usePlatformNotifications } from "../../modules/notifications/index";
 import { newEnquiryFormId, type EnquiryReportFilters } from "@codexsun/crm-web/modules/enquiry";
 import { TaskWorkspace, useTaskNavigationCount } from "@codexsun/crm-web/modules/task";
 import { auditorClientGateway } from "../../modules/auditor/auditor-host";
-import {
-  logicxErpOverviewGateway,
-  logicxErpSchemeGateway
-} from "../../modules/logicx-erp/logicx-erp-host";
 
 function lazyWorkspace<Props>(loader: () => Promise<ComponentType<Props>>) {
   return lazy(async () => ({ default: await loader() }));
@@ -219,16 +214,6 @@ const AuditorOverviewWorkspace = lazyWorkspace(() =>
 );
 const AuditorClientWorkspace = lazyWorkspace(() =>
   import("@codexsun/auditor-web/modules/client").then((module) => module.AuditorClientWorkspace)
-);
-const LogicxErpOverviewWorkspace = lazyWorkspace(() =>
-  import("@codexsun/logicx-erp-web/modules/overview").then(
-    (module) => module.LogicxErpOverviewWorkspace
-  )
-);
-const LogicxErpSchemeWorkspace = lazyWorkspace(() =>
-  import("@codexsun/logicx-erp-web/modules/scheme").then(
-    (module) => module.LogicxErpSchemeWorkspace
-  )
 );
 const CrmOverviewWorkspace = lazyWorkspace(() =>
   import("@codexsun/crm-web/modules/overview").then((module) => module.CrmOverviewWorkspace)
@@ -2009,12 +1994,6 @@ export function AppDesk() {
             {safePage === "ecommerce.categories" ? <ProductCategoriesWorkspace /> : null}
             {safePage === "ecommerce.products" ? <ProductWorkspace /> : null}
             {safePage === "ecommerce.brands-strip" ? <BrandsWorkspace /> : null}
-            {safePage === "logicx-erp.overview" ? (
-              <LogicxErpOverviewWorkspace gateway={logicxErpOverviewGateway} />
-            ) : null}
-            {safePage === "logicx-erp.schemes" ? (
-              <LogicxErpSchemeWorkspace gateway={logicxErpSchemeGateway} />
-            ) : null}
             {safePage === "frappe.overview" ? <FrappeOverviewWorkspace /> : null}
             {safePage === "zetro.chat" ? (
               <ZetroChatWorkspace
@@ -2176,15 +2155,6 @@ export function AppDesk() {
             ) : null}
             {safePage === "crm.status" ? <StatusWorkspace key={safePage} /> : null}
             {safePage === "crm.priority" ? <PriorityWorkspace key={safePage} /> : null}
-            {safePage === "codeit.overview" ? (
-              <CodeitOverview
-                standaloneUrl={codeitStandaloneUrl()}
-                onOpenSettings={() => requestListNavigation("codeit.settings")}
-              />
-            ) : null}
-            {safePage === "codeit.settings" ? (
-              <CodeitSettings standaloneUrl={codeitStandaloneUrl()} />
-            ) : null}
             {safePage === "application.overview" ? (
               <ApplicationOverview
                 companyName={selectedCompany ? companyBrandName(selectedCompany) : "â€”"}
@@ -3346,10 +3316,4 @@ function pageForApp(app: PlatformAppId): AppPage {
 
 function isAppRootPath(pathname: string) {
   return pathname === "/app" || pathname === "/app/";
-}
-
-function codeitStandaloneUrl() {
-  if (__CODEXSUN_CODEIT_WEB_URL__) return __CODEXSUN_CODEIT_WEB_URL__;
-  if (!["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname)) return undefined;
-  return `http://127.0.0.1:${__CODEXSUN_CODEIT_WEB_PORT__}/codeit/overview`;
 }

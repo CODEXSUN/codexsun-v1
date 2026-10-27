@@ -24,9 +24,12 @@ Keep this package free of app-owned fields and business CRUD. Expose intentional
 
 ## Review and evidence
 
+For a small change, use at most one focused check when useful. Inspection can suffice for a trivial edit.
+The commands below are options for full verification. Add checks when the actual risk requires them.
+
 - `npm run typecheck -w @codexsun/framework`
 - `npm run lint -w @codexsun/framework`
 - `npm run build -w @codexsun/framework`
 
-Check affected consumers and relevant tests. Report skipped or blocked checks explicitly.
+Check affected consumers as needed. Report material verification limits and blocked checks.
 Documentation and prompts never replace backend authorization or deployment approval.

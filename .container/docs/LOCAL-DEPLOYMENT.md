@@ -42,7 +42,6 @@ It leaves Frappe, Media, and unrelated containers unchanged.
 bash update-local.sh --plan
 bash update-local.sh --check
 bash update-local.sh
-bash update-local.sh --fix
 ```
 
 `--plan` describes the possible actions without inspecting Docker or changing data.
@@ -52,12 +51,6 @@ It checks source consistency during capture and validates every copied file with
 Later working-tree edits go into the next update. They do not alter the captured build.
 It builds the snapshot with the shared `codexsun-v1/Dockerfile` and Docker cache.
 Changed sources create unique local image tags, then pin their immutable image IDs.
-Before replacing existing containers, the updater applies new CRM permissions to active CRM tenants.
-The permission sync adds missing catalog entries and role grants. It does not run the full tenant seed.
-The tenant reader accepts older comma-separated module lists as well as current JSON lists.
-The sync processes tenants one at a time. A retry revisits tenants completed before a failure.
-Use `--fix` to repeat the CRM permission sync when the images are already current.
-Use `--check --fix` to check configuration without applying the fix.
 If the checksum and running images match a successful release, update checks health and exits without rebuilding or restarting.
 Only workspaces recorded in the root lockfile enter the build. Unregistered drafts remain in the checkout and are reported.
 No clean Git checkout, release version bump, or GitHub push is required.

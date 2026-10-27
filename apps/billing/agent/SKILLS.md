@@ -24,6 +24,10 @@ Keep company and financial-year scope explicit. Draft reservations do not settle
 
 ## Review and evidence
 
+For a small change, inspect the affected code and use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Add checks when the actual risk requires them.
+The commands below are options for full verification, not a checklist for every prompt.
+
 - `node tools/check-module-boundaries.mjs billing`
 - `npm run typecheck -w @codexsun/billing-api`
 - `npm run lint -w @codexsun/billing-api`
@@ -32,7 +36,7 @@ Keep company and financial-year scope explicit. Draft reservations do not settle
 - `npm run lint -w @codexsun/billing-web`
 - `npm run build -w @codexsun/billing-web`
 
-Check affected consumers and relevant tests. Report skipped or blocked checks explicitly.
+Check affected consumers as needed. Report material verification limits and blocked checks.
 Documentation and prompts never replace backend authorization or deployment approval.
 
 ## Data Bridge dashboard refresh, 25 October 2026

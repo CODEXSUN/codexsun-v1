@@ -3,22 +3,7 @@ import { mkdir, mkdtemp, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import test from "node:test";
 import { applications } from "./config.mjs";
-import { recover, syncCrmPermissions } from "./release.mjs";
-
-test("CRM fix uses the selected image without starting dependencies", async () => {
-  const calls = [];
-  const docker = {
-    async logged(args, path) {
-      calls.push({ args, path });
-    }
-  };
-  await syncCrmPermissions(docker, "codexsun-local-cloud", "candidate.json", "logs");
-  assert.equal(calls.length, 1);
-  assert.ok(calls[0].args.includes("--no-deps"));
-  assert.ok(calls[0].args.includes("never"));
-  assert.equal(calls[0].args.at(-1), "crm:permissions:sync");
-  assert.equal(calls[0].path, join("logs", "crm-permissions.log"));
-});
+import { recover } from "./release.mjs";
 
 test("failed local update uses the saved app model without database recovery", async () => {
   const base = resolve(import.meta.dirname, "../../../dist/deployment-local-recovery-tests");

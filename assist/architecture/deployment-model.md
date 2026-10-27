@@ -3,13 +3,13 @@
 ## Supervisor Ownership
 
 The [release supervisor](../agents/release-supervisor.md) owns Git integration and versioned release checkouts.
-App chats remain in their assigned worktrees and supply implementation and verification handoffs.
+App chats supply implementation and verification handoffs from their current checkout.
 Production promotion requires separate explicit approval. Supervisor Git authority does not authorize deployment or npm installation.
 
 ## Release Promotion Policy
 
 Follow [Worktree And Version Release Workflow](../operations/worktree-release-workflow.md).
-Integrate app worktrees into reviewed `main`, then prepare a frozen versioned candidate.
+Review app changes in `main`, then prepare a frozen versioned candidate.
 Build candidate images once, test staging, and promote the approved digests to production after explicit authorization.
 Staging must use separate data, queues, storage, secrets, and integration settings.
 The current VPS updater still builds source. Immutable image promotion requires a separate implementation task.
@@ -122,8 +122,8 @@ For a separately hosted Codeit site, configure `CODEXSUN_CODEIT_WEB_URL` before 
 Its static build output is `dist/devkits/codeit`.
 
 Changing Framework, Platform, Core, or another public foundation contract is intentionally wider work:
-`npm run stack:impact -- <changed files>` lists every product verification gate that must run. A change
-to shared foundation code impacts all product stacks.
+`npm run stack:impact -- <changed files>` lists product verification gates for release planning.
+Choose development checks based on the actual change and its risks.
 
 ### Composed live releases
 

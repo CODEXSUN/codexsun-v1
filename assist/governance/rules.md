@@ -2,20 +2,23 @@
 
 ## Fast Work Default
 
-For a focused bug or UI fix, inspect the changed owner and direct callers. Do not update documentation or run repository-wide checks by default.
+For a focused change, inspect the changed owner and direct callers. Use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Report what was verified and any material limits.
 
-Use the full governance audits and release gates only for a release, new module, refactor, data, permission, tenancy, contract, or cross-module change, or an explicit audit.
+Choose additional checks based on the change and its risks. Do not run repository-wide checks for every prompt.
+Use full governance audits and release gates for an explicit audit or release, or when the actual risk requires them.
+An independent codebase audit or review is a separate task unless the user requests it as part of the work.
 
 This section overrides older, more detailed governance or component checklist wording for normal focused work.
 
 ## App Selection
 
 Before an unspecified app task, ask which app the user wants to work on.
-Current app work is separate: CXMobile, Marketing, CRM, and Billing.
-Use the selected app's assigned worktree and task chat.
-Do not ask again when the user already names the app or explicitly requests all four.
+Current app work is separate: Marketing, CRM, and Billing.
+Use the current checkout for app development unless the user chooses another location.
+Do not ask again when the user already names the app or explicitly requests all three.
 Do not combine app changes, installs, or runtime resources merely because the repository is shared.
-App development tasks may install locked root dependencies in their assigned worktree when needed.
+App development tasks may install locked root dependencies when needed.
 
 ## Prompt Manager Boundaries
 
@@ -29,8 +32,8 @@ No npm installation or deployment is authorized by this role definition.
 ## Supervisor Ownership
 
 Follow [Release Supervisor Role](../agents/release-supervisor.md).
-App chats own implementation and focused checks within their assigned worktrees.
-App chats may stage, commit, pull, and push their own work in their assigned worktree.
+App chats own implementation and focused checks.
+App chats may stage, commit, pull, and push their own work.
 The supervisor owns integration into main, version updates, and release checkouts.
 An app handoff does not authorize integration. The supervisor must identify the authorized batch and verify its exact diff.
 Deployment and live data operations require separate authorization.
@@ -38,7 +41,7 @@ Deployment and live data operations require separate authorization.
 ## Worktree And Release Rules
 
 Follow [the shared workflow](../operations/worktree-release-workflow.md) for app integration and versioned cloud releases.
-Use authorized external app worktrees. Integrate reviewed work into `main` before cutting a frozen release candidate.
+Use the current checkout unless the user chooses another location. Review main before cutting a frozen release candidate.
 Test staging before an explicitly approved production promotion. Promote the same verified image digests.
 Keep reserved version folders empty until candidate preparation is authorized.
 Preserve unfinished work and separate test data, queues, storage, credentials, and ports.
@@ -154,7 +157,7 @@ The following are boundary failures:
 
 #### Required completion audit
 
-Use this full audit only when introducing or refactoring a module, changing ownership, data, permissions, tenancy, or public contracts, preparing a release, or completing an explicit audit. For a focused fix, inspect the affected owner and direct callers, then run proportionate verification.
+Use this full audit for an explicit audit or release, or when the actual change requires it. For other work, inspect affected owners and use proportionate verification.
 
 Before a module is declared final, the agent must:
 
@@ -286,5 +289,5 @@ Add plans, tasks, and agent guidance only when they help the work. Preserve usef
 Update documentation when contracts, ownership, operations, or documented behavior change.
 Documentation does not grant runtime permissions. Zetro's runtime `apps/zetro/agent/SKILLS.md` remains required.
 Keep its loader, build collector, backend permissions, and tests in agreement.
-Run component documentation checks for documentation changes and repository-wide verification.
+Use a focused documentation check when it adds value. Run repository-wide documentation checks for full verification.
 The root `npm run check` remains the full CI and release gate.

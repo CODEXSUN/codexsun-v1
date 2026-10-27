@@ -3,7 +3,6 @@
 Only the custom apps change. Framework code and permission checks stay intact.
 """
 
-import ast
 import json
 from pathlib import Path
 
@@ -11,19 +10,6 @@ from pathlib import Path
 def apply(bench):
     bench = Path(bench)
     framework = bench / "apps/frappe/frappe"
-    functions = {node.name for node in ast.parse((framework / "utils/install.py").read_text()).body
-                 if isinstance(node, ast.FunctionDef)}
-    if "auto_generate_icons_and_sidebar" not in functions:
-        if "create_desktop_icons_for_app" not in functions:
-            raise ValueError("This Frappe build has no supported desktop-icon installation helper.")
-        path = bench / "apps/logicx_app/logicx_app/install.py"
-        text = path.read_text()
-        old = "from frappe.utils.install import auto_generate_icons_and_sidebar"
-        new = "from frappe.utils.install import create_desktop_icons_for_app as auto_generate_icons_and_sidebar"
-        if old not in text and new not in text:
-            raise ValueError("LogicX install hook changed. Review its compatibility before installation.")
-        path.write_text(text.replace(old, new))
-        print("LogicX: use the current Frappe desktop-icon helper.")
     legacy = framework / "desk/doctype/workspace_sidebar/workspace_sidebar.py"
     if "def auto_generate_sidebar_from_module(" not in legacy.read_text():
         convert_sidebars(bench)

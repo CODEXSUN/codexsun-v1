@@ -43,15 +43,6 @@ const apps = {
     command: process.execPath,
     args: [nodePackageBin("vite", "bin/vite.js"), "--strictPort"]
   },
-  "codeit-web": {
-    displayName: "Codeit web",
-    cwd: "devkits/codeit",
-    envKey: "CODEXSUN_CODEIT_WEB_PORT",
-    defaultPort: 7070,
-    host: "127.0.0.1",
-    command: process.execPath,
-    args: [nodePackageBin("vite", "bin/vite.js"), "--strictPort"]
-  },
   "uiux-web": {
     displayName: "uiux web",
     cwd: "devkits/uiux",

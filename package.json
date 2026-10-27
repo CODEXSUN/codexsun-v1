@@ -1,6 +1,6 @@
 {
   "name": "codexsun",
-  "version": "1.1.80",
+  "version": "1.1.81",
   "private": true,
   "packageManager": "npm@12.2.0",
   "description": "CODEXSUN",
@@ -169,14 +169,7 @@
     "test:e2e:tconnect-journey": "node --import tsx tools/e2e/tconnect-account-browser.e2e.mjs",
     "test:e2e:tconnect-negotiation": "node --import tsx tools/e2e/tconnect-negotiation.e2e.ts",
     "test:e2e:tconnect-buyers": "node --import tsx tools/e2e/tconnect-buyer-access.e2e.ts",
-    "test:e2e:tconnect": "node --import tsx tools/e2e/tconnect-member-access.e2e.ts",
-    "dev:codeit": "node tools/preflight.mjs codeit-web",
-    "build:codeit": "npm run build -w @codexsun/codeit-api && npm run build -w @codexsun/codeit",
-    "start:codeit": "node dist/devkits/codeit/api/server.js",
-    "test:codeit": "node --test devkits/codeit/api/test/*.test.mjs",
-    "test:e2e:codeit": "node --test devkits/codeit/api/test/e2e-matrix.test.mjs",
-    "test:e2e:codeit:browser": "node tools/e2e/codeit-browser.e2e.mjs",
-    "test:packaging:codeit": "node --test tools/codeit-packaging-smoke.test.mjs"
+    "test:e2e:tconnect": "node --import tsx tools/e2e/tconnect-member-access.e2e.ts"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

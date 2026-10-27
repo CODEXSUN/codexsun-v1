@@ -1,214 +1,70 @@
-import { useEffect, useState } from "react";
-import {
-  Code2Icon,
-  LayersIcon,
-  LayoutDashboardIcon,
-  MessageSquareCodeIcon,
-  PuzzleIcon,
-  Settings2Icon,
-  SparklesIcon
-} from "lucide-react";
-import {
-  AppLayout,
-  AppHeader,
-  SideMenu,
-  StatusBar,
-  TopMenu,
-  WorkspaceCanvas,
-  mainLayoutTechnicalNames
-} from "@codexsun/ui/layouts/main-layouts";
-import { CodeitOverview, CodeitSettings } from "./modules/overview";
-import { ConversationWorkspace } from "./modules/conversation";
-import { PluginPanel } from "./modules/plugin";
-import { OrchestrationWorkspace } from "./modules/orchestration";
-import { PersonalizationPanel } from "./modules/personalization";
-import { ProviderWorkspace } from "./modules/provider";
+import { useEffect, useState, type CSSProperties } from "react";
+import { Code2Icon, LayoutDashboardIcon, PanelLeftIcon, Settings2Icon } from "lucide-react";
+import { AppSidebar } from "@codexsun/ui/blocks/menu/sidemenu/app-sidebar";
+import { SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, useSidebar } from "@codexsun/ui/components/sidebar";
+import { AppLayout, AppHeader, StatusBar, TopMenu, WorkspaceCanvas } from "@codexsun/ui/layouts/main-layouts";
+import { Card, CardContent, CardHeader, CardTitle } from "@codexsun/ui/components/card";
+
+type Page = "overview" | "workspace" | "settings";
+const user = { name: "Local developer", email: "Standalone workspace", fallback: "CI" };
 
 export function CodeitApp() {
-  const [page, setPage] = useState<
-    "chat" | "overview" | "supervisor" | "personalization" | "settings" | "plugins"
-  >(pageFromLocation);
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
+  return <SidebarProvider className="h-dvh min-h-0" style={{ "--sidebar-width": "19rem", "--sidebar-width-icon": "2.5rem" } as CSSProperties}><CodeitShell /></SidebarProvider>;
+}
+
+function CodeitShell() {
+  const [page, setPage] = useState<Page>(pageFromLocation);
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const title =
-    page === "settings"
-      ? "Settings"
-      : page === "plugins"
-        ? "Plugins"
-        : page === "supervisor"
-          ? "Supervisor"
-          : page === "personalization"
-            ? "Personalization"
-            : page === "chat"
-              ? "Workspace"
-              : "Overview";
-  const user = { name: "Local developer", email: "Standalone workspace", fallback: "CI" };
+  const { toggleSidebar, isMobile, setOpenMobile } = useSidebar();
+  const title = page === "overview" ? "Overview" : page === "workspace" ? "Workspace" : "Settings";
 
   useEffect(() => {
-    const onPopState = () => setPage(pageFromLocation());
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
+    const sync = () => setPage(pageFromLocation());
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
   }, []);
 
-  function selectPage(
-    next: "chat" | "overview" | "supervisor" | "personalization" | "settings" | "plugins"
-  ) {
+  function selectPage(next: Page) {
     window.history.pushState(null, "", `/codeit/${next}`);
     setPage(next);
     setSearchOpen(false);
     setSearch("");
-    if (window.innerWidth < 768) setSidebarOpen(false);
+    if (isMobile) setOpenMobile(false);
   }
 
-  const navigation = [
-    {
-      label: "Codeit",
-      icon: Code2Icon,
-      items: [
-        { label: "Workspace", icon: MessageSquareCodeIcon, onSelect: () => selectPage("chat") },
-        { label: "Overview", icon: LayoutDashboardIcon, onSelect: () => selectPage("overview") },
-        { label: "Supervisor", icon: LayersIcon, onSelect: () => selectPage("supervisor") },
-        {
-          label: "Personalization",
-          icon: SparklesIcon,
-          onSelect: () => selectPage("personalization")
-        },
-        { label: "Plugins", icon: PuzzleIcon, onSelect: () => selectPage("plugins") },
-        { label: "Settings", icon: Settings2Icon, onSelect: () => selectPage("settings") }
-      ]
-    }
+  const items = [
+    { title: "Overview", icon: LayoutDashboardIcon, isActive: page === "overview", onSelect: () => selectPage("overview") },
+    { title: "Workspace", icon: PanelLeftIcon, isActive: page === "workspace", onSelect: () => selectPage("workspace") }
   ];
+  const searchItems = [...items.map((item) => ({ label: item.title, icon: item.icon, onSelect: item.onSelect })), { label: "Settings", icon: Settings2Icon, onSelect: () => selectPage("settings") }, { label: "Toggle sidebar", onSelect: toggleSidebar }];
 
   return (
-    <AppLayout className="h-dvh [&_button]:cursor-pointer [&_button:disabled]:cursor-not-allowed">
-      <div data-technical-name={mainLayoutTechnicalNames.topMenu}>
-        <TopMenu
-          applicationName="Codeit"
-          appItems={[
-            {
-              title: "Codeit",
-              description: "Standalone development workspace",
-              icon: Code2Icon,
-              active: true,
-              onSelect: () => selectPage("overview")
-            }
-          ]}
-          notifications={[]}
-          user={user}
-          onProfile={() => selectPage("settings")}
-          search={search}
-          searchOpen={searchOpen}
-          searchPlaceholder="Search Codeit pages..."
-          onSearchChange={setSearch}
-          onOpenSearch={() => setSearchOpen(true)}
-          onCloseSearch={() => {
-            setSearchOpen(false);
-            setSearch("");
-          }}
-          onToggleSidebar={() => setSidebarOpen((open) => !open)}
-          searchItems={navigation[0]!.items.map((item) => ({
-            label: item.label,
-            icon: item.icon,
-            onSelect: item.onSelect
-          }))}
-        />
+    <AppLayout className="relative h-dvh w-full">
+      <div className="tenant-main-menu shrink-0 [&>header]:h-[50px] [&>header>div:last-child]:gap-3">
+        <TopMenu applicationName="Codeit" companyBrand={{ name: "codexsun" }} appItems={[{ title: "Codeit", description: "Standalone development workspace", icon: Code2Icon, active: true, onSelect: () => selectPage("overview") }]}
+          notifications={[]} user={user} search={search} searchOpen={searchOpen} searchPlaceholder="Search applications and commands"
+          onSearchChange={setSearch} onOpenSearch={() => setSearchOpen(true)} onCloseSearch={() => { setSearchOpen(false); setSearch(""); }}
+          onToggleSidebar={toggleSidebar} searchItems={searchItems} />
       </div>
-      <div className="relative flex min-h-0 flex-1">
-        {sidebarOpen ? (
-          <div
-            data-technical-name={mainLayoutTechnicalNames.sideBar}
-            className="absolute inset-y-0 left-0 z-20 flex bg-background shadow-lg md:static md:shadow-none"
-          >
-            <SideMenu
-              navigation={navigation}
-              onSelect={(label) =>
-                selectPage(
-                  label === "Settings"
-                    ? "settings"
-                    : label === "Plugins"
-                      ? "plugins"
-                      : label === "Supervisor"
-                        ? "supervisor"
-                        : label === "Personalization"
-                          ? "personalization"
-                          : label === "Workspace"
-                            ? "chat"
-                            : "overview"
-                )
-              }
-              search=""
-              selected={title}
-              workspaceTitle="Overview"
-            />
-          </div>
-        ) : null}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div data-technical-name={mainLayoutTechnicalNames.appHeader}>
-            <AppHeader
-              breadcrumbs={[{ label: title }]}
-              homeHref="/codeit/overview"
-              name={user.name}
-            />
-          </div>
-          <div
-            className="min-h-0 flex-1 overflow-y-auto"
-            data-technical-name={mainLayoutTechnicalNames.workspace}
-          >
-            {page === "chat" ? (
-              <ConversationWorkspace />
-            ) : page === "plugins" ? (
-              <WorkspaceCanvas>
-                <div className="mx-auto w-full max-w-7xl p-4 sm:p-6">
-                  <PluginPanel />
-                </div>
-              </WorkspaceCanvas>
-            ) : page === "supervisor" ? (
-              <WorkspaceCanvas>
-                <div className="mx-auto w-full max-w-7xl p-4 sm:p-6">
-                  <OrchestrationWorkspace />
-                </div>
-              </WorkspaceCanvas>
-            ) : page === "personalization" ? (
-              <WorkspaceCanvas>
-                <div className="mx-auto w-full max-w-7xl p-4 sm:p-6">
-                  <PersonalizationPanel />
-                </div>
-              </WorkspaceCanvas>
-            ) : (
-              <WorkspaceCanvas>
-                <div className="mx-auto w-full max-w-7xl p-4 sm:p-6">
-                  {page === "settings" ? (
-                    <div className="space-y-6">
-                      <CodeitSettings standaloneUrl={window.location.origin} />
-                      <ProviderWorkspace />
-                    </div>
-                  ) : (
-                    <CodeitOverview onOpenSettings={() => selectPage("settings")} />
-                  )}
-                </div>
-              </WorkspaceCanvas>
-            )}
-          </div>
-        </div>
+      <div className="relative flex min-h-0 flex-1 pt-0.5">
+        <AppSidebar className="md:p-1 md:pt-0.5 md:pb-0.5" items={items} positioning="container" user={user} variant="inset"
+          footerContent={<><div className="px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">v 1.1.80</div><SidebarMenu><SidebarMenuItem><SidebarMenuButton asChild isActive={page === "settings"} tooltip="Settings"><button type="button" onClick={() => selectPage("settings")}><Settings2Icon /><span className="group-data-[collapsible=icon]:hidden">Settings</span></button></SidebarMenuButton></SidebarMenuItem></SidebarMenu></>} />
+        <SidebarInset className="min-h-0 min-w-0 overflow-hidden md:peer-data-[variant=inset]:m-1 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:mt-0 md:peer-data-[variant=inset]:mb-0.5">
+          <AppHeader breadcrumbs={[{ label: title }]} homeHref="/codeit/overview" />
+          <div className="workspace-scroll min-h-0 flex-1 overflow-y-auto"><WorkspaceCanvas><main className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6">
+            <div className="space-y-2"><p className="text-sm font-medium text-muted-foreground">Developer kits</p><h1 className="text-2xl font-semibold">{title}</h1><p className="text-sm text-muted-foreground">{page === "overview" ? "Your standalone development workspace." : page === "workspace" ? "A place for your development work." : "Codeit settings."}</p></div>
+            {page === "overview" ? <div className="grid gap-4 md:grid-cols-2"><Card><CardHeader><CardTitle className="text-base">Codeit workspace</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">Open the workspace from the side menu to get started.</CardContent></Card><Card><CardHeader><CardTitle className="text-base">Standalone app</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">Codeit runs separately from CRM and uses the shared CODEXSUN interface.</CardContent></Card></div> : <Card><CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">{page === "workspace" ? "No development tools are connected yet." : "No settings are available yet."}</CardContent></Card>}
+          </main></WorkspaceCanvas></div>
+        </SidebarInset>
       </div>
-      <div data-technical-name={mainLayoutTechnicalNames.statusBar}>
-        <StatusBar
-          status={page === "chat" ? "Local runtime · Active" : "Local shell"}
-          workspace={title}
-        />
-      </div>
+      <StatusBar status="Standalone" workspace={title} />
     </AppLayout>
   );
 }
 
-function pageFromLocation():
-  "chat" | "overview" | "supervisor" | "personalization" | "settings" | "plugins" {
-  if (typeof window === "undefined") return "chat";
+function pageFromLocation(): Page {
+  if (window.location.pathname === "/codeit/workspace") return "workspace";
   if (window.location.pathname === "/codeit/settings") return "settings";
-  if (window.location.pathname === "/codeit/plugins") return "plugins";
-  if (window.location.pathname === "/codeit/supervisor") return "supervisor";
-  if (window.location.pathname === "/codeit/personalization") return "personalization";
-  if (window.location.pathname === "/codeit/overview") return "overview";
-  return "chat";
+  return "overview";
 }

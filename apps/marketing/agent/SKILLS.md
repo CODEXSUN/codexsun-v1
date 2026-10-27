@@ -102,12 +102,11 @@ Do not use scraping, login bots, cookie capture, or arbitrary mass direct messag
 
 ## Verification and reporting
 
-For documentation, run root component-document checks and formatting checks.
-For implementation, run focused lint, API/Web typecheck, boundaries, builds, dependencies, and relevant database tests.
-Run browser acceptance and authorized provider pilots separately from mocked connector tests.
-Always test two tenants and forged context, swapped identifiers, OAuth confusion, webhook replay, and queue restoration.
-Test consent and suppression races, revoked grants, tenant suspension, and edits after approval.
-Record exact evidence in TASK and keep unfinished tasks unchecked.
+For a small change, inspect the affected code and use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Add checks when the change and its risks require them.
+For affected tenant, authorization, OAuth, webhook, queue, consent, or approval behavior, test relevant negative paths.
+Run broad audits, full builds, browser acceptance, and provider pilots when requested or required by the change.
+Record evidence for the work performed and report material verification limits.
 Do not claim production, browser, persistence, provider, or delivery verification from compilation or documentation checks.
 Do not bump versions, publish, send campaigns, connect client accounts, or deploy as part of a documentation-only task.
 

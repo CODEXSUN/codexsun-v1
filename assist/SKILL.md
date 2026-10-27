@@ -22,7 +22,7 @@ Treat the repository's current authoritative instructions and the user's request
 
 ## Audit before editing
 
-Use this full audit only for new modules, refactors, ownership changes, permission or tenant changes, releases, or explicit audits. For focused fixes, inspect the changed owner and direct callers.
+Use this full audit for an explicit audit or release, or when the actual change requires it. For focused changes, inspect the affected owner and direct callers.
 
 Inventory:
 
@@ -89,7 +89,7 @@ Keep behavior concrete:
 
 ## Validate before completion
 
-For a focused change, run the smallest relevant test, lint, typecheck, or browser check. Run the following full set only for a release, ownership or data change, cross-module work, or an explicit audit:
+For a small change, use at most one focused check when useful. Inspection can suffice for a trivial edit. Add checks when the actual risk requires them. Use the following full set for full verification:
 
 1. Prettier on changed files.
 2. Focused ESLint.
@@ -100,7 +100,7 @@ For a focused change, run the smallest relevant test, lint, typecheck, or browse
 7. `npm run dependencies:check`.
 8. Database/E2E or browser verification when configured and required.
 
-Repeat the full ownership scan only after a full audit. Compare role-file hashes when copied files are suspected. Confirm layout only after dependency, package, workspace, or build changes.
+Repeat the full ownership scan only after a full audit. Compare role-file hashes when copied files are suspected. Check dependency layout when the change can affect it.
 
 Never claim a check passed unless it ran successfully. Report unavailable database/E2E checks and existing-database migration requirements explicitly.
 

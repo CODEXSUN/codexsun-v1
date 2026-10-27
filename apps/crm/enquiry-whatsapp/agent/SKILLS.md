@@ -17,7 +17,8 @@ introduce provider credentials, delivery claims, or external message sending in
 this leaf without an explicitly reviewed contract. Test permission denials and
 tenant isolation, not only successful persistence.
 
+For a small change, inspect the affected code and use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Add checks when the actual risk requires them.
 Run checks from the repository root. The focused database test is
-`npm run test:e2e:crm-whatsapp`; also run CRM boundaries, API/web typechecks,
-lint, and production builds. Report local database, browser, live tenant, and
-mobile evidence separately.
+`npm run test:e2e:crm-whatsapp`. Use broader CRM checks for full verification.
+Report local database, browser, live tenant, and mobile evidence separately.

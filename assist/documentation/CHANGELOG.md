@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.80
+Current version: 1.1.81
 
-Release tag: v-1.1.80
+Release tag: v-1.1.81
 
-Changelog label: v 1.1.80
+Changelog label: v 1.1.81
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,22 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.81
+
+### [v 1.1.81] 2026-10-27 11:58 am - Update development policies and repository cleanup
+
+#### Database Changes
+
+- Database update: Yes (manual).
+- Remove retired LogicX ERP tenant provisioning and seed calls. Preserve existing scheme tables and block unsafe tenant rollback.
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.81.
+- Apply fast-work verification guidance across repository, app, devkit, and shared package agent policies.
+- Remove retired CXMobile, LogicX ERP, and CodeIT integration references and update Frappe installation to use LogicX Biz.
+- Include the current local deployment, application, and tooling changes in this source baseline.
 
 ## v-1.1.80
 

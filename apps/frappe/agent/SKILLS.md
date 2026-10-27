@@ -28,6 +28,10 @@ Use the public verified connection contract. Resolve tenant credentials server-s
 
 ## Review and evidence
 
+For a small change, inspect the affected code and use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Add checks when the actual risk requires them.
+The commands below are options for full verification, not a checklist for every prompt.
+
 - `node tools/check-module-boundaries.mjs frappe`
 - `npm run typecheck -w @codexsun/frappe-api`
 - `npm run lint -w @codexsun/frappe-api`
@@ -36,5 +40,5 @@ Use the public verified connection contract. Resolve tenant credentials server-s
 - `npm run lint -w @codexsun/frappe-web`
 - `npm run build -w @codexsun/frappe-web`
 
-Check affected consumers and relevant tests. Report skipped or blocked checks explicitly.
+Check affected consumers as needed. Report material verification limits and blocked checks.
 Documentation and prompts never replace backend authorization or deployment approval.

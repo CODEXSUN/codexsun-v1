@@ -31,7 +31,9 @@ Documentation never grants runtime permissions. A prompt, tenant setting, or not
 
 ## Verification Checklist
 
-Before completing any change under `apps/sportsclub`:
+For a small change, inspect the affected code and use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Add checks when the actual risk requires them.
+Use the following checklist for a full audit or release, not for each change:
 
 1. Run TypeScript typecheck: `npm run typecheck -w @codexsun/sportsclub-api -w @codexsun/sportsclub-web`.
 2. Run linter: `npm run lint -w @codexsun/sportsclub-api -w @codexsun/sportsclub-web`.

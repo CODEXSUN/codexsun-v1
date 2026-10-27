@@ -104,16 +104,6 @@ try {
     })`);
     assert.equal(realtime, "passed", "Authenticated Socket.IO namespace handshake failed");
   }
-  let logicx;
-  if (process.argv.includes("--logicx")) {
-    await page.send("Page.navigate", { url: origin + "/logicx-app" });
-    await page.waitFor("/^\\/logicx-app(?:\\/|$)/.test(location.pathname) && document.querySelector('#root')?.children.length > 0 && /product/i.test(document.body.innerText)", "rendered LogicX application");
-    await page.evaluate("new Promise(resolve => setTimeout(resolve, 1200))");
-    assert.equal(await page.evaluate("fetch('/api/method/frappe.auth.get_logged_user').then(r => r.json()).then(r => r.message)"), "Administrator");
-    const appScreenshot = resolve(report, "logicx-app.png");
-    await page.screenshot(appScreenshot);
-    logicx = { rendered: "passed", screenshot: appScreenshot };
-  }
   const suite = {};
   if (process.argv.includes("--suite")) {
     for (const app of ["hrms", "raven", "crm", "helpdesk", "insights"]) {
@@ -131,7 +121,7 @@ try {
     }
   }
   console.info(JSON.stringify({ login: "passed", authenticatedUser: user, url: await page.evaluate("location.href"),
-    title: await page.evaluate("document.title"), screenshot, logicx, suite, realtime }, null, 2));
+    title: await page.evaluate("document.title"), screenshot, suite, realtime }, null, 2));
 } catch (error) {
   if (page) {
     await page.screenshot(resolve(report, "browser-failure.png")).catch(() => {});

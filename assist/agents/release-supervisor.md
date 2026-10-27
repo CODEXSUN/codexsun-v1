@@ -5,7 +5,7 @@
 The human assigns release supervision to the `CODEXSUN release supervisor` chat.
 Current supervisor chat: `01a1742f-cc59-7b21-9699-3ea4ca4cb185`.
 Only the human can reassign this role or grant an exception.
-App chats manage their own app worktree. The supervisor owns main integration and releases.
+The user chooses the app development location. The supervisor owns releases.
 
 Use the shared canonical policy on this workstation: `D:\workspace\codexsun\assist\agents\release-supervisor.md`.
 On another workstation, use the reviewed repository copy.
@@ -20,31 +20,24 @@ Prompt Manager does not commit, push, pull, merge, or create release checkouts w
 
 ## App Chat Responsibilities
 
-- Work only in the app's assigned worktree. Verify the actual directory and branch before editing.
+- Verify the actual directory and branch before editing.
 - Read-only Git status, diff, and log commands remain allowed.
 - Ask which app to use when the user has not identified one.
-- Implement the requested app change and run focused checks with available tooling.
+- Implement the requested app change. Use a focused check when it adds value.
 - Preserve unrelated changes and keep business code within its owner module.
-- Stage, commit, pull, and push only the app work in the assigned worktree. Preserve unrelated changes.
-- Do not edit main, change package versions, publish tags, or create another worktree.
+- Stage, commit, pull, and push only the app work. Preserve unrelated changes.
+- Do not change package versions or publish tags without authorization.
 - Do not use Git helpers that include unrelated changes or modify release versions.
-- Install locked root dependencies in the assigned worktree when needed. Do not borrow another worktree's dependency tree.
+- Install locked root dependencies when needed. Do not borrow another worktree's dependency tree.
 - Report missing tooling or unverified checks. Do not describe an unrun check as passed.
 - Provide the handoff in the app chat for the supervisor to read.
 - Do not message another chat without direct human authorization.
 
-Current assignments:
-
-| App       | Worktree                                    | Local branch      |
-| --------- | ------------------------------------------- | ----------------- |
-| CXMobile  | `D:\workspace\codexsun-worktrees\cxmobile`  | `codex/cxmobile`  |
-| Marketing | `D:\workspace\codexsun-worktrees\marketing` | `codex/marketing` |
-| CRM       | `D:\workspace\codexsun-worktrees\crm`       | `codex/crm`       |
-| Billing   | `D:\workspace\codexsun-worktrees\billing`   | `codex/billing`   |
+App development can use the current checkout or a worktree selected for the task.
 
 ## App Handoff
 
-Include the app, worktree, branch, changed files, intended behavior, and remaining work.
+Include the app, checkout, branch, changed files, intended behavior, and remaining work.
 List actual check commands, results, missing prerequisites, and acceptance limits.
 Identify migrations, data compatibility, shared-contract changes, and unrelated dirty files.
 An app handoff is evidence for review. It does not independently authorize integration or deployment.
@@ -52,7 +45,7 @@ An app handoff is evidence for review. It does not independently authorize integ
 ## Supervisor Responsibilities
 
 1. Identify the human-authorized app batch or target release version.
-2. Inspect the exact worktree, branch, diff, upstream state, and app handoff.
+2. Inspect the exact checkout, branch, diff, upstream state, and app handoff.
 3. Coordinate a pause in the affected app's edits before staging or merging its files.
 4. Review relevant checks and preserve unfinished changes, untracked files, and existing stashes.
 5. Review the scoped app commits and preserve any unfinished work.
@@ -72,7 +65,7 @@ Return candidate fixes to main. Do not merge all newer main work into a frozen c
 
 ## Release Boundary
 
-Use app worktree -> reviewed main -> frozen candidate -> staging -> explicit production approval.
+Use reviewed main -> frozen candidate -> staging -> explicit production approval.
 Use hyphenated version folder names and dotted package and candidate branch versions.
 A candidate folder does not authorize an automatic version bump or checkout.
 The target promotion uses the same approved image digests tested on staging.

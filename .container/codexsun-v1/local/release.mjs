@@ -24,25 +24,16 @@ export async function release(docker, root, config, mode, base, options = {}) {
     if (previous) {
       const candidateFile = join(directory, "candidate.private.json");
       await privateWrite(candidateFile, initial.model);
-      if (options.fix) {
-        console.log("Syncing CRM permissions for active existing tenants.");
-        await syncCrmPermissions(docker, config.project, candidateFile, directory);
-      }
       await verifyRuntime(docker, initial.model);
       await privateWrite(join(directory, "result.json"), {
         success: true,
         noChanges: true,
-        crmPermissionsSynchronized: Boolean(options.fix),
         sourceChecksum: checksum,
         reusedRelease: previous,
         databasePreserved: initial.database.Id,
         redisPreserved: initial.redis.Id
       });
-      console.log(
-        options.fix
-          ? "CRM permission sync passed. No rebuild or restart was needed."
-          : "No new source changes. All five running app images and health checks are current. No build or restart was needed."
-      );
+      console.log("No new source changes. All five running app images and health checks are current. No build or restart was needed.");
       return;
     }
   }
@@ -107,10 +98,6 @@ export async function release(docker, root, config, mode, base, options = {}) {
       bindings,
       "Local proxy configuration changed before replacement."
     );
-    if (mode === "update") {
-      console.log("Syncing CRM permissions for active existing tenants.");
-      await syncCrmPermissions(docker, config.project, candidateFile, directory);
-    }
     replaced = true;
     await replaceApplications(
       docker,
@@ -127,7 +114,6 @@ export async function release(docker, root, config, mode, base, options = {}) {
       success: true,
       sourceChecksum: fingerprint,
       workingTreeChangedDuringBuild,
-      crmPermissionsSynchronized: mode === "update",
       databasePreserved: current.database.Id,
       redisPreserved: current.redis.Id
     });
@@ -136,31 +122,6 @@ export async function release(docker, root, config, mode, base, options = {}) {
     await recover(docker, config, mode, replaced, candidate, previousFile, stopped, directory);
     throw error;
   }
-}
-
-export async function syncCrmPermissions(docker, project, file, directory) {
-  await docker.logged(
-    [
-      "compose",
-      "-p",
-      project,
-      "-f",
-      file,
-      "run",
-      "--rm",
-      "--no-deps",
-      "--pull",
-      "never",
-      "--entrypoint",
-      "node",
-      "codexsun-api",
-      "--import",
-      "./tools/register-production-package-resolution.mjs",
-      "dist/apps/platform/api/database/db-cli.js",
-      "crm:permissions:sync"
-    ],
-    join(directory, "crm-permissions.log")
-  );
 }
 
 export async function replaceApplications(docker, project, file, log) {

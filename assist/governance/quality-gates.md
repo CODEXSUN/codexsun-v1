@@ -6,6 +6,13 @@ Quality gates define when work is ready to move forward.
 
 They help CODEIT, developers, and reviewers decide whether a change is safe enough for the next stage.
 
+## Fast Development
+
+For a small change, inspect the affected code and use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Report what was checked and any material limitation.
+Use broader checks when the change's actual risk requires them or the user requests them.
+Apply the full review and release gates when preparing a review or release, not after each prompt.
+
 ## Planning Gate
 
 Before build starts, confirm:

@@ -24,6 +24,10 @@ Preserve revision checks and actor-scoped idempotency. Device presence and chat 
 
 ## Review and evidence
 
+For a small change, inspect the affected code and use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Add checks when the actual risk requires them.
+The commands below are options for full verification, not a checklist for every prompt.
+
 - `node tools/check-module-boundaries.mjs codexsun`
 - `npm run typecheck -w @codexsun/codexsun-api`
 - `npm run lint -w @codexsun/codexsun-api`
@@ -32,5 +36,5 @@ Preserve revision checks and actor-scoped idempotency. Device presence and chat 
 - `npm run lint -w @codexsun/codexsun-web`
 - `npm run build -w @codexsun/codexsun-web`
 
-Check affected consumers and relevant tests. Report skipped or blocked checks explicitly.
+Check affected consumers as needed. Report material verification limits and blocked checks.
 Documentation and prompts never replace backend authorization or deployment approval.

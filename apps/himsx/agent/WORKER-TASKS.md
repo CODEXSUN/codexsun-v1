@@ -33,7 +33,7 @@ H-11 scheduling starts after H-04 and D11, with disjoint leases.
 H-14 Platform administration starts after H-01 and D14.
 H-15 ABHA starts when D12 and H-07 are ready.
 Finish remaining H-03 masters before final acceptance.
-Every arrow includes independent review, repair, recheck, and ledger updates.
+For requested acceptance or risk that requires it, use independent review, repair, recheck, and ledger updates.
 ```
 
 ## Dispatch contract

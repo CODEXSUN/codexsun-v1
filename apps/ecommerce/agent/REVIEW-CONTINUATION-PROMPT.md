@@ -68,11 +68,13 @@ Persist business transitions and outbox intent atomically. Re-resolve tenant aut
 Local shopping and checkout must not depend on Frappe availability. Do not enable remote sync before the local acceptance gate.
 
 TEST, REVIEW, REPAIR, INTEGRATE
-For every task, verify prerequisites, implement a vertical slice, run focused tests, obtain independent review, repair findings, integrate, rerun affected checks and update evidence.
+For a small task, inspect the affected code and use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Add checks when the actual risk requires them.
+Use independent review and the full acceptance checks below for a requested audit or acceptance gate.
 Use meaningful unit and contract tests plus disposable MariaDB E2E for persistence, permissions, tenancy and money/quantity behavior. Tests must fail for the defect they claim to detect.
-Run frontend/backend typecheck, lint, formatting, module boundaries, relevant production builds, dependencies:check, component-doc checks and applicable Docs checks.
+For full acceptance, run applicable typecheck, lint, formatting, boundaries, builds, dependency checks, and documentation checks.
 Verify fresh and existing-schema migrations separately, including repeat and interrupted runs, constraints, data preservation and rollback conditions.
-Complete the E2E-PLAN matrix: two tenants, two companies, two customers and two vendors; forged headers, revoked access, ID substitution, exact counts, real file isolation, checkout retries, last-unit race, callbacks, queue restarts, partial shipments, returns/refunds and financial reconciliation.
+For full acceptance, complete the E2E-PLAN matrix: two tenants, two companies, two customers and two vendors; forged headers, revoked access, ID substitution, exact counts, real file isolation, checkout retries, last-unit race, callbacks, queue restarts, partial shipments, returns/refunds and financial reconciliation.
 Use live browser evidence for staff and public flows at desktop/tablet/mobile sizes. Generated screenshots and empty pages do not establish visual acceptance.
 Distinguish mocks, disposable DB tests, browser checks, provider sandbox, live providers and production. Never claim a check passed unless it actually ran successfully against the integrated source.
 Never weaken permissions, safety guards, assertions or test scope to obtain green results. Report existing failures and repair owned causes.

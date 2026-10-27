@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, type ReactEventHandler, type ReactNode } from "react";
 import { CommandIcon, MenuIcon, SearchIcon } from "lucide-react";
 import { Button } from "../../components/button";
 import { TopMenuAppLauncher } from "./top-menu-app-launcher";
@@ -90,11 +90,13 @@ export function TopMenu({
                   alt={`${companyBrand.name} logo`}
                   className="size-6 shrink-0 object-contain dark:hidden"
                   src={companyBrand.logoSrc ?? "/logo/logo.svg"}
+                  onError={fallbackLogo("/logo/logo.svg")}
                 />
                 <img
                   alt={`${companyBrand.name} logo`}
                   className="hidden size-6 shrink-0 object-contain dark:block"
                   src={companyBrand.logoDarkSrc ?? companyBrand.logoSrc ?? "/logo/logo-dark.svg"}
+                  onError={fallbackLogo("/logo/logo-dark.svg")}
                 />
                 <span className="truncate" title={companyBrand.name}>
                   {companyBrand.name}
@@ -148,4 +150,11 @@ export function TopMenu({
       />
     </>
   );
+}
+
+function fallbackLogo(path: string): ReactEventHandler<HTMLImageElement> {
+  return (event) => {
+    const image = event.currentTarget;
+    if (image.src !== new URL(path, window.location.origin).href) image.src = path;
+  };
 }

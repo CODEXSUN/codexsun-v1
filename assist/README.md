@@ -52,7 +52,7 @@ Strict workspace dependency and output layout:
 - Use npm only and run dependency commands from the repository root.
 - Keep exactly one root `node_modules` and one root `package-lock.json`; never install dependencies inside a workspace.
 - Keep generated builds only in the root `dist`; nested `node_modules`, `dist`, and `dist-types` folders are prohibited.
-- Run `npm run dependencies:check` after dependency, package, workspace, or build-configuration changes.
+- Run `npm run dependencies:check` when the change can affect dependency layout.
 
 ## Product Vision
 

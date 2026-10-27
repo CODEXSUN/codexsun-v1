@@ -15,22 +15,17 @@ try {
   if (options.help) {
     const usage =
       mode === "update"
-        ? "Usage: bash update-local.sh [--plan] [--check] [--fix] [--configure]\n" +
-          "  update: build and update the five apps; sync CRM permissions\n" +
+        ? "Usage: bash update-local.sh [--plan] [--check] [--configure]\n" +
+          "  update: build and update the five services\n" +
           "  --plan: show the actions without changing anything\n" +
           "  --check: check the configuration without changes\n" +
-          "  --fix: repeat CRM permission sync when images are current\n" +
           "  --configure: capture initial configuration"
         : "Usage: bash deploy-local.sh [--check | --configure]\n" +
           "  --check: check the configuration without changes\n" +
           "  --configure: capture the existing local configuration";
     console.log(usage);
   } else if (options.plan) {
-    console.log(
-      options.fix
-        ? "If a matching release is recorded: sync CRM permissions and check health. Otherwise: build, sync CRM permissions, update five apps, and check health."
-        : "If a matching release is recorded: check health. Otherwise: build five images, sync CRM permissions, update five apps, and check health."
-    );
+    console.log("If a matching release is recorded: check health. Otherwise: build and update all five services, then check health.");
     console.log(
       "API startup may run platform database migrations. No backup or environment-file update is performed."
     );

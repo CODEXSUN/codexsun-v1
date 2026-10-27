@@ -55,12 +55,13 @@ Use durable transactional outbox/inbox with existing queue infrastructure. Valid
 Enforce tenant/company/customer/vendor scope across lists, counts, details, files, exports, events, caches, and subscriptions.
 
 DEVELOPMENT LOOP AND EVIDENCE
-For each task: inspect, implement, run focused tests, review, repair, integrate, verify the combined state, then update evidence.
+For a small task, inspect the affected code and use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Add checks when the actual risk requires them.
 Run root npm commands using the single root installation, lockfile and dist tree.
-Run relevant formatting, lint, frontend/backend typecheck, module boundaries, builds, dependency checks, component docs and Docs checks.
+For full acceptance, run applicable formatting, lint, typecheck, boundaries, builds, dependency and documentation checks.
 Add meaningful unit, contract and disposable MariaDB E2E suites. Prove fresh and existing-schema migration behavior separately.
-Run the full E2E-PLAN matrix with two tenants, two companies, two customers and two vendors. Include forged headers, ID substitution, last-unit concurrency, duplicate callbacks, queue restarts, partial fulfillment, returns/refunds and reconciliation.
-Verify browser desktop 1440, tablet 768 and mobile 390/320 with live screenshots and persisted backend data. Verify raw HTML SEO and private cache boundaries.
+For full acceptance, run the E2E-PLAN matrix with two tenants, two companies, two customers and two vendors. Include forged headers, ID substitution, last-unit concurrency, duplicate callbacks, queue restarts, partial fulfillment, returns/refunds and reconciliation.
+For affected UI acceptance, verify browser desktop 1440, tablet 768 and mobile 390/320 with live screenshots and persisted backend data. Verify raw HTML SEO and private cache boundaries.
 Do not claim completion from worker summaries, generated screenshots, mocks, lint, or builds alone. Never weaken tests, ownership, permissions, or isolation to obtain a pass.
 Record commands, exit codes, revisions, fixtures, screenshots and remaining limits. Keep runtime output under root dist; keep concise evidence in task packets.
 Distinguish local fake, database E2E, browser, provider sandbox, live provider and production evidence.

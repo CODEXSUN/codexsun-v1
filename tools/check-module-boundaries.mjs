@@ -22,10 +22,6 @@ const moduleRoots = [
     path: join(process.cwd(), "apps", "ecommerce", "api", "src", "modules")
   },
   {
-    app: "logicx-erp-api",
-    path: join(process.cwd(), "apps", "logicx-erp", "api", "src", "modules")
-  },
-  {
     app: "mail-api",
     path: join(process.cwd(), "apps", "mail", "api", "src", "modules")
   },
@@ -64,10 +60,6 @@ const moduleRoots = [
   {
     app: "zuno-api",
     path: join(process.cwd(), "devkits", "zuno", "api", "src", "modules")
-  },
-  {
-    app: "codeit-api",
-    path: join(process.cwd(), "devkits", "codeit", "api", "src", "modules")
   }
 ];
 
@@ -183,8 +175,6 @@ const capabilityBackendRoles = new Map([
   ["ecommerce-api/storefront-organisation", reducedBackendRoles],
   ["ecommerce-api/storefront-slider", reducedBackendRoles],
   ["ecommerce-api/overview", ["module", "service", "routes", "seed", "types"]],
-  ["logicx-erp-api/overview", ["module", "service", "routes", "seed", "types"]],
-  ["logicx-erp-api/scheme", reducedBackendRoles],
   [
     "data-migration-api/migration",
     ["module", "service", "repository", "routes", "migration", "types", "secrets"]
@@ -261,21 +251,10 @@ const capabilityBackendRoles = new Map([
   [
     "zetro-api/provider",
     ["module", "service", "repository", "routes", "migration", "seed", "types", "secrets"]
-  ],
-  ["codeit-api/artifact", ["module", "service", "repository", "routes", "types"]],
-  ["codeit-api/conversation", ["module", "service", "repository", "routes", "types"]],
-  ["codeit-api/orchestration", ["module", "service", "repository", "routes", "types"]],
-  ["codeit-api/personalization", ["module", "service", "repository", "routes", "types"]],
-  ["codeit-api/plugin", ["module", "service", "repository", "routes", "types"]],
-  ["codeit-api/project", ["module", "service", "repository", "routes", "types"]],
-  ["codeit-api/provider", ["module", "service", "routes", "types"]],
-  ["codeit-api/run", ["module", "service", "repository", "routes", "types"]],
-  ["codeit-api/tool", ["module", "service", "routes", "types"]],
-  ["codeit-api/workspace", ["module", "routes", "types"]]
+  ]
 ]);
 
 const webModuleRoots = [
-  { app: "codeit-web", path: join(process.cwd(), "devkits", "codeit", "src", "modules") },
   { app: "marketing-web", path: join(process.cwd(), "apps", "marketing", "web", "src", "modules") },
   { app: "tconnect-web", path: join(process.cwd(), "apps", "tconnect", "web", "src", "modules") },
   { app: "qcafe-web", path: join(process.cwd(), "apps", "qcafe", "web", "src", "modules") },
@@ -296,10 +275,6 @@ const webModuleRoots = [
   {
     app: "ecommerce-web",
     path: join(process.cwd(), "apps", "ecommerce", "web", "src", "modules")
-  },
-  {
-    app: "logicx-erp-web",
-    path: join(process.cwd(), "apps", "logicx-erp", "web", "src", "modules")
   },
   {
     app: "crm-web",
@@ -347,10 +322,6 @@ const requiredFrontendRoles = ["workspace", "list", "form", "services", "hooks",
 const shellOnlyFrontendModules = new Set();
 const shellOnlyFrontendRoles = ["module", "workspace", "services", "hooks", "types"];
 const capabilityFrontendRoles = new Map([
-  ["codeit-web/overview", ["workspace"]],
-  ["codeit-web/personalization", ["services", "types"]],
-  ["codeit-web/plugin", ["services", "types"]],
-  ["codeit-web/orchestration", ["workspace", "services", "types"]],
   ["crm-web/lead", ["workspace", "list", "show", "services", "hooks", "types"]],
   ["tconnect-web/conversation", ["workspace", "list", "services", "hooks", "types", "schema"]],
   [
@@ -405,7 +376,6 @@ const capabilityFrontendRoles = new Map([
     "ecommerce-web/product-collection",
     ["workspace", "list", "form", "services", "hooks", "types", "schema"]
   ],
-  ["logicx-erp-web/overview", ["workspace", "services", "hooks", "types"]],
   ["zuno-web/diagnostics", ["workspace", "list", "form", "services", "hooks", "types", "schema"]],
   ["zuno-web/cases", ["workspace", "list", "form", "services", "hooks", "types", "schema"]],
   ["zuno-web/watch", ["workspace", "list", "services", "hooks", "types"]],

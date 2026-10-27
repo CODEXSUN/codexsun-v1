@@ -20,7 +20,6 @@ const apiPackages = new Map([
   ["@codexsun/core-api", "core"],
   ["@codexsun/crm-api", "crm"],
   ["@codexsun/frappe-api", "frappe"],
-  ["@codexsun/logicx-erp-api", "logicx-erp"],
   ["@codexsun/ecommerce-api", "ecommerce"],
   ["@codexsun/notes-api", "notes"],
   ["@codexsun/chat-api", "chat"],

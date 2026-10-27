@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install pinned LogicX apps into this installer's existing Frappe Docker site."""
+"""Install pinned LogicX Biz into this installer's existing Frappe Docker site."""
 
 import argparse
 from datetime import datetime, timezone
@@ -22,8 +22,7 @@ from configuration import secrets
 from verify import LocalRedirect
 
 
-APPS = {"logicx_app": "https://github.com/CODEXSUN/logicx-app.git",
-        "logicx_biz": "https://github.com/CODEXSUN/logicx-biz.git"}
+APPS = {"logicx_biz": "https://github.com/CODEXSUN/logicx-biz.git"}
 BENCH = "/home/frappe/frappe-bench"
 
 
@@ -51,10 +50,8 @@ class AppSetup:
             self.verify()
             self.record["app_setup"]["verified_at"] = datetime.now(timezone.utc).isoformat()
             installer.save(self.record, "apps-verified")
-            print("Both LogicX apps are already installed. No upgrade was attempted.")
+            print("LogicX Biz is already installed. No upgrade was attempted.")
             return
-        if set(APPS).intersection(state["apps"]):
-            raise ValueError("A partial LogicX installation exists. Review its backup and logs before recovery.")
         if state["maintenance"]:
             raise ValueError("The site is already in maintenance mode. Review it before installation.")
         installer.verify()
@@ -123,8 +120,8 @@ class AppSetup:
             code = r"""import pathlib,subprocess,sys
 subprocess.run(['cp','-a','/home/frappe/logicx-assets/.','sites/assets/'],check=True)
 p=pathlib.Path('sites/apps.txt')
-p.write_text('\n'.join(dict.fromkeys(p.read_text().split()+['logicx_app','logicx_biz']))+'\n')
-for app in ('logicx_app','logicx_biz'):
+p.write_text('\n'.join(dict.fromkeys(p.read_text().split()+['logicx_biz']))+'\n')
+for app in ('logicx_biz',):
  subprocess.run(['bench','--site',sys.argv[1],'install-app',app],check=True)
 subprocess.run(['bench','--site',sys.argv[1],'migrate'],check=True)
 subprocess.run(['bench','--site',sys.argv[1],'clear-cache'],check=True)
@@ -156,7 +153,7 @@ finally: frappe.destroy()
     def verify(self):
         state = self.site_state()
         if not set(APPS).issubset(state["apps"]):
-            raise ValueError("Both LogicX apps must be installed on the selected site.")
+            raise ValueError("LogicX Biz must be installed on the selected site.")
         if not {"LogicX HR", "LogicX ERP", "LogicX Banking"}.issubset(state["sidebars"]):
             raise ValueError("The three curated LogicX Biz sidebars were not installed.")
         self.installer.verify()
@@ -167,23 +164,13 @@ finally: frappe.destroy()
         with client.open(origin + "/api/method/login", credentials, timeout=60) as response:
             if json.load(response).get("message") != "Logged In":
                 raise ValueError("LogicX verification login failed.")
-        with client.open(origin + "/logicx-app", timeout=60) as response:
-            html = response.read().decode()
-        assets = re.findall(r'(?:src|href)="(/assets/logicx_app/[^"?]+)', html)
-        if not assets:
-            raise ValueError("The LogicX page has no compiled frontend assets.")
-        for path in assets:
-            with client.open(origin + path, timeout=30) as response:
-                if response.status != 200:
-                    raise ValueError("A LogicX frontend asset failed: " + path)
-        for doctype in ("LogicX Product", "Workspace Sidebar"):
-            with client.open(origin + "/api/resource/" + urllib.parse.quote(doctype) + "?limit_page_length=1", timeout=30) as response:
-                if "data" not in json.load(response):
-                    raise ValueError("LogicX API verification failed: " + doctype)
-        print("PASS: both apps installed, authenticated LogicX page, compiled frontend assets, and DocType APIs.")
+        with client.open(origin + "/api/resource/DocType/Employee", timeout=30) as response:
+            if json.load(response).get("data", {}).get("name") != "Employee":
+                raise ValueError("ERPNext Employee DocType verification failed.")
+        print("PASS: LogicX Biz installed, sidebars present, and authenticated ERPNext API verified.")
         self.record.setdefault("app_setup", {})["verification"] = {
             "installed_apps": state["apps"], "sidebars": state["sidebars"],
-            "logicx_page": "passed", "frontend_assets": "passed", "doctype_apis": "passed"}
+            "authenticated_login": "passed", "employee_doctype": "passed"}
 
     def bench(self, *args):
         return self.exec("bench", "--site", self.site, *args)
@@ -198,7 +185,6 @@ def main():
             stream.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--env-file", default=str(Path(__file__).with_name("frappe.env")))
-    parser.add_argument("--logicx-app-ref", default="main", help="Branch, tag, or commit to install")
     parser.add_argument("--logicx-biz-ref", default="main", help="Branch, tag, or commit to install")
     parser.add_argument("--with-suite", action="store_true", help="Also install HRMS, Raven, CRM, Helpdesk, Insights and Telephony")
     parser.add_argument("--suite-source", help="Optional clean local source checkouts at the selected refs")

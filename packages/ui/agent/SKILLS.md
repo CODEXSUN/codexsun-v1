@@ -24,9 +24,12 @@ Keep app fields, persistence, permissions, and business rules out of shared UI. 
 
 ## Review and evidence
 
+For a small change, use at most one focused check when useful. Inspection can suffice for a trivial edit.
+The commands below are options for full verification. Add checks when the actual risk requires them.
+
 - `npm run typecheck -w @codexsun/ui`
 - `npm run lint -w @codexsun/ui`
 - `npm run build -w @codexsun/ui`
 
-Check affected consumers and relevant tests. Report skipped or blocked checks explicitly.
+Check affected consumers as needed. Report material verification limits and blocked checks.
 Documentation and prompts never replace backend authorization or deployment approval.

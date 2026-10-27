@@ -215,7 +215,6 @@ export const defaultTenantModuleKeys = [
   "crm",
   "frappe",
   "zetro",
-  "logicx-erp",
   "tconnect",
   "ecommerce",
   "qcafe",
@@ -227,17 +226,6 @@ export const defaultTenantModuleKeys = [
 ] as const;
 
 export const platformAppRegistry: PlatformAppDefinition[] = [
-  {
-    id: "codeit",
-    label: "Codeit",
-    moduleKey: "codeit",
-    stack: "codeit",
-    alwaysEnabled: false,
-    defaultLanding: false,
-    description: "Standalone development workspace and runtime overview.",
-    icon: Code2Icon,
-    accentClass: "bg-slate-700"
-  },
   {
     id: "marketing",
     label: "Marketing",
@@ -484,17 +472,7 @@ export const platformAppRegistry: PlatformAppDefinition[] = [
     moduleKey: "auditor",
     stack: "auditor"
   },
-  {
-    accentClass: "bg-orange-600",
-    alwaysEnabled: false,
-    defaultLanding: false,
-    description: "LogicX ERP operations workspace for the tenant desk.",
-    icon: BoxesIcon,
-    id: "logicx-erp",
-    label: "LogicX ERP",
-    moduleKey: "logicx-erp",
-    stack: "logicx-erp"
-  }
+
 ];
 
 function ecommerceMenuItems(activePage: string, onSelect: (page: string) => void): SidemenuItem[] {

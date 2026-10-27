@@ -167,6 +167,9 @@ Do not invent npm script names or mark tests passed because a planned command ap
 
 ## Supervisor audit and repair loop
 
+Use this loop for requested acceptance or when the actual risk requires independent review.
+For routine work, use the fast-work rules in the repository agent guide.
+
 1. Select one dependency-ready task and freeze its contract, exact write lease, acceptance IDs, and fixture.
 2. Dispatch a real worker through the receiver's supported subagent mechanism.
 3. Inspect the diff and run the required checks. Do not trust a worker summary alone.
@@ -215,6 +218,9 @@ Source presence is not release evidence. Confirm executable behavior before desc
 
 ## Verification gates
 
+For a small change, use at most one focused check when useful. Inspection can suffice for a trivial edit.
+The commands below are options for full verification. Add checks when the actual risk requires them.
+
 - `node tools/check-module-boundaries.mjs himsx`
 - `npm run typecheck -w @codexsun/himsx-api`
 - `npm run lint -w @codexsun/himsx-api`
@@ -223,6 +229,6 @@ Source presence is not release evidence. Confirm executable behavior before desc
 - `npm run lint -w @codexsun/himsx-web`
 - `npm run build -w @codexsun/himsx-web`
 
-Use `npm run check:component-docs` and the relevant root checks.
+Use component and root checks when the change or full verification requires them.
 Run database, browser, native, and deployment checks when the changed behavior needs them.
 Do not mark an untested phase or planned feature complete.

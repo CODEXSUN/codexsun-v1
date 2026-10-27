@@ -42,6 +42,9 @@ Source presence is not release evidence. Confirm executable behavior before desc
 
 ## Verification gates
 
+For a small change, use at most one focused check when useful. Inspection can suffice for a trivial edit.
+The commands below are options for full verification. Add checks when the actual risk requires them.
+
 - `node tools/check-module-boundaries.mjs chat`
 - `npm run typecheck -w @codexsun/chat-api`
 - `npm run lint -w @codexsun/chat-api`
@@ -50,7 +53,7 @@ Source presence is not release evidence. Confirm executable behavior before desc
 - `npm run lint -w @codexsun/chat-web`
 - `npm run build -w @codexsun/chat-web`
 
-Use `npm run check:component-docs` and the relevant root checks.
+Use component and root checks when the change or full verification requires them.
 Run database, browser, native, and deployment checks when the changed behavior needs them.
 Do not mark an untested phase or planned feature complete.
 

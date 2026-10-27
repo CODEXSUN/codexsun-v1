@@ -46,7 +46,7 @@ Do not expand this assignment into clinical treatment, pharmacy inventory, bed m
 | 19 | Menus, roles, end-user access, login/logout, departments, sessions, IP, filters, print/export | Platform owns access and authentication. `platform-activity` repository uses the master database | Extend Platform reporting through tenant-scoped contracts. Do not copy credentials or patient audit into master activity. Never invent logout on browser closure. |
 | 20 | Role copy preview, new name/key, duplicate protection, confirmation, audit, no implicit user grants | Inspected tenant-role routes provide CRUD/lifecycle, with no copy action found | Implement atomic role copy in Platform access-control owners. HIMSX only links/composes the authorized UI. Prevent privilege escalation and protected-role copying. |
 | 21 | Consistent UI, server permissions, unique identity, transactions, history, common reports, configuration | Framework transport/migration contracts, Platform session/access, shared UI/theme | Apply all gates in PLAN. A menu, scaffold, mock, or build does not establish workflow completion. |
-| 22 | Ordered delivery, screen specifications, schemas, APIs, tests, deployment/configuration handover | cxmobile and Marketing supervisor/worker handoffs provide coordination examples | Use PLAN, TASK, WORKER-TASKS, SUPERVISOR-PROMPT, and AUDIT. Preserve evidence and iterate through independent review and repair. |
+| 22 | Ordered delivery, screen specifications, schemas, APIs, tests, deployment/configuration handover | Marketing supervisor and worker handoffs provide coordination examples | Use PLAN, TASK, WORKER-TASKS, SUPERVISOR-PROMPT, and AUDIT. Preserve evidence and iterate through independent review and repair. |
 
 ## Reuse register with inspected source anchors
 
@@ -64,7 +64,7 @@ Paths below are relative to the repository root. They identify current evidence,
 | CRM | `apps/crm/api/src/modules/enquiry/{index.ts,enquiry.types.ts}`, `apps/crm/web/src/modules/enquiry` | Reuse enquiry semantics through public contracts. CRM list/workspace/Show/form are visual references for every HIMSX list and form. Do not import those private components. |
 | Framework | `packages/framework` and its public subpath exports | Reuse typed contracts, errors, tenant database infrastructure, and migration ledger. No hospital fields inside Framework. |
 | UI | `packages/ui/src/workspace`, `packages/ui/src/design-system`, `packages/ui/src/styles.css` | Reuse themed primitives. No hospital CRUD engine or module-specific fields inside UI. |
-| Coordination examples | `apps/cxmobile/agent/{SUPERVISOR-PROMPT,WORKER-TASKS,AUDIT}.md`, `apps/marketing/agent/ANTIGRAVITY-{HANDOFF,WORKERS}.md` | Reuse leases, dependency waves, independent audit, repair tasks, and evidence discipline. Do not inherit their app-specific business scope or claim their tests prove HIMSX. |
+| Coordination examples | `apps/marketing/agent/ANTIGRAVITY-{HANDOFF,WORKERS}.md` | Reuse leases, dependency waves, independent audit, repair tasks, and evidence discipline. Do not inherit their app-specific business scope or claim their tests prove HIMSX. |
 
 ## Business module set
 
@@ -192,4 +192,4 @@ Never silently remove a requirement because a provider or policy is unavailable.
 7. Test matrix totals, timezone cutoffs, and active-as-of IP semantics against persisted detail.
 8. Add doctor booking UI because schedule configuration alone cannot prove availability or double-booking protection.
 9. Add only the admission/discharge controls needed for IP reporting. Do not invent treatment or bed workflows.
-10. Audit each increment independently and turn every valid finding into a tracked repair task.
+10. Use independent audit for requested acceptance or when the actual risk requires it. Track valid findings.

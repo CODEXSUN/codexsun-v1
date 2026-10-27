@@ -105,17 +105,14 @@ index.ts
 
 Each reduced Common module must own concrete migration SQL, repository queries, service validation, HTTP routes, lifecycle behavior, seeds, and types. Shared factories, generic inherited repositories/services, alias wrappers, and metadata definitions do not satisfy these roles. These synchronous CRUD masters must not carry separate metadata-only definition, event, sync, or worker files. If a Common module later gains real event, offline-sync, or background-job behavior, promote it to the full module contract when that behavior is implemented.
 
-### Mandatory Boundary Audit For Every Application
+### Boundary Audits
 
-The same ownership discipline applies to Core, Platform, Billing, and every future application. Before an
-application change is finalized, audit its complete backend and frontend module tree for wrapper/alias roles,
-inherited or metadata-driven generic CRUD, private cross-module imports, centralized business implementations,
-stale exports and proxies, misplaced files, and business behavior stored in app-level shared folders. Composition
-roots contain registration and lifecycle composition only; leaf modules own executable behavior.
+Apply ownership rules to every application. For a focused change, inspect the affected owner and direct callers.
+Use at most one focused check when useful. Inspection can suffice for a trivial edit.
+Add checks when the change and its risks require them. Run a complete boundary audit for an explicit audit,
+release, or when the actual change requires it. A new application must declare its approved boundary contract.
 
 Allowed shared infrastructure is narrow: API transport/session context, environment readers, observability, and reusable `@codexsun/ui` controls. Shared code must not know a business module's fields, validation, tables, lifecycle, routes, forms, lists, workspaces, settings, or print behavior.
-
-Run `node tools/check-module-boundaries.mjs <app>` for the changed application, followed by formatting, lint, TypeScript, production composition/build validation, and any configured database/E2E checks. A new application is incomplete until the boundary checker understands and enforces its approved full or reduced contract.
 
 Strict naming rules:
 

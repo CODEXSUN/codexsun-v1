@@ -39,6 +39,10 @@ reply links, and suppression of import echoes. General Activities exports remain
 
 ## Review and evidence
 
+For a small change, inspect the affected code and use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Add checks when the actual risk requires them.
+The commands below are options for full verification, not a checklist for every prompt.
+
 - `node tools/check-module-boundaries.mjs crm`
 - `npm run typecheck -w @codexsun/crm-api`
 - `npm run lint -w @codexsun/crm-api`
@@ -47,5 +51,5 @@ reply links, and suppression of import echoes. General Activities exports remain
 - `npm run lint -w @codexsun/crm-web`
 - `npm run build -w @codexsun/crm-web`
 
-Check affected consumers and relevant tests. Report skipped or blocked checks explicitly.
+Check affected consumers as needed. Report material verification limits and blocked checks.
 Documentation and prompts never replace backend authorization or deployment approval.

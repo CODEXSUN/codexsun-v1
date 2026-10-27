@@ -304,6 +304,9 @@ These tasks define acceptance for a change. Unchecked items are not claims of mi
 
 ## Acceptance evidence
 
+For a small change, use at most one focused check when useful. Inspection can suffice for a trivial edit.
+The commands below are options for full verification. Add checks when the actual risk requires them.
+
 - `node tools/check-module-boundaries.mjs frappe`
 - `npm run typecheck -w @codexsun/frappe-api`
 - `npm run lint -w @codexsun/frappe-api`
@@ -312,8 +315,8 @@ These tasks define acceptance for a change. Unchecked items are not claims of mi
 - `npm run lint -w @codexsun/frappe-web`
 - `npm run build -w @codexsun/frappe-web`
 
-Use `npm run check:component-docs` for this documentation contract.
-Run applicable tests before marking implementation work complete.
+Use component documentation checks when full verification requires them.
+Run checks proportionate to the implemented behavior and its risks.
 Do not treat documentation, a build, or a model response as proof of live persistence or deployment.
 
 ## Live CRM create and edit regression - 17-10-2026

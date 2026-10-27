@@ -14,19 +14,16 @@ Read the current policy before the next worktree, integration, or release operat
 
 ## Folder Layout
 
-Keep app and release worktrees outside the main repository.
+App development can use the current checkout or a separate worktree.
+Keep release worktrees outside the main repository.
 
 | Folder                                           | Purpose                          | Branch example         |
 | ------------------------------------------------ | -------------------------------- | ---------------------- |
 | `D:\workspace\codexsun`                          | Main integration checkout        | `main`                 |
-| `D:\workspace\codexsun-worktrees\cxmobile`       | CXMobile feature worktree        | `codex/cxmobile`       |
-| `D:\workspace\codexsun-worktrees\marketing`      | Marketing feature worktree       | `codex/marketing`      |
-| `D:\workspace\codexsun-worktrees\crm`            | CRM feature worktree             | `codex/crm-<task>`     |
-| `D:\workspace\codexsun-worktrees\billing`        | Billing feature worktree         | `codex/billing-<task>` |
 | `D:\workspace\codexsun-worktrees\release\1-1-67` | Candidate reservation for 1.1.67 | `codex/release/1.1.67` |
 
 Use hyphens in version folder names. Keep numeric package versions and release branch versions dotted.
-The listed release folders are empty reservations. App folders become worktrees only after checkout authorization.
+The listed release folders are empty reservations.
 Only `1-1-67` remains reserved. The human removed the empty `1-1-69` and `1-1-73` reservations.
 Do not populate folders, create branches, pull code, or install dependencies merely because a reservation exists.
 Do not reserve or bump intervening versions automatically.
@@ -35,7 +32,7 @@ Retire superseded app worktrees only after integration and verified recovery sna
 ## Prompt Manager Routing
 
 Follow [Prompt Manager Role](../agents/prompt-manager.md) for request analysis and prompt preparation.
-Route app work and its Git operations to the assigned worktree, integration and releases to the supervisor, and deployment to Hostinger Deploy.
+The user chooses the app development location. Route releases to the supervisor and deployment to Hostinger Deploy.
 Prompt Manager drafts only. It sends a selected prompt only after the human explicitly instructs it.
 The executing chat retains its own scope, worktree rules, and authorization boundaries.
 A prompt or starter template does not authorize a pull, install, version change, checkout, database operation, or deployment.
@@ -43,17 +40,17 @@ A prompt or starter template does not authorize a pull, install, version change,
 ## App Selection
 
 Ask which app to use when the task does not identify one.
-Current separate app worktrees are CXMobile, Marketing, CRM, and Billing.
-Honor an explicit request to prepare all four without asking again.
-New app chats must verify their assigned directory and branch before any work.
-Install locked root dependencies in the assigned worktree when needed for an authorized app task.
+Current app work is separate: Marketing, CRM, and Billing.
+Honor an explicit request to prepare all three without asking again.
+Verify the directory and branch before app work.
+Install locked root dependencies when needed for an authorized app task.
 
 ## Supervisor And App Chat Ownership
 
 Follow the shared [Release Supervisor Role](../agents/release-supervisor.md).
-App chats implement and check code only in their assigned worktrees.
+App chats implement and check code in the location chosen by the user.
 They provide an app handoff with changed files, actual checks, remaining work, and migration or shared-contract impact.
-App chats may stage, commit, pull, and push their own app work in their assigned worktree.
+App chats may stage, commit, pull, and push their own app work.
 The supervisor owns integration into main, version updates, and release checkouts.
 Preserve unfinished work before updating an app branch from main.
 Coordinate a pause in affected app edits before Git mutations. Other app work can continue independently.
@@ -61,8 +58,8 @@ A policy update does not trigger Git, installation, or deployment operations.
 
 ## App Development To Main
 
-1. Use an authorized app worktree and a task-specific branch from a reviewed main baseline.
-2. Reuse a suitable worktree before creating another copy.
+1. Use the current checkout unless the user chooses another location.
+2. Preserve existing work when choosing a checkout.
 3. Keep each app's implementation within its ownership boundary.
 4. Run focused checks during daily coding.
 5. The app chat provides its handoff. The supervisor reviews the complete change before integration.
@@ -101,7 +98,7 @@ Candidate fixes require a new build and relevant verification.
 
 The target flow is:
 
-**App worktree -> reviewed main -> frozen release candidate -> staging -> approval -> production**
+**Reviewed main -> frozen release candidate -> staging -> approval -> production**
 
 Build the exact candidate once in a controlled build environment.
 Record immutable image digests for API, Web, Shop, Worker, and Chatb when included.

@@ -2309,7 +2309,7 @@ try {
         assert.equal(
           Array.isArray((legacy.json() as { data: unknown }).data),
           true,
-          `${label} unpaged reads must stay a bare array for cxmobile.`
+          `${label} unpaged reads must stay a bare array.`
         );
       };
       await readPagedCatalog("/ecommerce/catalog/attributes", "Attributes");
