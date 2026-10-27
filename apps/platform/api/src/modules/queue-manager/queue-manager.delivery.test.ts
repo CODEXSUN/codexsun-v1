@@ -166,7 +166,7 @@ test(
       idempotencyKey: randomUUID(),
       payload: {},
       actorEmail: "test@codexsun.local",
-      availableAt: new Date().toISOString(),
+      availableAt: new Date(Date.now() + 60_000).toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       completedAt: null,
@@ -209,7 +209,8 @@ test(
         timer = setTimeout(() => reject(new Error("Prior delivery did not complete.")), 10000);
       });
       await worker.waitUntilReady();
-      await prior.promote();
+      record.availableAt = new Date().toISOString();
+      await publishBullMqJob(record);
       await completed;
       await worker.close();
       assert.equal(await prior.getState(), "completed");

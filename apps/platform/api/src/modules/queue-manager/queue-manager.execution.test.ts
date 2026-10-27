@@ -5,7 +5,12 @@ import { publishPendingDeliveries, queueDeliveryId } from "./queue-manager.deliv
 import { resolveMailJobTenant } from "./queue-manager.mail.js";
 import type { Tenant } from "../tenant/index.js";
 
-const tenant = { uuid: "tenant-a", status: "active", dbName: "codexsun_tenant_a" } as Tenant;
+const tenant = {
+  uuid: "tenant-a",
+  status: "active",
+  dbName: "codexsun_tenant_a",
+  enabledModuleKeys: ["mail"]
+} as Tenant;
 
 test("only the configured enabled executor owns execution", () => {
   for (const host of ["platform", "worker"] as const) {
@@ -67,6 +72,7 @@ test("Mail execution restores only its active authoritative tenant", async () =>
   const invalidTenants: Array<Tenant | null> = [
     null,
     { ...tenant, status: "inactive" },
+    { ...tenant, enabledModuleKeys: [] },
     { ...tenant, uuid: "tenant-b" },
     { ...tenant, dbName: "codexsun_tenant_b" }
   ];
@@ -88,7 +94,16 @@ test("Mail execution restores only its active authoritative tenant", async () =>
 });
 
 test("transport identity follows the persisted record and attempt generation", () => {
-  assert.equal(queueDeliveryId({ uuid: "a", attempts: 0 }), queueDeliveryId({ uuid: "a", attempts: 0 }));
-  assert.notEqual(queueDeliveryId({ uuid: "a", attempts: 0 }), queueDeliveryId({ uuid: "b", attempts: 0 }));
-  assert.notEqual(queueDeliveryId({ uuid: "a", attempts: 0 }), queueDeliveryId({ uuid: "a", attempts: 1 }));
+  assert.equal(
+    queueDeliveryId({ uuid: "a", attempts: 0 }),
+    queueDeliveryId({ uuid: "a", attempts: 0 })
+  );
+  assert.notEqual(
+    queueDeliveryId({ uuid: "a", attempts: 0 }),
+    queueDeliveryId({ uuid: "b", attempts: 0 })
+  );
+  assert.notEqual(
+    queueDeliveryId({ uuid: "a", attempts: 0 }),
+    queueDeliveryId({ uuid: "a", attempts: 1 })
+  );
 });

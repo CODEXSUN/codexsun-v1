@@ -10,9 +10,7 @@ import type {
   QueueJobPayload,
   QueueJobRecord
 } from "./queue-manager.types.js";
-import { processMailJob } from "@codexsun/mail-api";
 import { getTenantDatabase } from "../../database/tenant-database.js";
-import { TenantRepository } from "../tenant/index.js";
 import { resolveMailJobTenant } from "./queue-manager.mail.js";
 import { queueExecutionAllowed, type QueueExecutionHost } from "./queue-manager.execution.js";
 import { queueJobProcessor, queueJobReadiness, QueueJobHeld } from "./queue-manager.worker.js";
@@ -27,7 +25,8 @@ export class QueueManagerService {
     private readonly repository = new QueueManagerRepository(),
     private readonly activity = new PlatformActivityService(),
     private readonly executor: QueueExecutionHost = "platform",
-    private readonly prepareJob?: (job: QueueJobRecord) => Promise<void>
+    private readonly prepareJob?: (job: QueueJobRecord) => Promise<void>,
+    private readonly publishDelivery = publishBullMqJob
   ) {}
 
   canExecute() {
@@ -54,7 +53,7 @@ export class QueueManagerService {
     const job = await this.repository.enqueue(input);
     if (job?.status === "pending") {
       const backend = await this.repository.backend();
-      if (backend === "bullmq-redis") await publishBullMqJob(job);
+      if (backend === "bullmq-redis") await this.publishSavedJob(job);
     }
     return job;
   }
@@ -89,7 +88,7 @@ export class QueueManagerService {
       if (options.fromWorker) throw new Error("This process does not own queue execution.");
       const deferred = job.status === "failed" ? await this.repository.retry(id) : job;
       if (deferred?.status === "pending" && (await this.repository.backend()) === "bullmq-redis")
-        await publishBullMqJob(deferred);
+        await this.publishSavedJob(deferred);
       return deferred;
     }
     if (job.status === "pending" || job.status === "failed") {
@@ -109,7 +108,7 @@ export class QueueManagerService {
       job.status === "pending" &&
       !options.fromWorker
     ) {
-      await publishBullMqJob(job);
+      await this.publishSavedJob(job);
       return job;
     }
     if (job.status !== "pending" && job.status !== "failed") {
@@ -129,15 +128,23 @@ export class QueueManagerService {
     }
     try {
       await this.prepareJob?.(claimed);
-      const result = await this.dispatch(job);
+      const result = await this.dispatch(job, claimed.attempts);
       const readiness = await queueJobReadiness(job, undefined, result);
       if (readiness && !readiness.ready) {
-        const held = await this.repository.hold(id, readiness.retryAt, readiness.reason, true);
+        const held = await this.repository.hold(
+          id,
+          readiness.retryAt,
+          readiness.reason,
+          true,
+          claimed.attempts
+        );
         if (options.fromWorker) throw new QueueJobHeld(readiness.retryAt);
         return held;
       }
-      const completed = await this.repository.markCompleted(id, result);
-      await this.recordExecutionActivity({
+      const completed = await this.repository.markCompleted(id, result, claimed.attempts);
+      if (completed?.status !== "completed" || completed.attempts !== claimed.attempts)
+        return completed;
+      await this.recordQueueActivity({
         action: "queue.job.completed",
         details: { jobName: job.jobName, queueName: job.queueName },
         moduleKey: "platform.queue-manager",
@@ -150,14 +157,26 @@ export class QueueManagerService {
       if (error instanceof QueueJobHeld) throw error;
       const readiness = await queueJobReadiness(job, error);
       if (readiness && !readiness.ready) {
-        const held = await this.repository.hold(id, readiness.retryAt, readiness.reason, true);
+        const held = await this.repository.hold(
+          id,
+          readiness.retryAt,
+          readiness.reason,
+          true,
+          claimed.attempts
+        );
         if (options.fromWorker) throw new QueueJobHeld(readiness.retryAt);
         return held;
       }
       const message = error instanceof Error ? error.message : "Queue job failed.";
       const progress = await this.repository.find(id);
-      const failed = await this.repository.markFailed(id, message, progress?.result ?? {});
-      await this.recordExecutionActivity({
+      const failed = await this.repository.markFailed(
+        id,
+        message,
+        progress?.result ?? {},
+        claimed.attempts
+      );
+      if (failed?.status !== "failed" || failed.attempts !== claimed.attempts) return failed;
+      await this.recordQueueActivity({
         action: "queue.job.failed",
         details: { error: message, jobName: job.jobName, queueName: job.queueName },
         moduleKey: "platform.queue-manager",
@@ -167,7 +186,7 @@ export class QueueManagerService {
       });
       if (options.fromWorker) throw error;
       if (job.attempts + 1 < job.maxAttempts) {
-        return this.repository.retryAfter(id, 5000 * 2 ** job.attempts);
+        return this.repository.retryAfter(id, 5000 * 2 ** job.attempts, claimed.attempts);
       }
       return failed;
     }
@@ -188,7 +207,7 @@ export class QueueManagerService {
   async reconcilePendingDeliveries() {
     await publishPendingDeliveries(
       (afterId) => this.repository.pendingDeliveries(afterId),
-      publishBullMqJob
+      this.publishDelivery
     );
   }
 
@@ -197,9 +216,9 @@ export class QueueManagerService {
     if (!job) return null;
     if (job.status === "pending") {
       const backend = await this.repository.backend();
-      if (backend === "bullmq-redis") await publishBullMqJob(job);
+      if (backend === "bullmq-redis") await this.publishSavedJob(job);
     }
-    await this.activity.recordActivity({
+    await this.recordQueueActivity({
       action: "queue.job.retried",
       moduleKey: "platform.queue-manager",
       recordId: job.id,
@@ -212,7 +231,7 @@ export class QueueManagerService {
   async cancelJob(id: number) {
     const job = await this.repository.cancel(id);
     if (!job) return null;
-    await this.activity.recordActivity({
+    await this.recordQueueActivity({
       action: "queue.job.cancelled",
       moduleKey: "platform.queue-manager",
       recordId: job.id,
@@ -238,7 +257,7 @@ export class QueueManagerService {
     if (backend === "bullmq-redis") {
       await this.reconcilePendingDeliveries();
     }
-    await this.activity.recordActivity({
+    await this.recordQueueActivity({
       action: "queue.backend.switched",
       actorEmail,
       details: { backend },
@@ -252,23 +271,34 @@ export class QueueManagerService {
     return this.repository.backend();
   }
 
-  private async recordExecutionActivity(
+  private async recordQueueActivity(
     input: Parameters<PlatformActivityService["recordActivity"]>[0]
   ) {
     try {
       await this.activity.recordActivity(input);
     } catch {
-      console.warn("[queue] execution activity could not be recorded", {
+      console.warn("[queue] activity could not be recorded", {
         jobId: input.recordId,
         action: input.action
       });
     }
   }
 
-  private async dispatch(job: QueueJobRecord) {
+  private async publishSavedJob(job: QueueJobRecord) {
+    try {
+      await this.publishDelivery(job);
+    } catch {
+      console.warn("[queue] saved job awaits Redis reconciliation", { jobId: job.id });
+    }
+  }
+
+  private async dispatch(job: QueueJobRecord, expectedAttempts: number) {
     const { jobName, payload } = job;
     const processor = queueJobProcessor(jobName);
-    if (processor) return processor(job, (result) => this.repository.updateResult(job.id, result));
+    if (processor)
+      return processor(job, (result) =>
+        this.repository.updateResult(job.id, result, expectedAttempts)
+      );
     if (jobName === "queue.probe") {
       return { echo: payload, processedAt: new Date().toISOString() };
     }
@@ -284,17 +314,29 @@ export class QueueManagerService {
       return processDatabaseMaintenanceJob(payload);
     }
     if (jobName === "mail.system-send") {
+      const { processMailJob } = await import("@codexsun/mail-api");
       return processMailJob(jobName, payload, {
         fallback: mailFallback(),
         secretKey: env.JWT_SECRET
       });
     }
     if (jobName === "mail.send" || jobName === "mail.sync") {
+      const { TenantRepository } = await import("../tenant/index.js");
       const tenant = await resolveMailJobTenant(job, (id) =>
         new TenantRepository().findByIdOrCode(id)
       );
+      const database = getTenantDatabase(tenant);
+      const enabled = await database
+        .selectFrom("app_module_settings")
+        .select("id")
+        .where("module_key", "=", "mail")
+        .where("enabled", "=", true)
+        .where("status", "=", "active")
+        .executeTakeFirst();
+      if (!enabled) throw new Error("Mail is disabled for the queued tenant.");
+      const { processMailJob } = await import("@codexsun/mail-api");
       return processMailJob(jobName, payload, {
-        database: getTenantDatabase(tenant) as never,
+        database: database as never,
         fallback: mailFallback(),
         secretKey: env.JWT_SECRET
       });

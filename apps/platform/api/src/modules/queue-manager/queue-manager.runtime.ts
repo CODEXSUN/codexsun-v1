@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { env } from "../../env.js";
-import { closeBullMq, startBullMqWorker } from "./queue-manager.bullmq.js";
+import { closeBullMq, probeBullMq, startBullMqWorker } from "./queue-manager.bullmq.js";
 import { queueExecutionAllowed, type QueueExecutionHost } from "./queue-manager.execution.js";
 import { QueueManagerService } from "./queue-manager.service.js";
 
@@ -36,6 +36,7 @@ export function startQueueManagerWorker(app: FastifyInstance, service = new Queu
             startBullMqWorker(name, (queueJobId, expectedUuid) =>
               service.runJob(queueJobId, { fromWorker: true, expectedUuid })
             );
+          await probeBullMq();
           await service.reconcilePendingDeliveries();
           return null;
         }

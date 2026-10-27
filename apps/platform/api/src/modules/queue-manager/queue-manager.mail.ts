@@ -12,7 +12,8 @@ export async function resolveMailJobTenant(
     !tenant ||
     tenant.uuid !== job.tenantId ||
     tenant.status !== "active" ||
-    tenant.dbName !== job.payload.tenantDatabase
+    tenant.dbName !== job.payload.tenantDatabase ||
+    !tenant.enabledModuleKeys.includes("mail")
   )
     throw new Error("Mail job tenant is invalid or inactive.");
   return tenant;

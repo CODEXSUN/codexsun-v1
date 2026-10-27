@@ -159,8 +159,14 @@ export class QueueManagerRepository {
     return row ? toQueueJob(row) : null;
   }
 
-  async hold(id: number, retryAt: string, reason: string | null, refundAttempt = false) {
-    await getPlatformDatabase()
+  async hold(
+    id: number,
+    retryAt: string,
+    reason: string | null,
+    refundAttempt = false,
+    expectedAttempts?: number
+  ) {
+    let update = getPlatformDatabase()
       .updateTable("queue_jobs")
       .set({
         status: "pending",
@@ -173,8 +179,9 @@ export class QueueManagerRepository {
         result_json: JSON.stringify({ held: true, holdReason: reason, resumeAt: retryAt })
       })
       .where("id", "=", id)
-      .where("status", "in", refundAttempt ? ["running"] : ["pending", "failed"])
-      .execute();
+      .where("status", "in", refundAttempt ? ["running"] : ["pending", "failed"]);
+    if (expectedAttempts !== undefined) update = update.where("attempts", "=", expectedAttempts);
+    await update.execute();
     return this.find(id);
   }
 
@@ -196,7 +203,7 @@ export class QueueManagerRepository {
     return this.find(id);
   }
 
-  async markCompleted(id: number, result: Record<string, unknown>) {
+  async markCompleted(id: number, result: Record<string, unknown>, expectedAttempts: number) {
     await getPlatformDatabase()
       .updateTable("queue_jobs")
       .set({
@@ -206,20 +213,28 @@ export class QueueManagerRepository {
         updated_at: new Date()
       })
       .where("id", "=", id)
+      .where("status", "=", "running")
+      .where("attempts", "=", expectedAttempts)
       .execute();
     return this.find(id);
   }
 
-  async updateResult(id: number, result: Record<string, unknown>) {
+  async updateResult(id: number, result: Record<string, unknown>, expectedAttempts: number) {
     await getPlatformDatabase()
       .updateTable("queue_jobs")
       .set({ result_json: JSON.stringify(result), updated_at: new Date() })
       .where("id", "=", id)
       .where("status", "=", "running")
+      .where("attempts", "=", expectedAttempts)
       .execute();
   }
 
-  async markFailed(id: number, errorMessage: string, result: Record<string, unknown> = {}) {
+  async markFailed(
+    id: number,
+    errorMessage: string,
+    result: Record<string, unknown>,
+    expectedAttempts: number
+  ) {
     await getPlatformDatabase()
       .updateTable("queue_jobs")
       .set({
@@ -230,6 +245,8 @@ export class QueueManagerRepository {
         updated_at: new Date()
       })
       .where("id", "=", id)
+      .where("status", "=", "running")
+      .where("attempts", "=", expectedAttempts)
       .execute();
     return this.find(id);
   }
@@ -251,7 +268,7 @@ export class QueueManagerRepository {
     return this.find(id);
   }
 
-  async retryAfter(id: number, delayMs: number) {
+  async retryAfter(id: number, delayMs: number, expectedAttempts: number) {
     await getPlatformDatabase()
       .updateTable("queue_jobs")
       .set({
@@ -263,6 +280,7 @@ export class QueueManagerRepository {
       })
       .where("id", "=", id)
       .where("status", "=", "failed")
+      .where("attempts", "=", expectedAttempts)
       .execute();
     return this.find(id);
   }

@@ -2,7 +2,7 @@
 
 Repository source: `apps/worker/README.md`
 
-Source SHA-256 (LF line endings): `9a574dc2b1d073a95203beefcbb683a785a068cbc36e8ab31f0bfe0513386ace`
+Source SHA-256 (LF line endings): `d55b8d85a79b21e153dbefd4256be9f433b9364f54c72a2500f55aabd7f47e30`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -111,4 +111,16 @@ node tools/container-testing/verify-realtime.mjs --restart
 
 The integration audit requires the local cloud stack. It tests real Redis consumption, token enforcement,
 queue persistence, dependency readiness, and automatic recovery. Runtime secrets and audit output stay under ignored root `dist`.
+
+### Platform fixture follow-up
+
+The shared-stack restart command above does not select the isolated Platform audit fixture.
+For the Platform follow-up, use the resource inventory and sequence in
+[the queue audit](agent/QUEUE-AUDIT-2026-10-27.md). Wait for the separate deployment operation to finish before replacing fixture containers.
+
+Queue producers acknowledge SQL persistence. A Redis publication failure leaves the saved job pending for reconciliation.
+Consumers retain reconnect support. Producer commands and connection retries are bounded.
+The dispatcher checks Redis even with an empty SQL backlog. Redis transport retention follows the configured retention ages.
+SQL writes from an older attempt cannot replace a newer attempt's state or progress.
+These guards do not establish exactly-once effects, generic hard-crash recovery, or cross-version fencing.
 ````

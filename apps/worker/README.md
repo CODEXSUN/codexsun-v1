@@ -100,3 +100,15 @@ node tools/container-testing/verify-realtime.mjs --restart
 
 The integration audit requires the local cloud stack. It tests real Redis consumption, token enforcement,
 queue persistence, dependency readiness, and automatic recovery. Runtime secrets and audit output stay under ignored root `dist`.
+
+### Platform fixture follow-up
+
+The shared-stack restart command above does not select the isolated Platform audit fixture.
+For the Platform follow-up, use the resource inventory and sequence in
+[the queue audit](agent/QUEUE-AUDIT-2026-10-27.md). Wait for the separate deployment operation to finish before replacing fixture containers.
+
+Queue producers acknowledge SQL persistence. A Redis publication failure leaves the saved job pending for reconciliation.
+Consumers retain reconnect support. Producer commands and connection retries are bounded.
+The dispatcher checks Redis even with an empty SQL backlog. Redis transport retention follows the configured retention ages.
+SQL writes from an older attempt cannot replace a newer attempt's state or progress.
+These guards do not establish exactly-once effects, generic hard-crash recovery, or cross-version fencing.
