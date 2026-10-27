@@ -27,8 +27,8 @@
   "dependencies": {
     "@codexsun/framework": "^1.1.81",
     "fastify": "^5.12.5",
-    "kysely": "^0.29.6",
-    "mysql2": "^3.24.5",
-    "zod": "^4.6.5"
+    "kysely": "^0.29.7",
+    "mysql2": "^3.24.6",
+    "zod": "^4.6.7"
   }
 }

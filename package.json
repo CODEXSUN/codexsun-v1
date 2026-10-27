@@ -173,21 +173,24 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
-    "@tiptap/extension-text-style": "^3.31.4",
+    "@tiptap/extension-text-style": "^3.32.0",
     "@types/mailparser": "^3.9.0",
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "@types/nodemailer": "^8.0.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "deepmerge-ts": "^8.0.1",
+    "entities": "^8.1.0",
     "oxlint": "^1.87.0",
     "prettier": "^3.9.9",
+    "rollup": "^4.65.1",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "turbo": "^2.11.7",
     "typescript": "^7.0.2",
-    "vite": "^8.3.3"
+    "vite": "^8.3.5",
+    "ws": "^8.22.0"
   },
   "engines": {
     "node": ">=26.5.0",

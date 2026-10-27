@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@codexsun/ui": "^1.1.81",
-    "lucide-react": "^1.52.0",
-    "react": "^19.3.0"
+    "lucide-react": "^1.62.0",
+    "react": "^19.3.1"
   }
 }

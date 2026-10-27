@@ -15,9 +15,9 @@
   },
   "dependencies": {
     "@codexsun/ui": "^1.1.81",
-    "@tanstack/react-query": "^5.104.1",
-    "lucide-react": "^1.52.0",
-    "react": "^19.3.0",
-    "zod": "^4.6.5"
+    "@tanstack/react-query": "^5.105.0",
+    "lucide-react": "^1.62.0",
+    "react": "^19.3.1",
+    "zod": "^4.6.7"
   }
 }
