@@ -45,7 +45,7 @@ class MobileNotificationService extends ChangeNotifier {
   Future<void> _initialize() async {
     const android = AndroidInitializationSettings('ic_launcher');
     await _notifications.initialize(
-      const InitializationSettings(android: android),
+      settings: const InitializationSettings(android: android),
     );
     final androidPlugin = _notifications
         .resolvePlatformSpecificImplementation<
@@ -79,10 +79,10 @@ class MobileNotificationService extends ChangeNotifier {
     required String body,
   }) {
     return _notifications.show(
-      id,
-      title,
-      body,
-      NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           'crm_activity',
           '${AppConfig.brandName} activity',

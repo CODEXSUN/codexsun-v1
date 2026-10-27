@@ -2,7 +2,7 @@
 
 Repository source: `apps/crm/agent/SKILLS.md`
 
-Source SHA-256 (LF line endings): `e0738e72e88a46299ad5f139e17ea2cd4423dddd2b348fd642eefd48f18ab57b`
+Source SHA-256 (LF line endings): `ab176232a2bbb5e6aecdc32eeec6b32541ec7c5557ace702a3ae65c405b79e91`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -50,6 +50,10 @@ reply links, and suppression of import echoes. General Activities exports remain
 
 ## Review and evidence
 
+For a small change, inspect the affected code and use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Add checks when the actual risk requires them.
+The commands below are options for full verification, not a checklist for every prompt.
+
 - `node tools/check-module-boundaries.mjs crm`
 - `npm run typecheck -w @codexsun/crm-api`
 - `npm run lint -w @codexsun/crm-api`
@@ -58,6 +62,6 @@ reply links, and suppression of import echoes. General Activities exports remain
 - `npm run lint -w @codexsun/crm-web`
 - `npm run build -w @codexsun/crm-web`
 
-Check affected consumers and relevant tests. Report skipped or blocked checks explicitly.
+Check affected consumers as needed. Report material verification limits and blocked checks.
 Documentation and prompts never replace backend authorization or deployment approval.
 ```

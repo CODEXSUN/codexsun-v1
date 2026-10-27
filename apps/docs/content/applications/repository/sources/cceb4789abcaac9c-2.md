@@ -2,7 +2,7 @@
 
 Repository source: `apps/frappe/agent/TASK.md`
 
-Source SHA-256 (LF line endings): `f897cbc4dc13609369fea95bd79118bee2d8a3da3d401621fc2e0f9ef71d62e0`
+Source SHA-256 (LF line endings): `a6831d5f7e464b75779eaa13d0d4b0d3647eb0903ed9ff6402196a751d2a6050`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -102,6 +102,9 @@ These tasks define acceptance for a change. Unchecked items are not claims of mi
 
 ## Acceptance evidence
 
+For a small change, use at most one focused check when useful. Inspection can suffice for a trivial edit.
+The commands below are options for full verification. Add checks when the actual risk requires them.
+
 - `node tools/check-module-boundaries.mjs frappe`
 - `npm run typecheck -w @codexsun/frappe-api`
 - `npm run lint -w @codexsun/frappe-api`
@@ -110,8 +113,8 @@ These tasks define acceptance for a change. Unchecked items are not claims of mi
 - `npm run lint -w @codexsun/frappe-web`
 - `npm run build -w @codexsun/frappe-web`
 
-Use `npm run check:component-docs` for this documentation contract.
-Run applicable tests before marking implementation work complete.
+Use component documentation checks when full verification requires them.
+Run checks proportionate to the implemented behavior and its risks.
 Do not treat documentation, a build, or a model response as proof of live persistence or deployment.
 
 ## Live CRM create and edit regression - 17-10-2026

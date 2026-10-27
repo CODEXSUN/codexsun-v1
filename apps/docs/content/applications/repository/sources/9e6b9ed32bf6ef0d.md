@@ -2,7 +2,7 @@
 
 Repository source: `devkits/uiux/agent/TASK.md`
 
-Source SHA-256 (LF line endings): `92aaca1b1318a5582a9f7b5836b77cd79459d62c2c8fcd6dae16117aa2368e45`
+Source SHA-256 (LF line endings): `e6caada1e21b252ffea02ee855dbb9e32ffe2e41fe874722eacb29b92d6e5ee0`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -31,11 +31,14 @@ These tasks define acceptance for a change. Unchecked items are not claims of mi
 
 ## Acceptance evidence
 
+For a small change, use at most one focused check when useful. Inspection can suffice for a trivial edit.
+The commands below are options for full verification. Add checks when the actual risk requires them.
+
 - `npm run typecheck -w @codexsun/uiux`
 - `npm run lint -w @codexsun/uiux`
 - `npm run build -w @codexsun/uiux`
 
-Use `npm run check:component-docs` for this documentation contract.
-Run applicable tests before marking implementation work complete.
+Use component documentation checks when full verification requires them.
+Run checks proportionate to the implemented behavior and its risks.
 Do not treat documentation, a build, or a model response as proof of live persistence or deployment.
 ```

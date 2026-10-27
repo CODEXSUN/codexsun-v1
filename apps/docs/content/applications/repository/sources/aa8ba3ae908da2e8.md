@@ -2,7 +2,7 @@
 
 Repository source: `apps/core/agent/PLAN.md`
 
-Source SHA-256 (LF line endings): `539d49ee85bc6a7b6f1215cf144aed9c976ade86fb4ff25cdb2f2438cd55dc44`
+Source SHA-256 (LF line endings): `c8535fbfa52402f30943a1170b4930c7f3083eb69c71411b9c1eb38366623287`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -52,6 +52,9 @@ Source presence is not release evidence. Confirm executable behavior before desc
 
 ## Verification gates
 
+For a small change, use at most one focused check when useful. Inspection can suffice for a trivial edit.
+The commands below are options for full verification. Add checks when the actual risk requires them.
+
 - `node tools/check-module-boundaries.mjs core`
 - `npm run typecheck -w @codexsun/core-api`
 - `npm run lint -w @codexsun/core-api`
@@ -60,7 +63,7 @@ Source presence is not release evidence. Confirm executable behavior before desc
 - `npm run lint -w @codexsun/core-web`
 - `npm run build -w @codexsun/core-web`
 
-Use `npm run check:component-docs` and the relevant root checks.
+Use component and root checks when the change or full verification requires them.
 Run database, browser, native, and deployment checks when the changed behavior needs them.
 Do not mark an untested phase or planned feature complete.
 

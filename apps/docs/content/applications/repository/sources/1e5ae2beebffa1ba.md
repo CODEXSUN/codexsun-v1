@@ -2,7 +2,7 @@
 
 Repository source: `apps/chat/agent/PLAN.md`
 
-Source SHA-256 (LF line endings): `94f88c1fe4eb2b5f581ee669b03af42a00f789d2c67c49afc17422279852b627`
+Source SHA-256 (LF line endings): `716f565dfa4cfa11ea96a336a04c8393c0fa3e9d0de688050be8105df67dffc3`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -53,6 +53,9 @@ Source presence is not release evidence. Confirm executable behavior before desc
 
 ## Verification gates
 
+For a small change, use at most one focused check when useful. Inspection can suffice for a trivial edit.
+The commands below are options for full verification. Add checks when the actual risk requires them.
+
 - `node tools/check-module-boundaries.mjs chat`
 - `npm run typecheck -w @codexsun/chat-api`
 - `npm run lint -w @codexsun/chat-api`
@@ -61,7 +64,7 @@ Source presence is not release evidence. Confirm executable behavior before desc
 - `npm run lint -w @codexsun/chat-web`
 - `npm run build -w @codexsun/chat-web`
 
-Use `npm run check:component-docs` and the relevant root checks.
+Use component and root checks when the change or full verification requires them.
 Run database, browser, native, and deployment checks when the changed behavior needs them.
 Do not mark an untested phase or planned feature complete.
 

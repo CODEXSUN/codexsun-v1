@@ -20,6 +20,24 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
 
+## Unreleased operation records
+
+### 2026-10-27 - Record the Thirumurugan Data Bridge VPS transfer
+
+#### Database Changes
+
+- Record the completed transfer from local `thirumurugan_v2_local` to VPS `thirumurugan_v2_db`.
+- Record activation of the existing SRI THIRUMURUGAN PRINTERS tenant and persistent storage provisioning.
+- Record verification of 1,660 confirmed invoices, 5,301 items, login, isolation, and unchanged source fingerprints.
+- Keep 223 held invoices and all 683 legacy receipts pending. Customer outstanding balances remain incomplete.
+- This documentation update performs no additional database change or transfer.
+
+#### App Codebase Changes
+
+- Update the [Thirumurugan migration guide](../../devkits/data-bridge/agent/thirumurugan-migration.md) with the completed VPS phase.
+- Add the [dated operation log](../../devkits/data-bridge/agent/THIRUMURUGAN-VPS-TRANSFER-2026-10-27.md) with verification and recovery evidence.
+- No application logic, package version, image deployment, or credential change in this documentation task.
+
 ## v-1.1.81
 
 ### [v 1.1.81] 2026-10-27 11:58 am - Update development policies and repository cleanup

@@ -1,6 +1,7 @@
 # Thirumurugan migration: execution notes and repeat procedure
 
 Recorded: 2026-10-25, Asia/Calcutta.
+Updated: 2026-10-27, Asia/Calcutta, after the approved VPS transfer.
 
 ## Purpose and current scope
 
@@ -8,7 +9,10 @@ Use this guide for older databases with renamed tables, accounting-period compan
 It records the approved Thirumurugan work and the checks needed for another client.
 Client names, table names, field names, and numeric IDs below describe this case. They are not universal migration rules.
 
-This work ran against a local Docker target. It did not migrate Thirumurugan to the cloud.
+The legacy conversion ran against a local Docker target.
+On 2026-10-27, the approved subset was transferred to the VPS and the existing tenant was activated.
+See [the VPS operation log](THIRUMURUGAN-VPS-TRANSFER-2026-10-27.md) for the recorded verification and recovery evidence.
+This documentation update does not repeat the transfer or run another database operation.
 Do not treat these notes as permission to import another client or deploy to production.
 
 Read [cxapp-v2.md](cxapp-v2.md) for the shared operating safeguards.
@@ -22,24 +26,27 @@ That earlier document describes the preparation phase. Its historical no-import 
 | Original source | `thirumurugan_db`, native local MariaDB, port 3306 | Read only. Do not change rows, schema, users, or audit fields. |
 | Raw Docker restore | `codexsun_bridge_thirumurugan_legacy`, local port 13306 | Read only. Compare its contents with the original source. |
 | Normalized staging | `codexsun_bridge_thirumurugan_stage_1792910661053` | Derived working collection. Apply approved transformations here, then freeze it during execution. |
-| Business target | `thirumurugan_v2_local`, local Docker MariaDB | Only this business database received the approved imports. |
+| Local prepared tenant | `thirumurugan_v2_local`, local Docker MariaDB | Received the approved legacy imports. Its rows stayed unchanged during the VPS transfer. |
+| Active VPS tenant | `thirumurugan_v2_db`, VPS Docker MariaDB | Received the verified snapshot and owner runtime provisioning. Held legacy rows remain excluded. |
 | Earlier disposable target | `codexsun_bridge_thirumurugan_target_1792910661053` | Preparation fixture. Do not confuse it with the business target. |
 
 The selected Data Bridge source was connection 3. The selected local tenant was tenant 14.
 These registration IDs are case references. Resolve the current connection and tenant again before another run.
 
-The final source checks covered 43 tables and 23,890 rows.
+The original legacy-source checks covered 43 tables and 23,890 rows.
+The later VPS transfer separately checked all 92 prepared tenant tables.
 These counts describe the inspected snapshot. Compare hashes as well as counts when resuming work.
 
 ## Completed work and open work
 
-| Stage | Verified local result | Remaining boundary |
+| Stage | Verified result | Remaining boundary |
 | --- | --- | --- |
 | Core common references | 99 inserts and 24 existing matches across 14 selected tables. Repeat inserted zero rows. | Ambiguous geography remains held. |
 | Core masters | Reused company ID 1. Added 2,063 rows, including contacts, products, addresses, channels, and historical years. | Eight contact addresses and three products remain held. |
 | Billing sales | Added 1,660 confirmed invoices and all 5,301 associated item rows. Repeat inserted zero rows. | Held 223 complete invoice aggregates and their 903 children. |
 | Receipts | Prepared 683 receipts and 683 source detail rows. | No receipt import occurred. All receiving-ledger mappings remain unresolved. |
 | Receipt allocations | Prepared three explicit allocations against existing target invoices. | No allocation import occurred. Do not invent links for the other 680 details. |
+| VPS transfer | Copied the 92-table prepared tenant. Activated the existing SRI THIRUMURUGAN PRINTERS tenant after verification. | No held invoices or receipts were imported. |
 
 Do not describe the full client migration as complete. Invoice mismatches and receipt decisions remain open.
 
@@ -59,6 +66,61 @@ Do not claim that these Billing rows have Data Bridge queue job records.
 Application code and the original source were not changed for these execution steps.
 Do not reuse private operational scripts blindly against another database.
 Use the normal supported import path for future work. Review any required transaction exception before execution.
+
+The VPS transfer used a consistent logical dump over pinned-host SSH.
+The destination did not exist before the operation. It was created as `thirumurugan_v2_db` while the tenant remained inactive.
+All 92 restored table hashes matched the source before owner provisioning.
+Standard deployed owner functions then prepared missing runtime tables and persistent storage.
+The destination had 305 tables afterward. Added prerequisites do not represent additional legacy business imports.
+No application image or version was deployed during the transfer.
+
+## VPS tenant, storage, and verification record
+
+This section records the completed 2026-10-27 operation. It is not a fresh live-status check.
+
+| Item | Verified transfer result |
+| --- | --- |
+| Tenant | SRI THIRUMURUGAN PRINTERS |
+| Corporate ID / tenant code | `SRITHIRUMURUGAN` / `THIRUMURUGAN` |
+| Existing registry ID / public UUID | 14 / `3728e1d1` |
+| Database and status | `thirumurugan_v2_db`, active |
+| Company | Existing company ID 1 preserved. One company with the expected name. |
+| Confirmed invoices / item rows | 1,660 / 5,301 |
+| Confirmed sales amount | INR 2,62,12,667.00 |
+| Orphaned references / aggregate mismatches | 0 / 0 |
+| Administrator | `admin@tenant.com`, active admin role. Existing password hash preserved. |
+| Configured storage alias | `/app/storage/thirumurugan` |
+| Persistent storage root | `/storage/tenants/thirumurugan` |
+
+The storage owner prepared public and private roots on the persistent CODEXSUN volume.
+Read/write probes passed and were removed.
+The inspected company had no logo or attachment files that required transfer.
+The existing VPS module list, including Zetro, was preserved.
+
+Tenant login resolved to UUID `3728e1d1` and database `thirumurugan_v2_db`.
+Public HTTPS login and positive Billing checks passed.
+The seven historical dashboards matched their SQL counts and totals.
+One confirmed invoice from each historical year returned its expected complete child set.
+All 1,660 invoice aggregates also passed database checks. The seven API samples supplement those full-dataset checks.
+
+An untrusted client database header did not change the session's tenant.
+The repeated deployed API check rejected an invalid company scope with HTTP 400.
+Test sessions were logged out. Passwords, tokens, and cookies were not recorded in the verification reports.
+Windows HTTPS probes had intermittent connection resets. Complete repeated API checks passed over VPS loopback.
+An interactive browser form sign-in was not performed.
+
+All 92 local source table hashes remained unchanged after the operation.
+The source tenant routing and original legacy source were not migration targets.
+Only expected framework metadata, migration entries, and derived dashboard snapshots changed during destination provisioning.
+Copied Core and Billing business values remained intact.
+
+The current/default FY 2026-27 stayed unchanged.
+Select FY 2017-18 through FY 2023-24 to view the imported historical sales.
+The transfer did not import the 223 held invoices, their 903 children, or the 683 pending receipts.
+Receipt and invoice allocation tables remained empty. Customer outstanding balances are not final.
+
+After activation, do not restore the old local snapshot over the live destination.
+Review subsequent live writes first. Future held-row imports need new backups and an approved incremental plan.
 
 ## Repeat procedure for another legacy database
 
@@ -306,6 +368,31 @@ Customer outstanding balances remain incomplete until receipt and allocation wor
 Private artifacts live under repository-root `dist/verification/thirumurugan-legacy/`.
 They contain client data and are ignored generated output. Preserve them securely before cleaning `dist`.
 Do not commit raw rows, credentials, password hashes, or database dumps with these notes.
+The earlier October 25 row-review files were absent from the current `dist` tree during the VPS audit.
+Use the retained notes and backups, then recreate row-level reviews before resolving pending records.
+
+Durable VPS transfer evidence is retained at:
+
+`D:/workspace/backups/data-bridge/thirumurugan-vps-transfer-20261027/`
+
+Use `REPORT.md` or `REPORT.html` for the final report.
+Use `summary.json`, `api-login-verification.json`, and `post-activation-base-proof.json` for the verification details.
+Use `local-before.json` and `local-final.json` for the unchanged source fingerprints.
+Use `vps-restored.json` for exact restored-table equality before owner provisioning.
+Use `vps-final.json`, `activation.json`, and `provision-target.json` for final destination and storage evidence.
+
+The verified compressed dump has SHA-256:
+
+`500634c62b3e5ab7a5059c6a8aa0dfcc93bd5b6d02637833d0c8ff18f187919c`
+
+The restricted VPS recovery directory is:
+
+`/home/codexsun-backups/thirumurugan-transfer-20261027-1793081640319`
+
+It retains the dump, the pre-transfer tenant record, and the final report.
+The recovery copy contains business data and password hashes. Keep it private and outside public storage.
+If recovery is required, disable the tenant and review newer transactions before any restore.
+Do not drop or overwrite an active destination as an automatic rollback.
 
 | Folder | Main evidence |
 | --- | --- |

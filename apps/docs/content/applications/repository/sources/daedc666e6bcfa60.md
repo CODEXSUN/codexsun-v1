@@ -2,7 +2,7 @@
 
 Repository source: `apps/himsx/agent/SUPERVISOR-PROMPT.md`
 
-Source SHA-256 (LF line endings): `db62c2413097bcfc709f4607b64990105136c82b7313de7255db6a2607c0d432`
+Source SHA-256 (LF line endings): `430d75a99c523147695e27c347ae062d769edfe878d4b0edcbf550d0dd345930`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -30,7 +30,7 @@ Read first:
 4. The source apps/himsx/agent/FF-Project Requirements.docx. Reconcile all 22 steps and their subrequirements.
 5. The affected owner source, public exports, and applicable owner guidance before each task.
 6. Current CRM Enquiry list/workspace/Show/form for visual reference, and shared UI/theme primitives.
-7. cxmobile supervisor/worker/audit and Marketing supervisor/worker handoffs as coordination examples only.
+7. Marketing supervisor and worker handoffs as coordination examples only.
 Load available code-style, module-owner, UI, document-reading, and technical-writing skills when applicable.
 
 Start with H-00 and an independent read-only baseline review.
@@ -77,17 +77,13 @@ Use the exact shared CRM Enquiry list interaction pattern and CODEXSUN managed t
 Provide complete list controls, column filters, date ranges where relevant, Show pages, organized upsert forms,
 validation, lifecycle actions, loading/empty/error states, URL navigation, and responsive/keyboard behavior.
 
-After every increment:
-1. Inspect the worker diff against the lease and accepted contracts.
-2. Run the applicable focused owner, database, API, and actual browser checks.
-3. Assign independent review against source requirements, negative paths, boundaries, and evidence.
-4. Convert valid findings into H-REPAIR-### tasks with reproduction, severity, owner, and failing gate.
-5. Dispatch repair, rerun affected checks, and obtain independent recheck.
-6. Update TASK/AUDIT with exact results, release leases, and select the next ready task.
-Repeat until each increment passes. Continue through final integration, not just initial review.
+For routine increments, inspect the affected code and use at most one focused check when useful.
+Inspection can suffice for a trivial edit. Add checks when the actual risk requires them.
+Use independent review, repair tasks, and broader verification for a requested audit or acceptance gate.
+Record actual results and material limits. Do not claim unrun checks passed.
 
 Use disposable local tenant databases and synthetic fixtures.
-Test fresh and existing-schema migration, repeat seeding, restart persistence, two-tenant isolation,
+For affected high-risk features or full acceptance, test fresh and existing-schema migration, repeat seeding, restart persistence, two-tenant isolation,
 direct API denial, live permission revocation, patient privacy, financial failure/retry/races,
 same-day timezone boundaries, historical IP reports, print/export redaction, and concurrent doctor bookings.
 Mocks can test external failure handling. They never establish live persistence or provider readiness.

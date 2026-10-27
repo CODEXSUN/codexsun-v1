@@ -2,7 +2,7 @@
 
 Repository source: `devkits/zuno/agent/PLAN.md`
 
-Source SHA-256 (LF line endings): `3554ec51004bb2c6bc3aa7f135374deb62ab98b5b4c3dd3b70243677fa5c6588`
+Source SHA-256 (LF line endings): `7323ddd17cb3ed1677682dd650f0dc6888479b506ecafce2b5928a7560dbf428`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -42,6 +42,9 @@ Source presence is not release evidence. Confirm executable behavior before desc
 
 ## Verification gates
 
+For a small change, use at most one focused check when useful. Inspection can suffice for a trivial edit.
+The commands below are options for full verification. Add checks when the actual risk requires them.
+
 - `node tools/check-module-boundaries.mjs zuno`
 - `npm run typecheck -w @codexsun/zuno-api`
 - `npm run lint -w @codexsun/zuno-api`
@@ -50,7 +53,7 @@ Source presence is not release evidence. Confirm executable behavior before desc
 - `npm run lint -w @codexsun/zuno-web`
 - `npm run build -w @codexsun/zuno-web`
 
-Use `npm run check:component-docs` and the relevant root checks.
+Use component and root checks when the change or full verification requires them.
 Run database, browser, native, and deployment checks when the changed behavior needs them.
 Do not mark an untested phase or planned feature complete.
 ```

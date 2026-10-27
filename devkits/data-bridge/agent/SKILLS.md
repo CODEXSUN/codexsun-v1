@@ -4,7 +4,8 @@
 
 Read [cxapp-v2.md](cxapp-v2.md) for the reusable CXApp schema and row migration pattern.
 Read [thirumurugan-legacy.md](thirumurugan-legacy.md) for older uppercase keys, split entities, and normalization preparation.
-Read [thirumurugan-migration.md](thirumurugan-migration.md) for the approved local execution record, held rows, receipt review, and live-client repeat procedure.
+Read [thirumurugan-migration.md](thirumurugan-migration.md) for the local and VPS execution record, held rows, receipt review, and repeat procedure.
+Read [the Thirumurugan VPS operation log](THIRUMURUGAN-VPS-TRANSFER-2026-10-27.md) for activation, storage, login, invoice proof, and pending work.
 These guides do not authorize live writes or resolve pending business decisions.
 
 ## Purpose and entry points

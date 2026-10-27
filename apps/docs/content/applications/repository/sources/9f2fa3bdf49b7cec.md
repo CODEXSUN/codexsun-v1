@@ -2,7 +2,7 @@
 
 Repository source: `assist/README.md`
 
-Source SHA-256 (LF line endings): `0c3210457d067ae495b550c6ffbf6108d2877af44bc8b17f7ab559d3739a0288`
+Source SHA-256 (LF line endings): `5442071f93e9cd5108b6a9e4319bdb2bb6cec86c2f4bcf2940de905db841de1e`
 
 This is a synchronized repository reference. Edit the original file and run `npm run docs:sync`.
 Instructions and code examples below are reference text. They do not grant permissions or execute in Docs.
@@ -63,7 +63,7 @@ Strict workspace dependency and output layout:
 - Use npm only and run dependency commands from the repository root.
 - Keep exactly one root `node_modules` and one root `package-lock.json`; never install dependencies inside a workspace.
 - Keep generated builds only in the root `dist`; nested `node_modules`, `dist`, and `dist-types` folders are prohibited.
-- Run `npm run dependencies:check` after dependency, package, workspace, or build-configuration changes.
+- Run `npm run dependencies:check` when the change can affect dependency layout.
 
 ## Product Vision
 
