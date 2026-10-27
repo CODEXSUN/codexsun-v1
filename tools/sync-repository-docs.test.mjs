@@ -23,6 +23,8 @@ test("repository references preserve MDX as text, exclude output, and detect dri
     mkdirSync(join(root, ".codex-runtime"));
     writeFileSync(join(root, ".codex-runtime/local-report.md"), "# Local acceptance evidence");
     writeFileSync(join(root, ".codex-runtime/HANDOFF.md"), "# Private local runtime record");
+    mkdirSync(join(root, ".npm/_cacache"), { recursive: true });
+    writeFileSync(join(root, ".npm/_cacache/ignored.md"), "# Package cache");
     const audit = new RepositoryDocumentation(root);
     assert.equal(audit.synchronize().count, 1);
     assert.deepEqual(audit.synchronize(true).failures, []);

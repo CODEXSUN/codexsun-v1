@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/sites-clients",
-  "version": "1.1.76",
+  "version": "1.1.77",
   "private": true,
   "type": "module",
   "exports": {
@@ -32,13 +32,13 @@
   },
   "dependencies": {
     "zod": "^4.6.5",
-    "@codexsun/sites-api": "^1.1.76",
-    "@codexsun/ui": "^1.1.76",
+    "@codexsun/sites-api": "^1.1.77",
+    "@codexsun/ui": "^1.1.77",
     "framer-motion": "^14.0.0",
     "lucide-react": "^1.52.0",
     "react": "^19.3.0",
     "react-dom": "^19.0.0",
-    "@codexsun/tconnect-web": "^1.1.76"
+    "@codexsun/tconnect-web": "^1.1.77"
   },
   "description": "Sites clients: LogicX (7131), Ramu Tex (7132) and Tirupur Connect (7040)"
 }

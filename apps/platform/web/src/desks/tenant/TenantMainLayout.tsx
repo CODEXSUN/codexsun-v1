@@ -124,6 +124,11 @@ function TenantMainShell({
           addonItems={addonAppItems}
           appItems={appItems}
           applicationName={workspaceName}
+          companyBrand={{
+            name: brand.title,
+            ...(brand.logoSrc ? { logoSrc: brand.logoSrc } : {}),
+            ...(brand.logoDarkSrc ? { logoDarkSrc: brand.logoDarkSrc } : {})
+          }}
           notifications={notifications}
           {...(onNotificationDismiss ? { onNotificationDismiss } : {})}
           onCloseSearch={closeSearch}
