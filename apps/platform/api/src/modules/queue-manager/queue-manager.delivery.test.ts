@@ -11,6 +11,7 @@ import {
 } from "./queue-manager.bullmq.js";
 import {
   queueDeliveryDelay,
+  queueDeliveryId,
   readQueueDelivery,
   redisQueuePrefix,
   verifyQueueDelivery
@@ -133,6 +134,98 @@ test(
       await legacyQueue.obliterate({ force: true });
       await queue.close();
       await legacyQueue.close();
+    }
+  }
+);
+
+test(
+  "a held prior Redis generation blocks duplicate publication until terminal",
+  {
+    skip: process.env.CODEXSUN_TEST_REDIS !== "1"
+  },
+  async () => {
+    const url = new URL(env.CODEXSUN_REDIS_URL);
+    const connection = {
+      host: url.hostname,
+      port: Number(url.port || 6379),
+      db: Number(url.pathname.slice(1) || 0),
+      password: url.password ? decodeURIComponent(url.password) : undefined,
+      username: url.username || undefined,
+      maxRetriesPerRequest: null
+    };
+    const name = `codexsun-held-delivery-test-${randomUUID()}`;
+    const queue = new Queue(name, { connection, prefix: queueRedisPrefix });
+    const record: QueueJobRecord = {
+      id: 1,
+      uuid: randomUUID(),
+      queueName: name,
+      jobName: "queue.probe",
+      attempts: 1,
+      maxAttempts: 3,
+      priority: 1,
+      idempotencyKey: randomUUID(),
+      payload: {},
+      actorEmail: "test@codexsun.local",
+      availableAt: new Date(Date.now() + 60_000).toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      completedAt: null,
+      correlationId: null,
+      errorMessage: null,
+      result: {},
+      sourceModule: "queue-manager.test",
+      startedAt: null,
+      status: "pending",
+      tenantId: null
+    };
+    const priorId = queueDeliveryId({ uuid: record.uuid, attempts: 0 });
+    const currentId = queueDeliveryId(record);
+    let worker: Worker | undefined;
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      const prior = await queue.add(
+        record.jobName,
+        {
+          queueJobId: record.id,
+          queueJobUuid: record.uuid
+        },
+        { jobId: priorId, delay: 60_000, removeOnComplete: false }
+      );
+      assert.equal(await prior.getState(), "delayed");
+      await publishBullMqJob(record);
+      await publishBullMqJob(record);
+      assert.equal(await queue.getJob(currentId), undefined);
+      assert.equal(
+        (await queue.getJobs(["waiting", "active", "delayed", "prioritized"])).length,
+        1
+      );
+      worker = new Worker(name, async () => ({ resumed: true }), {
+        connection,
+        prefix: queueRedisPrefix
+      });
+      const completed = new Promise<void>((resolve, reject) => {
+        worker!.once("completed", () => resolve());
+        worker!.once("failed", (_job, error) => reject(error));
+        timer = setTimeout(() => reject(new Error("Prior delivery did not complete.")), 10000);
+      });
+      await worker.waitUntilReady();
+      record.availableAt = new Date().toISOString();
+      await publishBullMqJob(record);
+      await completed;
+      await worker.close();
+      assert.equal(await prior.getState(), "completed");
+      await publishBullMqJob(record);
+      assert.ok(await queue.getJob(currentId));
+      assert.equal(
+        (await queue.getJobs(["waiting", "active", "delayed", "prioritized"])).length,
+        1
+      );
+    } finally {
+      if (timer) clearTimeout(timer);
+      await worker?.close();
+      await closeBullMq();
+      await queue.obliterate({ force: true });
+      await queue.close();
     }
   }
 );

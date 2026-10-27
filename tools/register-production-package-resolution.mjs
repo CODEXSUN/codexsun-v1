@@ -30,6 +30,10 @@ const apiPackages = new Map([
   ["@codexsun/marketing-api", "marketing"]
 ]);
 const productionApiAliases = new Map([
+  [
+    "@codexsun/platform-api/background",
+    resolve(root, "dist", "apps", "platform", "api", "background.js")
+  ],
   ["@codexsun/data-bridge-api", resolve(root, "dist", "devkits", "data-bridge", "api", "index.js")],
   [
     "@codexsun/data-migration-api",

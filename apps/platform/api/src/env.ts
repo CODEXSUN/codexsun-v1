@@ -27,6 +27,7 @@ const envSchema = z
       (value) => (value === "memory" ? "database" : value),
       z.enum(["database", "bullmq-redis"])
     ),
+    CODEXSUN_QUEUE_EXECUTION_HOST: z.enum(["platform", "worker"]).default("platform"),
     CODEXSUN_QUEUE_COMPLETED_RETENTION_DAYS: z.coerce.number().int().positive(),
     CODEXSUN_QUEUE_FAILED_RETENTION_DAYS: z.coerce.number().int().positive(),
     CODEXSUN_QUEUE_WORKER_ENABLED: z.enum(["0", "1"]),

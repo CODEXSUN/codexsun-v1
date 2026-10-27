@@ -5,6 +5,7 @@
     "moduleResolution": "NodeNext",
     "noEmit": false,
     "outDir": "../../../dist/apps/worker/api",
+    "preserveSymlinks": true,
     "rootDir": "src",
     "types": ["node"]
   },

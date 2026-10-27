@@ -58,9 +58,40 @@ The standard Chat permission seed grants Admin, Super Admin, Manager, and User a
 Channel and message reads require active membership; channel administration and editing another user's message require channel administration.
 Web channel/message queries poll for messages written by the CRM transaction contract.
 
-
 ## 2026-10-17: Read cursor correctness
 
 Migration `chat.008_read_cursor` adds nullable `chat_channel_reads.last_message_id` and backfills existing rows from their saved read timestamp. It changes only Chat read tracking; no message rows are removed. The migration is repeatable and was applied twice on the local test tenant.
 Unread counts compare message IDs, which avoids timezone and same-second timestamp ambiguity. HTTP read requests accept an optional messageId and advance the cursor monotonically. Membership and company checks remain required. Existing clients without a cursor retain mark-current-channel-read behavior. New messages use UTC, and newest-message queries use ID order.
 Validation: the isolated work-report E2E covers assignment unread, new messages after read, old cursor retries, and read clearing. Apply the tracked migration to each target tenant before deploying this code. Production migration was not run.
+
+## Realtime ownership and delivery
+
+Chatb remains a transport proxy. Chat owns channel membership, message persistence, and realtime events.
+Platform supplies the authenticated tenant context and live permission authority.
+
+Realtime event publishers pass the verified tenant, database, and company context.
+The Chat bus matches this scope before checking each subscriber's current permission and channel membership.
+Removed memberships and denied permissions stop message, typing, and presence delivery.
+Typing also requires current channel membership for its sender.
+
+`ChatRealtimeEvents` callbacks are asynchronous and take `ChatRuntimeContext` first.
+Publishers must await these callbacks. This contract adds no database migration or new broker.
+Connections remain process-local. Multiple Platform instances need a separately reviewed fan-out contract.
+The existing browser reconnect and HTTP polling recover persisted messages. Presence and typing remain transient.
+Timestamp-based `chat.sync` is unchanged and is not an exactly-once cursor protocol.
+
+The host must include live session validation in its context authority to revoke an already open socket on logout.
+Handshake authentication alone does not supply that guarantee.
+
+## Telegram execution host
+
+`telegramExecution: false` keeps the API routes and queue producers without starting the account scheduler or registering its processor.
+The execution host starts the exported `ChatTelegramWorker` with the same tenant scope and authorization dependencies.
+Its asynchronous stop callback stops dispatch and waits for the current scheduler pass.
+The queue host must also drain its active processors before closing database connections.
+
+`subscribeExternalMessages` lets the composition host deliver persisted-message notifications to Chat's local realtime bus.
+The host validates the trusted transport event, resolves tenant authority, and reloads the persisted message.
+It returns asynchronous subscription cleanup for application shutdown.
+Chat rechecks local recipients' live permissions and membership before delivery.
+The host owns Redis configuration and namespace isolation. Chat adds no Redis dependency.

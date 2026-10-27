@@ -28,14 +28,15 @@ export class ChatTelegramWorker {
     this.dependencies.registerProcessor((tenant, account, operation) =>
       this.process(tenant, account, operation)
     );
-    let running = false;
+    let stopped = false;
+    let inFlight: Promise<void> | undefined;
     const dispatch = async () => {
-      if (running) return;
-      running = true;
       try {
         for (const scope of await this.dependencies.scopes()) {
+          if (stopped) return;
           try {
             for (const account of await this.repository.list(scope)) {
+              if (stopped) return;
               const slot =
                 account.auth_state === "connected" ? `:${Math.floor(Date.now() / 15_000)}` : "";
               await this.dependencies.enqueue({
@@ -57,13 +58,20 @@ export class ChatTelegramWorker {
         }
       } catch {
         console.warn("[chat.telegram] Account dispatch deferred.");
-      } finally {
-        running = false;
       }
     };
-    const timer = setInterval(() => void dispatch(), 5_000);
+    const timer = setInterval(() => {
+      if (stopped || inFlight) return;
+      inFlight = dispatch().finally(() => {
+        inFlight = undefined;
+      });
+    }, 5_000);
     timer.unref();
-    return () => clearInterval(timer);
+    return async () => {
+      stopped = true;
+      clearInterval(timer);
+      await inFlight;
+    };
   }
   async process(tenantId: string, accountUuid: string, operationId: string) {
     const scope = (await this.dependencies.scopes()).find((scope) => scope.tenantId === tenantId);

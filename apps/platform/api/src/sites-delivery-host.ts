@@ -26,6 +26,8 @@ export function sitesDeliveryHost(
     const tenant = await new TenantRepository().findByIdOrCode(job.tenantId);
     if (
       !tenant ||
+      tenant.uuid !== job.tenantId ||
+      tenant.status !== "active" ||
       tenant.corporateId !== "TIRUPURCONNECT" ||
       !tenant.enabledModuleKeys.includes("sites")
     )
@@ -40,8 +42,9 @@ export function sitesDeliveryHost(
       deploymentUuid: job.payload.deploymentUuid
     });
   });
-  if (process.env.CODEXSUN_SITES_PUBLISH_SECRET) {
-    const stop = startSitesDeliveryRelay(async () => {
+  if (queue.canExecute() && process.env.CODEXSUN_SITES_PUBLISH_SECRET) {
+    let activeRelay: Promise<void> | undefined;
+    const relay = async () => {
       await queue.expireRunningJobs(["sites.publication.deliver"], 120000);
       const jobs = await queue.listJobs({
         queueName: "system",
@@ -62,19 +65,15 @@ export function sitesDeliveryHost(
           if (site) await expireSiteDelivery(db, job.payload.deploymentUuid, site.id);
         }
       }
-      for (const job of jobs
-        .filter(
-          (job) =>
-            job.jobName === "sites.publication.deliver" &&
-            ["pending", "failed"].includes(job.status) &&
-            job.attempts < job.maxAttempts &&
-            Date.parse(job.availableAt) <= Date.now()
-        )
-        .sort((a, b) => a.id - b.id)
-        .slice(0, 3))
-        await queue.runJob(job.id, { fromWorker: true });
+    };
+    const stop = startSitesDeliveryRelay(() => {
+      activeRelay = relay();
+      return activeRelay;
     });
-    app.addHook("onClose", async () => stop());
+    app.addHook("onClose", async () => {
+      stop();
+      await activeRelay?.catch(() => undefined);
+    });
   }
   return {
     async enqueue(input) {

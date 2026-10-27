@@ -53,3 +53,23 @@ Source presence is not release evidence. Confirm executable behavior before desc
 Use `npm run check:component-docs` and the relevant root checks.
 Run database, browser, native, and deployment checks when the changed behavior needs them.
 Do not mark an untested phase or planned feature complete.
+
+## Realtime isolation phase - 2026-10-26
+
+Preserve Chatb proxying and Chat ownership. Scope realtime fan-out by tenant, database, and company.
+Recheck live permissions and channel membership before delivery. Reject typing from removed members.
+Keep message persistence and existing HTTP polling inside Chat.
+Do not introduce Redis fan-out until multi-process delivery and a tested public authorization handoff require it.
+
+The event callback contract now carries authenticated context and returns a promise.
+All publishers must upgrade together. No stored-data migration is required.
+Focused tests cover colliding channel identities, revoked access, denied typing, and unsubscribe races.
+These tests use injected membership checks. Real database, authenticated browser, and deployment proof remain separate gates.
+
+## External Telegram execution composition
+
+The API can disable Telegram execution while retaining its settings and producer routes.
+The Worker host starts the exported module-owned executor and scheduler.
+Persisted-message notifications return through the injected external subscription contract.
+The host owns transport validation, tenant resolution, persisted-message reload, and subscription shutdown.
+Keep only one execution host enabled during the cutover. Drain old processors before starting the new host.

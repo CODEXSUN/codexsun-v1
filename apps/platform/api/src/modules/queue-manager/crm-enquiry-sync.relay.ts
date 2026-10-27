@@ -1,3 +1,4 @@
+import { startQueueRelay } from "./queue-manager.relay.js";
 import { canDispatchCrmFrappeSync, readCrmFrappeSyncAccess } from "../../crm-frappe-sync-access.js";
 import { createHash } from "node:crypto";
 import { sql, type Kysely } from "kysely";
@@ -161,8 +162,5 @@ export function startCrmEnquirySyncRelay(queue: QueueManagerService) {
       running = false;
     }
   };
-  const timer = setInterval(() => void dispatch(), 5000);
-  timer.unref?.();
-  void dispatch();
-  return () => clearInterval(timer);
+  return startQueueRelay(dispatch, 5000, () => queue.canExecute());
 }

@@ -44,7 +44,14 @@ export async function registerDataBridgeHost(
   app: FastifyInstance,
   migrationHost: DataMigrationHost
 ) {
-  const queue = new QueueManagerService();
+  const host = registerDataBridgeBackground(migrationHost);
+  await registerDataBridgeApi(app, host);
+}
+
+export function registerDataBridgeBackground(
+  migrationHost: DataMigrationHost,
+  queue = new QueueManagerService()
+): CommonTableImportHost {
   const refreshDashboard = async (targetTenantId: number) => {
     const target = await tenants.findByIdOrCode(String(targetTenantId));
     if (
@@ -303,5 +310,5 @@ export async function registerDataBridgeHost(
       invoiceWarnings: result.invoiceWarnings
     };
   });
-  await registerDataBridgeApi(app, host);
+  return host;
 }

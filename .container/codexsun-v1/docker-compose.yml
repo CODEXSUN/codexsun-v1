@@ -75,12 +75,19 @@ services:
       target: worker
     image: ${CODEXSUN_IMAGE_REGISTRY:-codexsun}/worker:${CODEXSUN_VERSION:?required}
     container_name: codexsun-worker
+    env_file: ../deploy.env
     environment:
       NODE_ENV: production
+      CODEXSUN_QUEUE_EXECUTION_HOST: ${CODEXSUN_QUEUE_EXECUTION_HOST:-platform}
+      CODEXSUN_DB_FRESH_ON_START: "0"
+      CODEXSUN_ALLOW_PRODUCTION_DB_RESET: "0"
+      CODEXSUN_ALLOW_LIVE_RESTORE: "0"
+      ENABLE_DEFAULT_TENANT_SEED: "0"
       CODEXSUN_REDIS_URL: ${CODEXSUN_REDIS_URL:-}
       CODEXSUN_WORKER_CONTROL_TOKEN: ${CODEXSUN_WORKER_CONTROL_TOKEN:-}
       CODEXSUN_WORKER_QUEUE_PREFIX: ${CODEXSUN_WORKER_QUEUE_PREFIX:-codexsun-worker}
       CODEXSUN_WORKER_PORT: ${CODEXSUN_WORKER_PORT:-17040}
+    volumes: [application-data:/storage]
     ports:
       - "127.0.0.1:${CODEXSUN_WORKER_PORT:-17040}:${CODEXSUN_WORKER_PORT:-17040}"
 

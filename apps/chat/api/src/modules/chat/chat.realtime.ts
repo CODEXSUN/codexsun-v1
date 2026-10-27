@@ -5,7 +5,7 @@ import type { WebSocket as WsSocket } from "ws";
 import { z } from "zod";
 import { AppError } from "@codexsun/framework/errors";
 import { ChatService } from "./chat.service.js";
-import type { ChatMessage, ChatModuleDependencies, ChatRuntimeContext } from "./chat.types.js";
+import type { ChatModuleDependencies, ChatRuntimeContext } from "./chat.types.js";
 
 /**
  * Realtime boundary for team chat. It owns socket lifecycle, channel
@@ -17,98 +17,15 @@ import type { ChatMessage, ChatModuleDependencies, ChatRuntimeContext } from "./
  * immediately without a socket.
  */
 
-export type ChatRealtimeSocket = {
-  close: (code?: number, reason?: string) => void;
-  send: (frame: string) => void;
-};
-
-export type ChatRealtimeConnection = {
-  channels: Set<string>;
-  connectionId: string;
-  context: ChatRuntimeContext;
-  socket: ChatRealtimeSocket;
-};
-
-export class ChatConnectionManager {
-  private readonly connections = new Map<string, ChatRealtimeConnection>();
-
-  admit(connection: ChatRealtimeConnection): void {
-    this.connections.set(connection.connectionId, connection);
-  }
-
-  remove(connectionId: string): void {
-    this.connections.delete(connectionId);
-  }
-
-  get(connectionId: string): ChatRealtimeConnection | undefined {
-    return this.connections.get(connectionId);
-  }
-
-  subscribe(connectionId: string, channelUuid: string): void {
-    this.get(connectionId)?.channels.add(channelUuid);
-  }
-
-  unsubscribe(connectionId: string, channelUuid: string): void {
-    this.get(connectionId)?.channels.delete(channelUuid);
-  }
-
-  subscribers(channelUuid: string): ChatRealtimeConnection[] {
-    return [...this.connections.values()].filter((connection) =>
-      connection.channels.has(channelUuid)
-    );
-  }
-
-  onlineEmails(channelUuid: string): string[] {
-    return [
-      ...new Set(this.subscribers(channelUuid).map((connection) => connection.context.actorEmail))
-    ];
-  }
-}
-
-export class ChatRealtimeBus {
-  constructor(private readonly manager: ChatConnectionManager) {}
-
-  async messageCreatedInScope(context: ChatRuntimeContext, message: ChatMessage): Promise<void> {
-    const frame = realtimeFrame("message.created", { channelUuid: message.channelUuid, message });
-    for (const connection of this.manager.subscribers(message.channelUuid)) {
-      if (
-        connection.context.tenantId === context.tenantId &&
-        connection.context.tenantDatabase === context.tenantDatabase &&
-        connection.context.companyId === context.companyId
-      )
-        try {
-          await connection.context.authorize("chat.manage");
-          connection.socket.send(frame);
-        } catch {
-          // Revoked subscribers must not receive imported Telegram messages.
-        }
-    }
-  }
-
-  messageCreated(channelUuid: string, message: ChatMessage): void {
-    this.publish(channelUuid, realtimeFrame("message.created", { channelUuid, message }));
-  }
-
-  messageChanged(channelUuid: string, message: ChatMessage): void {
-    this.publish(channelUuid, realtimeFrame("message.updated", { channelUuid, message }));
-  }
-
-  messageDeleted(channelUuid: string, uuid: string): void {
-    this.publish(channelUuid, realtimeFrame("message.deleted", { channelUuid, uuid }));
-  }
-
-  publish(channelUuid: string, frame: string, excludeEmail?: string): void {
-    for (const connection of this.manager.subscribers(channelUuid)) {
-      if (
-        excludeEmail &&
-        connection.context.actorEmail.toLowerCase() === excludeEmail.toLowerCase()
-      ) {
-        continue;
-      }
-      connection.socket.send(frame);
-    }
-  }
-}
+export { ChatConnectionManager, ChatRealtimeBus, realtimeFrame } from "./chat.realtime-bus.js";
+export type { ChatRealtimeConnection, ChatRealtimeSocket } from "./chat.realtime-bus.js";
+import {
+  ChatConnectionManager,
+  ChatRealtimeBus,
+  realtimeFrame,
+  type ChatRealtimeConnection,
+  type ChatRealtimeSocket
+} from "./chat.realtime-bus.js";
 
 const envelopeSchema = z.object({
   eventId: z.string().trim().min(1).max(80),
@@ -141,6 +58,15 @@ export class ChatRealtimeGateway {
     const parsed = envelopeSchema.safeParse(parseFrame(raw));
     if (!parsed.success) {
       this.send(connectionId, "error", { code: "INVALID_EVENT", message: "Malformed event." });
+      return;
+    }
+    const connection = this.manager.get(connectionId);
+    if (!connection) return;
+    try {
+      await connection.context.authorize("chat.manage");
+    } catch {
+      this.manager.remove(connectionId);
+      connection.socket.close(4403, "Chat permission was revoked.");
       return;
     }
     const envelope = parsed.data;
@@ -196,13 +122,7 @@ export class ChatRealtimeGateway {
     }
     if (subscribe) {
       this.manager.subscribe(connectionId, payload.data.channelUuid);
-      this.bus.publish(
-        payload.data.channelUuid,
-        realtimeFrame("presence.updated", {
-          channelUuid: payload.data.channelUuid,
-          online: this.manager.onlineEmails(payload.data.channelUuid)
-        })
-      );
+      await this.bus.publishPresence(connection.context, payload.data.channelUuid);
     } else {
       this.manager.unsubscribe(connectionId, payload.data.channelUuid);
     }
@@ -252,7 +172,17 @@ export class ChatRealtimeGateway {
       });
       return;
     }
-    this.bus.publish(
+    try {
+      await this.bus.assertChannelAccess(connection.context, payload.data.channelUuid);
+    } catch {
+      this.send(connectionId, "error", {
+        code: "UNKNOWN_CHANNEL",
+        message: "Channel was not found."
+      });
+      return;
+    }
+    await this.bus.publish(
+      connection.context,
       payload.data.channelUuid,
       realtimeFrame(payload.data.typing ? "typing.started" : "typing.stopped", {
         channelUuid: payload.data.channelUuid,
@@ -332,15 +262,6 @@ export class ChatRealtimeGateway {
   }
 }
 
-export function realtimeFrame(eventType: string, payload: Record<string, unknown>): string {
-  return JSON.stringify({
-    eventId: randomUUID(),
-    eventType,
-    payload,
-    timestamp: new Date().toISOString()
-  });
-}
-
 function parseFrame(raw: string): unknown {
   try {
     return JSON.parse(raw) as unknown;
@@ -386,6 +307,7 @@ async function admitConnection(
   let context: ChatRuntimeContext;
   try {
     context = await dependencies.resolveContext(request);
+    await context.authorize("chat.manage");
   } catch {
     socket.close(4401, "Chat realtime session is not valid.");
     return;
@@ -419,24 +341,13 @@ async function admitConnection(
     });
   });
   socket.on("close", () => {
-    broadcastPresence(dependencies.manager, dependencies.events, connection);
     dependencies.manager.remove(connectionId);
+    for (const channelUuid of connection.channels) {
+      void dependencies.events.publishPresence(connection.context, channelUuid);
+    }
   });
   socket.on("error", () => {
     dependencies.manager.remove(connectionId);
     socket.close(1011, "Chat realtime connection error");
   });
-}
-
-function broadcastPresence(
-  manager: ChatConnectionManager,
-  bus: ChatRealtimeBus,
-  connection: ChatRealtimeConnection
-) {
-  for (const channelUuid of connection.channels) {
-    const online = manager
-      .onlineEmails(channelUuid)
-      .filter((email) => email.toLowerCase() !== connection.context.actorEmail.toLowerCase());
-    bus.publish(channelUuid, realtimeFrame("presence.updated", { channelUuid, online }));
-  }
 }

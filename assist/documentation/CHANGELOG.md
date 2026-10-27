@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.78
+Current version: 1.1.79
 
-Release tag: v-1.1.78
+Release tag: v-1.1.79
 
-Changelog label: v 1.1.78
+Changelog label: v 1.1.79
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,26 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.79
+
+### [v 1.1.79] 2026-10-27 10:12 am - Complete Platform queue Worker sync and resilience audit
+
+#### Database Changes
+
+- Database update: No. Use the existing queue schema. No migration, seed, reset, or data restore is required by this batch.
+- Guard queue completion, failure, progress, refunded holds, and automatic retry with the claimed attempt and current status.
+
+#### App Codebase Changes
+
+- Complete opt-in headless Worker composition for existing Platform queues. Keep Platform execution as the compatibility default.
+- Preserve tenant restoration, module-owned handlers, producer-only APIs, signed Chat notifications, and graceful consumer shutdown.
+- Bound Redis producer waits and retain successful SQL enqueue acknowledgements during transport outages. Reconcile pending jobs after recovery.
+- Repair cancelled and delayed delivery reuse, apply Redis retention ages, preserve TLS and IPv6 connection settings, and check readiness with an empty backlog.
+- Recheck tenant Mail activation and prevent activity-log failures from invalidating saved queue operations. Load Mail dependencies only when needed.
+- Record 36 native regression passes, Platform and Worker typechecks/lint, Docs validation, and module-boundary checks in the queue audit.
+- Keep Docker acceptance with the deployment owner. Generic hard-crash replay, cross-version fencing, exactly-once effects, and live-provider acceptance remain outside the executed proof.
+- Synchronize all workspace, internal dependency, lockfile, Windows manifest, and deployment-sample versions to 1.1.79.
 
 ## v-1.1.78
 

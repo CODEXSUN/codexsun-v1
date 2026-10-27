@@ -38,8 +38,9 @@ export function registerBillingComplianceHost(app: FastifyInstance, queue: Queue
     registerConnection(tenant);
     return processExportSalesComplianceJob(tenant.dbName, payload.operationUuid);
   });
-  if (!enabled) return;
+  if (!queue.canExecute()) return;
   let busy = false;
+  let activeRelay: Promise<void> | undefined;
   const relay = async () => {
     if (busy) return;
     busy = true;
@@ -101,13 +102,18 @@ export function registerBillingComplianceHost(app: FastifyInstance, queue: Queue
       busy = false;
     }
   };
-  const timer = setInterval(
-    () => void relay().catch((error) => app.log.error(error, "Billing compliance relay failed")),
-    3000
-  );
+  const timer = setInterval(() => {
+    if (!activeRelay)
+      activeRelay = relay()
+        .catch((error) => app.log.error(error, "Billing compliance relay failed"))
+        .finally(() => {
+          activeRelay = undefined;
+        });
+  }, 3000);
   timer.unref();
   app.addHook("onClose", async () => {
     clearInterval(timer);
+    await activeRelay;
     configureSalesComplianceRuntime(false);
     configureExportSalesComplianceRuntime(false);
   });
