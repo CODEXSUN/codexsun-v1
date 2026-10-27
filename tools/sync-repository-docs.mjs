@@ -14,6 +14,7 @@ export class RepositoryDocumentation {
       ".turbo",
       ".cache",
       ".next",
+      ".npm",
       ".vite",
       "node_modules",
       "dist",

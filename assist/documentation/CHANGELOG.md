@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.76
+Current version: 1.1.77
 
-Release tag: v-1.1.76
+Release tag: v-1.1.77
 
-Changelog label: v 1.1.76
+Changelog label: v 1.1.77
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -19,6 +19,22 @@ Records schema, migration, seed, tenant provisioning, and data compatibility cha
 #### App Codebase Changes
 
 Records UI, API, service logic, tooling, packaging, and documentation changes.
+
+## v-1.1.77
+
+### [v 1.1.77] 2026-10-27 8:52 am - Compact CRM enquiry table
+
+#### Database Changes
+
+- Database update: No (manual).
+
+#### App Codebase Changes
+
+- Show compact relative ages in the Created column with the full date and time on hover.
+- Keep table headers on one line, shorten Assigned, and reduce ID, Action, and Details widths.
+- Keep long names and details accessible on hover and retain horizontal scrolling on narrow screens.
+- Exclude the local npm cache from documentation scans to avoid long filesystem walks.
+- Bump workspace version to 1.1.77.
 
 ## v-1.1.76
 
