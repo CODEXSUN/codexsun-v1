@@ -8,7 +8,7 @@ import { EnquiryInlineFilter } from "./enquiry.inline-filter";
 import { enquiryTableText } from "./enquiry.table-text";
 import { formatListDueDate } from "./enquiry.view-utils";
 import { formatCrmDateTime } from "../../crm-time.js";
-import { diffForHumans } from "./enquiry.created-age.js";
+import { compactCreatedAge, diffForHumans } from "./enquiry.created-age.js";
 import type { EnquiryColumnFilters, EnquiryLookup, EnquiryRecord } from "./enquiry.types";
 
 const filterColumns: Record<string, { key: keyof EnquiryColumnFilters; label: string }> = {
@@ -74,6 +74,7 @@ export function EnquiryList({
   const columns: ColumnDef<EnquiryRecord>[] = [
     {
       id: "enquiryNo",
+      size: 60,
       accessorKey: "enquiryNo",
       header: "ID",
       cell: ({ row }) => (
@@ -91,12 +92,21 @@ export function EnquiryList({
     },
     {
       id: "customer",
+      size: 125,
       header: "Customer",
       accessorFn: (record) => record.contactName ?? record.capturedName ?? "",
-      cell: ({ row }) => row.original.contactName ?? row.original.capturedName ?? "—"
+      cell: ({ row }) => {
+        const name = row.original.contactName ?? row.original.capturedName ?? "—";
+        return (
+          <span className="block truncate" title={name}>
+            {name}
+          </span>
+        );
+      }
     },
     {
       id: "details",
+      size: 230,
       accessorKey: "title",
       header: "Enquiry details",
       cell: ({ row }) =>
@@ -125,7 +135,7 @@ export function EnquiryList({
           )
         ) : (
           <button
-            className="block max-w-80 cursor-pointer truncate text-left font-medium text-foreground hover:underline"
+            className="block w-full cursor-pointer truncate text-left font-medium text-foreground hover:underline"
             title={enquiryTableText(row.original.description ?? row.original.title)}
             type="button"
             onClick={(event) => {
@@ -139,12 +149,18 @@ export function EnquiryList({
     },
     {
       id: "listIn",
+      size: 85,
       accessorKey: "listIn",
       header: "List in",
-      cell: ({ row }) => row.original.listIn || "Unlisted"
+      cell: ({ row }) => (
+        <span className="block truncate" title={row.original.listIn || "Unlisted"}>
+          {row.original.listIn || "Unlisted"}
+        </span>
+      )
     },
     {
       id: "dueDate",
+      size: 105,
       accessorKey: "dueDate",
       header: () => <span className="whitespace-nowrap">Due date</span>,
       cell: ({ row }) => (
@@ -153,6 +169,7 @@ export function EnquiryList({
     },
     {
       id: "priority",
+      size: 95,
       accessorKey: "priority",
       header: "Priority",
       cell: ({ row }) => (
@@ -169,6 +186,7 @@ export function EnquiryList({
 
     {
       id: "createdAt",
+      size: 90,
       accessorKey: "createdAt",
       header: "Created",
       cell: ({ row }) => (
@@ -177,32 +195,45 @@ export function EnquiryList({
           title={formatCrmDateTime(row.original.createdAt)}
           className="block whitespace-nowrap text-center"
         >
-          {formatListDueDate(row.original.createdAt)} · {diffForHumans(row.original.createdAt, now)}
+          {compactCreatedAge(row.original.createdAt, now)}
         </time>
       )
     },
     {
       id: "creator",
+      size: 110,
       header: "Creator",
       accessorFn: creatorName,
-      cell: ({ row }) => creatorName(row.original)
+      cell: ({ row }) => (
+        <span className="block truncate" title={creatorName(row.original)}>
+          {creatorName(row.original)}
+        </span>
+      )
     },
     {
       id: "assignedTo",
-      header: userColumnMode === "allocatedTo" ? "Allocated to" : "Assigned to",
+      size: 110,
+      header: userColumnMode === "allocatedTo" ? "Allocated" : "Assigned",
       accessorFn: (record) =>
         record.assignedUserId
           ? (userNames.get(record.assignedUserId) ?? record.assignedToName ?? "")
           : "",
-      cell: ({ row }) =>
-        row.original.assignedUserId
+      cell: ({ row }) => {
+        const name = row.original.assignedUserId
           ? (userNames.get(row.original.assignedUserId) ??
             row.original.assignedToName ??
             `#${row.original.assignedUserId}`)
-          : "—"
+          : "—";
+        return (
+          <span className="block truncate" title={name}>
+            {name}
+          </span>
+        );
+      }
     },
     {
       id: "status",
+      size: 135,
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
@@ -211,6 +242,7 @@ export function EnquiryList({
     },
     {
       id: "actions",
+      size: 65,
       header: "Action",
       enableSorting: false,
       cell: ({ row }) => (
@@ -255,6 +287,7 @@ export function EnquiryList({
       emptyState={emptyState}
       isLoading={loading}
       minWidth="1020px"
+      panelClassName="[&_table]:table-fixed [&_th]:whitespace-nowrap [&_th]:px-2 [&_td]:px-2"
       mobileRow={(record) => (
         <article className="grid min-w-0 gap-2.5 rounded-xl border border-border/70 bg-card p-3 shadow-sm">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
