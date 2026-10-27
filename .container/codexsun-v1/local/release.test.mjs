@@ -3,7 +3,24 @@ import { mkdir, mkdtemp, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import test from "node:test";
 import { applications } from "./config.mjs";
-import { recover } from "./release.mjs";
+import { recover, verifyStorefront } from "./release.mjs";
+
+test("storefront check accepts only the expected unmapped-domain denial", async () => {
+  const original = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => new Response(JSON.stringify({
+      success: false,
+      error: { code: "NOT_FOUND", message: "The public application is not available for this domain." }
+    }), { status: 404 });
+    await verifyStorefront("http://127.0.0.1/bootstrap");
+    globalThis.fetch = async () => new Response(JSON.stringify({ success: false, error: { code: "OTHER" } }), { status: 404 });
+    await assert.rejects(verifyStorefront("http://127.0.0.1/bootstrap"));
+    globalThis.fetch = async () => new Response(JSON.stringify({ success: true }), { status: 200 });
+    await verifyStorefront("http://127.0.0.1/bootstrap");
+  } finally {
+    globalThis.fetch = original;
+  }
+});
 
 test("failed local update uses the saved app model without database recovery", async () => {
   const base = resolve(import.meta.dirname, "../../../dist/deployment-local-recovery-tests");

@@ -45,6 +45,17 @@ on_release_exit() {
 
 install_release() {
   trap on_release_exit EXIT
+  python3 - "$PROJECT_ROOT" <<'PY'
+import json, pathlib, re, sys
+root = pathlib.Path(sys.argv[1])
+dockerfile = (root / '.container/codexsun-v1/Dockerfile').read_text(encoding='utf-8')
+lock = json.loads((root / 'package-lock.json').read_text(encoding='utf-8'))
+workspaces = {entry.get('name') for entry in lock['packages'].values()}
+required = set(re.findall(r'npm run build -w\s+(@[^\s\\]+)', dockerfile))
+missing = sorted(required - workspaces)
+if missing:
+    sys.exit('Dockerfile requires workspaces missing from package-lock.json: ' + ', '.join(missing))
+PY
   docker_root="$(docker info --format '{{.DockerRootDir}}')"
   required="$(env_value CODEXSUN_UPDATE_MIN_DOCKER_FREE_MB)"
   [[ "$required" =~ ^[1-9][0-9]*$ ]] || fail "Configure a positive Docker free-space threshold."
@@ -104,7 +115,7 @@ install_release() {
   fi
   python3 "$CONFIG" metadata "$BACKUP_DIR" migrated "$CODEXSUN_VERSION" "$CODEXSUN_REVISION"
   REPLACEMENT_STARTED=true
-  runtime_compose up -d --no-build --wait --wait-timeout 180 "${SERVICES[@]}"
+  runtime_compose up -d --no-deps --no-build --wait --wait-timeout 180 "${SERVICES[@]}"
   verify_release
   python3 "$CONFIG" metadata "$BACKUP_DIR" healthy "$CODEXSUN_VERSION" "$CODEXSUN_REVISION"
   verify_backup

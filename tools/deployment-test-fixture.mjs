@@ -88,6 +88,7 @@ export function createVpsFixture(state) {
     recursive: true
   });
   cpSync(join(root, "package.json"), join(directory, "package.json"));
+  cpSync(join(root, "package-lock.json"), join(directory, "package-lock.json"));
   const envPath = environmentFixture(directory);
   cpSync(envPath, join(directory, ".container/deploy.env"));
   mkdirSync(join(directory, "payload"));

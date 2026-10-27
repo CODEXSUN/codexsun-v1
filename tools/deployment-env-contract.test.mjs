@@ -122,6 +122,11 @@ test("MariaDB mounts and differing live application storage block destructive ad
     { Mounts: [{ Type: "volume", RW: true, Name: "codexsun-data", Destination: "/storage" }] }
   ];
   assert.equal(config(["adoption", "codexsun-data"], JSON.stringify(application)).status, 0);
+  application[0].Mounts.push({ Type: "volume", RW: false, Name: "bridge-data", Destination: "/storage/data-bridge-sources/cxapp" });
+  assert.equal(config(["adoption", "codexsun-data", "", "bridge-data"], JSON.stringify(application)).status, 0);
+  assert.notEqual(config(["adoption", "codexsun-data"], JSON.stringify(application)).status, 0);
+  application[0].Mounts[1].RW = true;
+  assert.notEqual(config(["adoption", "codexsun-data", "", "bridge-data"], JSON.stringify(application)).status, 0);
 });
 
 test("rollback snapshot retains exact images, private environment, ports, storage, and network", () => {
