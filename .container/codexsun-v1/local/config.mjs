@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { digest } from "./files.mjs";
@@ -86,6 +86,7 @@ export function inspectDeployment(docker, config, mode) {
   }
   const model = structuredClone(config.model);
   validateModel(docker, model, database, redis);
+  validateProxyTemplates(model, process.cwd());
   for (const item of containers) {
     const actual = snapshot([item], process.cwd()).services[item.Name.slice(1)];
     const expected = model.services[item.Name.slice(1)];
@@ -106,6 +107,18 @@ export function inspectDeployment(docker, config, mode) {
   }
   const relay = config.relay ? inspectRelay(docker, config.relay, database) : null;
   return { model, containers, database, redis, relay };
+}
+
+export function validateProxyTemplates(model, root) {
+  for (const name of ["web", "shop"]) {
+    const mounts = model.services[`codexsun-${name}`].volumes ?? [];
+    const template = mounts.find((mount) => mount.target === "/etc/nginx/templates/default.conf.template");
+    if (!template) continue;
+    assert.equal(template.type, "bind", `Unexpected ${name} proxy template mount.`);
+    const actual = readFileSync(literal(template.source), "utf8").replaceAll("\r\n", "\n");
+    const expected = readFileSync(join(root, `.container/codexsun-v1/nginx-${name}.conf`), "utf8").replaceAll("\r\n", "\n");
+    assert.equal(actual, expected, `Local ${name} proxy template differs from the repository. Review and update the retained bind file before deployment.`);
+  }
 }
 
 export function environmentChanges(actual, expected) {

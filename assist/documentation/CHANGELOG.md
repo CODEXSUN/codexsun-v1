@@ -53,6 +53,7 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 
 - Bumped workspace version to 1.1.85.
 - Add guarded local backups, database relay isolation, recovery checks, and migration sequencing.
+- Reject stale mounted proxy templates before local updates. Recover the local stack after a shop startup race.
 - Show tenant database setup progress and refresh proxy DNS after API replacement.
 - Pin npm 12.2.1 and record the install script policy for core-js and msgpackr-extract.
 - Test three isolated migration and seed cycles and one local deployment on version 1.1.84.
