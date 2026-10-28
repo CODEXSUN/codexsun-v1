@@ -45,6 +45,11 @@ Git tags use the `v-` prefix:
 v-<major>.<minor>.<patch>
 ```
 
+Keep a release branch with the same `v-<major>.<minor>.<patch>` name for each released version.
+The branch and tag identify the reviewed release source commit.
+Keep release image and database evidence separately, as defined in the shared workflow.
+Do not create a release tag for an unreleased candidate or move a published tag.
+
 Workspace package versions describe a tested source-repository baseline and remain lockstep. Deployable
 product stacks additionally have independent semantic release lines without changing package versions:
 

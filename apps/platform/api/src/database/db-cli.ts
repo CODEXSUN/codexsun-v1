@@ -1,6 +1,6 @@
 import {
   crmPermissionTargets,
-  tenantMigrationTargets,
+  existingTenantMigrationTargets,
 } from "./migration-targets.js";
 import { createConnection } from "mysql2/promise";
 import { closeAllBillingDatabases } from "@codexsun/billing-api";
@@ -23,7 +23,13 @@ import {
 } from "../modules/tenant/tenant.seed.js";
 import { env } from "../env.js";
 import { assertDatabaseName, quoteIdentifier } from "./database-utils.js";
-import { verifyMigrationBackups } from "../modules/database-maintenance/database-maintenance.migration-backup.js";
+import {
+  verifyMigrationBackups,
+  type MigrationBackupVerifier,
+} from "../modules/database-maintenance/database-maintenance.migration-backup.js";
+import { isolatedCliBackupVerifier } from "./isolated-backup-cli.js";
+import { isolatedEvidenceRequested } from "./isolated-backup-options.js";
+import { createMasterStartupProof } from "./master-startup-proof.js";
 import { withCoordinatedMigration } from "./migration-coordination.js";
 import {
   assertDistinctRollbackTargets,
@@ -46,7 +52,8 @@ type DbCommand =
   | "dump:create"
   | "dump:download"
   | "restore:test"
-  | "backup:verify";
+  | "backup:verify"
+  | "master:startup-proof";
 
 const validCommands: DbCommand[] = [
   "migrate",
@@ -63,6 +70,7 @@ const validCommands: DbCommand[] = [
   "dump:download",
   "restore:test",
   "backup:verify",
+  "master:startup-proof",
 ];
 
 const command = process.argv[2] as DbCommand | undefined;
@@ -74,6 +82,9 @@ async function main() {
     return;
   }
 
+  const isolated = isolatedEvidenceRequested(command, env.NODE_ENV, process.argv.slice(3));
+  const verifier = isolated ? isolatedCliBackupVerifier() : undefined;
+
   try {
     console.info(`[database] db:${command} started`);
     if (command === "migrate") {
@@ -81,7 +92,7 @@ async function main() {
     }
 
     if (command === "seed") {
-      await seedAll();
+      await seedAll(verifier);
     }
 
     if (command === "crm:permissions:sync") {
@@ -104,11 +115,11 @@ async function main() {
     }
 
     if (command === "migrations:preflight") {
-      await runMigrationPreflight();
+      await runMigrationPreflight(verifier);
     }
 
     if (command === "migrations:run") {
-      await migrateAll(true);
+      await migrateAll(true, verifier);
     }
 
     if (command === "migrations:rollback") {
@@ -130,6 +141,9 @@ async function main() {
     if (command === "backup:verify") {
       await runBackupVerify();
     }
+    if (command === "master:startup-proof") {
+      await createMasterStartupProof();
+    }
 
     console.log(`ok db:${command} completed`);
   } finally {
@@ -142,12 +156,12 @@ async function main() {
   }
 }
 
-async function migrateAll(preflight = false) {
+async function migrateAll(preflight = false, verifier?: MigrationBackupVerifier) {
   await withCoordinatedMigration(async () => {
-    if (preflight) await runMigrationPreflight();
+    if (preflight) await runMigrationPreflight(verifier);
     console.info("[database] running master and tenant migrations");
-    await migratePlatformDatabase();
-    await migrateTenantAppDatabases();
+    await migratePlatformDatabase(verifier?.master);
+    await migrateTenantAppDatabases(verifier);
   });
 }
 
@@ -170,7 +184,7 @@ async function rollbackAll() {
 }
 
 async function assessRollbackTargets() {
-  const tenants = tenantMigrationTargets(await new TenantRepository().list());
+  const tenants = await existingUpgradeTargets();
   const targets = [
     {
       label: "platform",
@@ -239,37 +253,37 @@ async function assessRollbackTargets() {
   assertDistinctRollbackTargets(resolved);
 }
 
-async function seedAll() {
+async function seedAll(verifier?: MigrationBackupVerifier) {
   await withCoordinatedMigration(async () => {
-    if (env.NODE_ENV === "production") await runMigrationPreflight();
+    if (env.NODE_ENV === "production") await runMigrationPreflight(verifier);
     console.info("[seeder] running master and tenant seeders");
-    await migratePlatformDatabase();
+    await migratePlatformDatabase(verifier?.master);
     await seedPlatformDatabase();
     const defaultTenant = await seedDefaultTenant();
-    await seedTenantAppDatabases(defaultTenant?.id);
+    await seedTenantAppDatabases(defaultTenant?.id, verifier);
   });
 }
 
-async function migrateTenantAppDatabases() {
-  const tenants = tenantMigrationTargets(await new TenantRepository().list());
+async function migrateTenantAppDatabases(verifier?: MigrationBackupVerifier) {
+  const tenants = await existingUpgradeTargets();
   console.info(`[database] tenant app migration targets: ${tenants.length}`);
   for (const tenant of tenants) {
     console.info(
       `[database] migrating tenant app modules for "${tenant.tenantCode}" (${tenant.dbName})`,
     );
-    await migrateTenantDatabase(tenant);
+    await migrateTenantDatabase(tenant, verifier?.tenant);
   }
 }
 
-async function seedTenantAppDatabases(alreadySeededTenantId?: number) {
-  const tenants = tenantMigrationTargets(await new TenantRepository().list());
+async function seedTenantAppDatabases(alreadySeededTenantId?: number, verifier?: MigrationBackupVerifier) {
+  const tenants = await existingUpgradeTargets();
   console.info(`[seeder] tenant app seed targets: ${tenants.length}`);
   for (const tenant of tenants) {
     if (tenant.id === alreadySeededTenantId) continue;
     console.info(
       `[seeder] seeding tenant app modules for "${tenant.tenantCode}" (${tenant.dbName})`,
     );
-    await seedTenantDatabase(tenant);
+    await seedTenantDatabase(tenant, verifier?.tenant);
   }
 }
 
@@ -282,6 +296,20 @@ async function syncExistingCrmPermissions() {
     );
     await syncTenantCrmPermissions(tenant);
   }
+}
+
+async function existingUpgradeTargets() {
+  return existingTenantMigrationTargets(await new TenantRepository().list(), async (tenant) => {
+    const connection = await createConnection({
+      database: tenant.dbName,
+      host: tenant.dbHost || env.DB_HOST,
+      port: tenant.dbPort || env.DB_PORT,
+      user: tenant.dbUser || env.DB_USER,
+      password: resolveTenantDatabasePassword(tenant),
+      timezone: "Z",
+    });
+    await connection.end();
+  });
 }
 
 async function listMigrationState() {
@@ -311,7 +339,7 @@ async function listMigrationState() {
     await connection.end();
   }
 
-  const tenants = tenantMigrationTargets(await new TenantRepository().list());
+  const tenants = await existingUpgradeTargets();
   console.info(`[database] tenant migration targets: ${tenants.length}`);
   for (const tenant of tenants) {
     const tenantConnection = await createConnection({
@@ -340,14 +368,14 @@ async function listMigrationState() {
   }
 }
 
-async function runMigrationPreflight() {
+async function runMigrationPreflight(verifier?: MigrationBackupVerifier) {
   const masterName = platformDatabaseName();
   console.info(
     `[database] preflight target: ${env.NODE_ENV} ${env.DB_HOST}:${env.DB_PORT}/${masterName}`,
   );
   assertDatabaseName(masterName, "master database name");
 
-  const tenants = tenantMigrationTargets(await new TenantRepository().list());
+  const tenants = await existingUpgradeTargets();
   for (const tenant of tenants) {
     assertDatabaseName(
       tenant.dbName,
@@ -355,7 +383,7 @@ async function runMigrationPreflight() {
     );
   }
 
-  if (env.NODE_ENV === "production") await verifyMigrationBackups(tenants);
+  if (env.NODE_ENV === "production") await verifyMigrationBackups(tenants, verifier);
 
   console.info(
     `[database] preflight checked ${tenants.length} tenant database target(s)`,

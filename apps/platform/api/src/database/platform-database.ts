@@ -352,7 +352,7 @@ export async function closePlatformDatabase() {
   bootstrapped = false;
 }
 
-export async function createMasterDatabase() {
+export async function createMasterDatabase(verifyBackup?: () => Promise<void>) {
   const databaseName = platformDatabaseName();
   console.info(
     `[database] ensuring master database "${databaseName}" on ${env.DB_HOST}:${env.DB_PORT}`
@@ -367,8 +367,11 @@ export async function createMasterDatabase() {
   try {
     await createMigrationDatabase(connection, databaseName, async () => {
       if (env.NODE_ENV !== "production") return;
-      const { verifyMasterMigrationBackup } = await import("../modules/database-maintenance/database-maintenance.migration-backup.js");
-      await verifyMasterMigrationBackup();
+      if (verifyBackup) await verifyBackup();
+      else {
+        const { verifyMasterMigrationBackup } = await import("../modules/database-maintenance/database-maintenance.migration-backup.js");
+        await verifyMasterMigrationBackup();
+      }
     });
     console.info(`[database] master database ready: "${databaseName}"`);
   } finally {
@@ -376,13 +379,13 @@ export async function createMasterDatabase() {
   }
 }
 
-export async function migratePlatformDatabase() {
-  return withCoordinatedMigration(migratePlatformDatabaseLocked);
+export async function migratePlatformDatabase(verifyBackup?: () => Promise<void>) {
+  return withCoordinatedMigration(() => migratePlatformDatabaseLocked(verifyBackup));
 }
 
-async function migratePlatformDatabaseLocked() {
+async function migratePlatformDatabaseLocked(verifyBackup?: () => Promise<void>) {
   console.info(`[database] migrating platform database "${platformDatabaseName()}"`);
-  await createMasterDatabase();
+  await createMasterDatabase(verifyBackup);
   const database = getPlatformDatabase();
   const result = await runMigrationBatch(database, platformMigrationBatch, { batchSize: 8 });
   await migrateDataMigrationDatabase(database as unknown as Kysely<unknown>);

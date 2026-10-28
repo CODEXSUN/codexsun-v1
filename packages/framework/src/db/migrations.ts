@@ -47,6 +47,9 @@ export type TablePrefixPolicy = {
 type StandardColumn = {
   column_name: string;
   character_maximum_length: number | string | null;
+  data_type: string;
+  is_nullable: string;
+  column_default: string | null;
 };
 
 type LedgerRow = {
@@ -443,10 +446,10 @@ export async function ensureStandardTableColumns<Database>(
   database: Kysely<Database>,
   tableNames: readonly string[],
 ) {
+  const tables = new Set(await listDatabaseTables(database));
   for (const rawTableName of tableNames) {
     const tableName = safeIdentifier(rawTableName);
-    const tables = await listDatabaseTables(database);
-    if (!tables.includes(tableName)) {
+    if (!tables.has(tableName)) {
       throw new Error(
         `Expected module-owned table ${tableName} was not created.`,
       );
@@ -495,11 +498,13 @@ export async function ensureStandardTableColumns<Database>(
         `Cannot standardize UUIDs in ${tableName}: an 8-character collision exists.`,
       );
     }
-    await sql
-      .raw(
-        `ALTER TABLE \`${tableName}\` MODIFY COLUMN uuid CHAR(8) NOT NULL DEFAULT (LOWER(SUBSTRING(MD5(UUID()),1,8)))`,
-      )
-      .execute(database);
+    if (!hasStandardUuidDefinition(columns.get("uuid"))) {
+      await sql
+        .raw(
+          `ALTER TABLE \`${tableName}\` MODIFY COLUMN uuid CHAR(8) NOT NULL DEFAULT (LOWER(SUBSTRING(MD5(UUID()),1,8)))`,
+        )
+        .execute(database);
+    }
     if (!(await tableHasUniqueColumn(database, tableName, "uuid"))) {
       await sql
         .raw(
@@ -507,7 +512,7 @@ export async function ensureStandardTableColumns<Database>(
         )
         .execute(database);
     }
-    columns = await listTableColumns(database, tableName);
+    const additions: string[] = [];
     for (const [columnName, definition] of [
       ["status", "VARCHAR(24) NOT NULL DEFAULT 'active'"],
       ["created_by", "VARCHAR(191) NOT NULL DEFAULT 'system:migration'"],
@@ -518,13 +523,21 @@ export async function ensureStandardTableColumns<Database>(
       ],
     ] as const) {
       if (columns.has(columnName)) continue;
-      await sql
-        .raw(
-          `ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` ${definition}`,
-        )
-        .execute(database);
+      additions.push(`ADD COLUMN \`${columnName}\` ${definition}`);
+    }
+    if (additions.length) {
+      await sql.raw(`ALTER TABLE \`${tableName}\` ${additions.join(", ")}`).execute(database);
     }
   }
+}
+
+function hasStandardUuidDefinition(column: StandardColumn | undefined) {
+  if (
+    !column || column.data_type?.toLowerCase() !== "char" ||
+    Number(column.character_maximum_length) !== 8 || column.is_nullable !== "NO"
+  ) return false;
+  const expression = (column.column_default ?? "").toLowerCase().replace(/[\s`]/g, "");
+  return /^\(*(?:lower|lcase)\((?:substring|substr)\(md5\(uuid\(\)\),1,8\)\)\)*$/.test(expression);
 }
 
 async function ensureMigrationLedger<Database>(
@@ -750,7 +763,9 @@ async function listTableColumns<Database>(
 ) {
   const result = await sql<StandardColumn>`
     SELECT COLUMN_NAME AS column_name,
-           CHARACTER_MAXIMUM_LENGTH AS character_maximum_length
+           CHARACTER_MAXIMUM_LENGTH AS character_maximum_length,
+           DATA_TYPE AS data_type, IS_NULLABLE AS is_nullable,
+           COLUMN_DEFAULT AS column_default
     FROM information_schema.COLUMNS
     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=${tableName}
   `.execute(database);

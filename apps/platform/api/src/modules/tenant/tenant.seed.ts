@@ -3,6 +3,7 @@ import { sql, type Kysely } from "kysely";
 import { getPlatformDatabase } from "../../database/platform-database.js";
 import {
   createTenantDatabase,
+  requireExistingTenantDatabase,
   getTenantDatabase,
   closeTenantDatabase
 } from "../../database/tenant-database.js";
@@ -59,12 +60,12 @@ async function provisionTenantDatabaseLocked(tenant: Tenant) {
   }
 }
 
-export async function migrateTenantDatabase(tenant: Tenant) {
-  return withCoordinatedMigration(() => migrateTenantDatabaseLocked(tenant));
+export async function migrateTenantDatabase(tenant: Tenant, verifyBackup?: (tenant: Tenant) => Promise<void>) {
+  return withCoordinatedMigration(() => migrateTenantDatabaseLocked(tenant, verifyBackup));
 }
 
-async function migrateTenantDatabaseLocked(tenant: Tenant) {
-  await createTenantDatabase(tenant);
+async function migrateTenantDatabaseLocked(tenant: Tenant, verifyBackup?: (tenant: Tenant) => Promise<void>) {
+  await requireExistingTenantDatabase(tenant, verifyBackup);
   const database = getTenantDatabase(tenant);
   try {
     await migrateTenantRuntimeModule(database);
@@ -74,12 +75,12 @@ async function migrateTenantDatabaseLocked(tenant: Tenant) {
   }
 }
 
-export async function seedTenantDatabase(tenant: Tenant) {
-  return withCoordinatedMigration(() => seedTenantDatabaseLocked(tenant));
+export async function seedTenantDatabase(tenant: Tenant, verifyBackup?: (tenant: Tenant) => Promise<void>) {
+  return withCoordinatedMigration(() => seedTenantDatabaseLocked(tenant, verifyBackup));
 }
 
-async function seedTenantDatabaseLocked(tenant: Tenant) {
-  await createTenantDatabase(tenant);
+async function seedTenantDatabaseLocked(tenant: Tenant, verifyBackup?: (tenant: Tenant) => Promise<void>) {
+  await requireExistingTenantDatabase(tenant, verifyBackup);
   const database = getTenantDatabase(tenant);
   try {
     await migrateTenantRuntimeModule(database);

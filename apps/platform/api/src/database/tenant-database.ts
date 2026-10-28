@@ -40,6 +40,32 @@ export async function createTenantDatabase(target: string | Tenant) {
   }
 }
 
+export async function requireExistingTenantDatabase(
+  tenant: Tenant,
+  verifyBackup?: (tenant: Tenant) => Promise<void>
+) {
+  const database = assertDatabaseName(tenant.dbName, "tenant database name");
+  const connection = await createConnection({
+    host: tenant.dbHost || env.DB_HOST,
+    port: tenant.dbPort || env.DB_PORT,
+    user: tenant.dbUser || env.DB_USER,
+    password: resolveTenantDatabasePassword(tenant),
+    database,
+    timezone: "Z"
+  });
+  try {
+    if (env.NODE_ENV === "production") {
+      if (verifyBackup) await verifyBackup(tenant);
+      else {
+        const { verifyTenantMigrationBackup } = await import("../modules/database-maintenance/database-maintenance.migration-backup.js");
+        await verifyTenantMigrationBackup(tenant);
+      }
+    }
+  } finally {
+    await connection.end();
+  }
+}
+
 export function getTenantDatabase(tenant: Tenant) {
   const databaseName = assertDatabaseName(tenant.dbName, "tenant database name");
   const key = tenant.uuid.trim().toLowerCase();

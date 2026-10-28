@@ -7,6 +7,7 @@ import { LocalDocker } from "./docker.mjs";
 import { privateWrite, readJson, withLock } from "./files.mjs";
 import { parseLocalOptions } from "./options.mjs";
 import { release } from "./release.mjs";
+import { assertInfrastructurePortsUnpublished } from "./database.mjs";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const [mode, ...arguments_] = process.argv.slice(2);
@@ -25,9 +26,11 @@ try {
           "  --configure: capture the existing local configuration";
     console.log(usage);
   } else if (options.plan) {
-    console.log("If a matching release is recorded: check health. Otherwise: build and update all five services, then check health.");
     console.log(
-      "API startup may run platform database migrations. No backup or environment-file update is performed."
+      "If a matching release is recorded: check health. Otherwise: build and update all five services, then check health."
+    );
+    console.log(
+      "After stopping app writers, create a verified local backup, then run candidate migration preflight, migrations, and seed before replacement. Restore evidence is still required."
     );
   } else {
     process.chdir(root);
@@ -47,7 +50,8 @@ try {
       const path = resolve(root, configurationName);
       if (options.check) {
         const config = existsSync(path) ? await readJson(path) : capture(docker, root);
-        inspectDeployment(docker, config, mode);
+        const state = inspectDeployment(docker, config, mode);
+        if (mode === "update") assertInfrastructurePortsUnpublished(state);
         console.log(`Local ${mode} preflight passed. No files or containers changed.`);
       } else
         await withLock(root, async (base) => {

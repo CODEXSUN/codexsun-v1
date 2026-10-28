@@ -6,6 +6,7 @@ import { createConnection, type RowDataPacket } from "mysql2/promise";
 import { env } from "../../env.js";
 import { assertDatabaseName, quoteIdentifier } from "../../database/database-utils.js";
 import { databaseBackupPath } from "../storage-manager/storage-manager.paths.js";
+import { restoreCreateDatabaseSql } from "./database-maintenance.restore-sql.js";
 
 export type DatabaseExecutionTarget = {
   databaseName: string;
@@ -53,6 +54,7 @@ export async function executeDatabaseRestore(input: {
   restoreMode?: string;
   sandboxMode?: "fresh" | "append";
   sandboxName?: string;
+  requireNewSandbox?: boolean;
   runId: number;
   scope: string;
   target: DatabaseExecutionTarget;
@@ -96,7 +98,7 @@ export async function executeDatabaseRestore(input: {
     if (sandboxMode === "append") {
       insertedRows = await appendToSandbox(connection, restoreDatabaseName, dump);
     } else {
-      await restoreMasterFresh(connection, restoreDatabaseName, dump, input.runId);
+      await restoreMasterFresh(connection, restoreDatabaseName, dump, input.runId, input.requireNewSandbox === true);
     }
   } finally {
     try {
@@ -120,7 +122,8 @@ async function restoreMasterFresh(
   connection: Awaited<ReturnType<typeof createConnection>>,
   sandboxName: string,
   dump: string,
-  runId: number
+  runId: number,
+  requireNewSandbox: boolean
 ) {
   const stagingName = assertDatabaseName(
     `${sandboxName.slice(0, 42)}_stage_${runId}`,
@@ -138,7 +141,7 @@ async function restoreMasterFresh(
   );
   try {
     await restoreFresh(connection, stagingName, dump, false);
-    await restoreFresh(connection, sandboxName, dump, true);
+    await restoreFresh(connection, sandboxName, dump, !requireNewSandbox, requireNewSandbox);
   } finally {
     await connection.query(`DROP DATABASE IF EXISTS ${quoteIdentifier(stagingName)}`);
   }
@@ -148,13 +151,12 @@ async function restoreFresh(
   connection: Awaited<ReturnType<typeof createConnection>>,
   databaseName: string,
   dump: string,
-  replaceSandbox: boolean
+  replaceSandbox: boolean,
+  requireNewSandbox = false
 ) {
   if (replaceSandbox)
     await connection.query(`DROP DATABASE IF EXISTS ${quoteIdentifier(databaseName)}`);
-  await connection.query(
-    `CREATE DATABASE IF NOT EXISTS ${quoteIdentifier(databaseName)} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
-  );
+  await connection.query(restoreCreateDatabaseSql(databaseName, requireNewSandbox));
   await connection.query(`USE ${quoteIdentifier(databaseName)}`);
   await connection.query("SET FOREIGN_KEY_CHECKS=0");
   try {

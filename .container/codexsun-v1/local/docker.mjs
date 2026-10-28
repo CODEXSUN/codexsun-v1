@@ -91,10 +91,10 @@ export class LocalDocker {
     ]);
   }
 
-  async logged(args, path) {
+  async logged(args, path, environment = {}) {
     this.assertActive();
     const output = createWriteStream(path, { flags: "a", mode: 0o600 });
-    const child = this.startProcess(args);
+    const child = this.startProcess(args, environment);
     child.stdout.pipe(output, { end: false });
     child.stderr.pipe(output, { end: false });
     await new Promise((resolve, reject) => {
@@ -123,6 +123,17 @@ export class LocalDocker {
       "Only local app containers may be stopped."
     );
     assert.equal(container.Config.Labels?.["com.docker.compose.project"], project);
+    await this.stopContainer(container);
+  }
+
+  async stopRelay(relay) {
+    const container = this.inspect(relay.name);
+    assert.equal(container.Id, relay.id, "Database relay identity changed.");
+    assert.equal(container.Config.Labels?.["io.codexsun.role"], "mariadb-relay");
+    await this.stopContainer(container);
+  }
+
+  async stopContainer(container) {
     if (!container.State.Running) return;
     const signal = container.Config.StopSignal || "SIGTERM";
     assert.ok(!["SIGKILL", "KILL", "9"].includes(signal), "Force-kill is forbidden.");
@@ -133,7 +144,7 @@ export class LocalDocker {
     await new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         child.kill("SIGTERM");
-        reject(new Error(`${name} did not stop gracefully. Replacement was aborted.`));
+        reject(new Error(`${container.Name} did not stop gracefully. Replacement was aborted.`));
       }, 90_000);
       child.once("error", (error) => {
         clearTimeout(timer);
@@ -142,7 +153,7 @@ export class LocalDocker {
       child.once("close", (code) => {
         clearTimeout(timer);
         if (code === 0) resolve();
-        else reject(new Error(`Graceful stop failed for ${name}.`));
+          else reject(new Error(`Graceful stop failed for ${container.Name}.`));
       });
     });
     assert.equal(this.inspect(container.Id).State.Running, false, "An app writer did not stop.");

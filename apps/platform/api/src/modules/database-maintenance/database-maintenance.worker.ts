@@ -55,6 +55,7 @@ async function processDatabaseMaintenanceJobLocked(payload: Record<string, unkno
             operation: run.operation,
             restoreMode: stringDetail(run.details.restoreMode),
             sandboxMode: run.details.sandboxMode === "append" ? "append" : "fresh",
+            requireNewSandbox: run.details.requireNewSandbox === true,
             ...(tenant ? { sandboxName: tenantRestoreSandboxName(tenant.dbName, tenant.id) } : {}),
             runId: run.id,
             scope: run.scope,

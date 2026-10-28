@@ -5,6 +5,7 @@ import { existsSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { digest } from "./files.mjs";
+import { inspectRelay } from "./database-relay.mjs";
 
 export const applications = [
   "codexsun-api",
@@ -16,19 +17,23 @@ export const applications = [
 export const project = "codexsun-local-cloud";
 export const configurationName = ".container/local-deploy.private.json";
 
-export function capture(docker, root) {
+export function capture(docker, root, existing = {}) {
   const containers = applications.map((name) => docker.inspect(name));
-  const database = docker.inspect("cxapp-mariadb");
-  const redis = docker.inspect("cxapp-redis");
+  const databaseName = existing.database?.name ?? "cxapp-mariadb";
+  const redisName = existing.redis?.name ?? "cxapp-redis";
+  const database = docker.inspect(databaseName);
+  const redis = docker.inspect(redisName);
   const model = snapshot(containers, root);
-  return {
+  const result = {
     schemaVersion: 1,
     context: docker.context,
     project,
     model,
-    database: { name: "cxapp-mariadb", id: database.Id },
-    redis: { name: "cxapp-redis", id: redis.Id }
+    database: { name: databaseName, id: database.Id },
+    redis: { name: redisName, id: redis.Id }
   };
+  if (existing.relay) result.relay = inspectRelay(docker, existing.relay, database);
+  return result;
 }
 
 export function inspectDeployment(docker, config, mode) {
@@ -99,7 +104,8 @@ export function inspectDeployment(docker, config, mode) {
     }
     expected.image = item.Image;
   }
-  return { model, containers, database, redis };
+  const relay = config.relay ? inspectRelay(docker, config.relay, database) : null;
+  return { model, containers, database, redis, relay };
 }
 
 export function environmentChanges(actual, expected) {

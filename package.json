@@ -1,8 +1,8 @@
 {
   "name": "codexsun",
-  "version": "1.1.84",
+  "version": "1.1.85",
   "private": true,
-  "packageManager": "npm@12.2.0",
+  "packageManager": "npm@12.2.1",
   "description": "CODEXSUN",
   "type": "module",
   "workspaces": [
@@ -201,6 +201,8 @@
     "lodash-es": "4.18.1"
   },
   "allowScripts": {
-    "esbuild": true
+    "esbuild": true,
+    "core-js": false,
+    "msgpackr-extract@3.0.4": true
   }
 }

@@ -58,7 +58,7 @@ An app handoff is evidence for review. It does not independently authorize integ
 The supervisor owns integration operations in main and release checkouts.
 An identified, authorized batch does not need repeated permission for each necessary Git command.
 Do not infer a new batch or version from a passing test, folder reservation, or role initialization.
-Keep main as the only persistent GitHub branch under the current user policy.
+Keep main and the versioned release branches as persistent GitHub branches.
 If required pull-request protection needs temporary remote branches, resolve that scope with the human. Never bypass protection.
 Never force-push main, rewrite published release tags, or mix unrelated app changes into one batch.
 Return candidate fixes to main. Do not merge all newer main work into a frozen candidate.

@@ -7,9 +7,20 @@ import { verifiedTenantBackupFile } from "./database-maintenance.tenant-backups.
 import type { DatabaseMaintenanceRun } from "./database-maintenance.types.js";
 import { assertMigrationBackupEvidence } from "./database-maintenance.backup-evidence.js";
 
-export async function verifyMigrationBackups(tenants: readonly Tenant[]) {
-  await verifyMasterMigrationBackup();
-  for (const tenant of tenants) await verifyTenantMigrationBackup(tenant);
+export type MigrationBackupVerifier = {
+  master(): Promise<void>;
+  tenant(tenant: Tenant): Promise<void>;
+};
+
+export async function verifyMigrationBackups(
+  tenants: readonly Tenant[],
+  verifier: MigrationBackupVerifier = {
+    master: verifyMasterMigrationBackup,
+    tenant: verifyTenantMigrationBackup
+  }
+) {
+  await verifier.master();
+  for (const tenant of tenants) await verifier.tenant(tenant);
 }
 
 export async function verifyMasterMigrationBackup() {

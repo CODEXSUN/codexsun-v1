@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/auditor-api",
-  "version": "1.1.84",
+  "version": "1.1.85",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,7 +12,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/framework": "^1.1.84",
+    "@codexsun/framework": "^1.1.85",
     "fastify": "^5.12.5",
     "kysely": "^0.29.7",
     "zod": "^4.6.7"

@@ -96,6 +96,18 @@ Candidate fixes require a new build and relevant verification.
 
 ## Candidate To Cloud
 
+### Release references
+
+Keep a branch and an immutable tag named `v-<version>` for each released version.
+Point both references to the exact source commit for that release.
+Create them after the release source is reviewed and its version is confirmed.
+Do not create a release tag for an unreleased candidate.
+Record the deployed image digests, database migration state, and recovery evidence separately.
+If services use different commits, record each service revision and image digest.
+A source reference alone does not prove database rollback or deployment compatibility.
+Never move a published release tag. Use a new version for a correction.
+Check release automation before pushing a tag.
+
 The target flow is:
 
 **Reviewed main -> frozen release candidate -> staging -> approval -> production**

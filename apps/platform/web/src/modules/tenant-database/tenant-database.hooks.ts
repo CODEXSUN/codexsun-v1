@@ -73,14 +73,15 @@ export function useTenantDatabaseQuery() {
 
 export function useTenantDatabaseDetailsQuery(
   tenantId: number | null,
-  mode: "automatic" | "manual" = "automatic"
+  mode: "automatic" | "manual" = "automatic",
+  watch = false
 ) {
   return useQuery({
-    enabled: mode === "automatic" && tenantId !== null,
+    enabled: (mode === "automatic" || watch) && tenantId !== null,
     queryFn: () => getTenantDatabaseDetails(tenantId ?? 0),
     queryKey: [...tenantDatabaseQueryKey, tenantId, "details"],
     meta: { suppressGlobalLoader: true },
-    refetchInterval: mode === "automatic" ? 15_000 : false,
+    refetchInterval: watch ? 5_000 : mode === "automatic" ? 15_000 : false,
     retry: mode === "automatic" ? 3 : false
   });
 }

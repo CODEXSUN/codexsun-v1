@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.84
+Current version: 1.1.85
 
-Release tag: v-1.1.84
+Release tag: v-1.1.85
 
-Changelog label: v 1.1.84
+Changelog label: v 1.1.85
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -37,6 +37,25 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Update the [Thirumurugan migration guide](../../devkits/data-bridge/agent/thirumurugan-migration.md) with the completed VPS phase.
 - Add the [dated operation log](../../devkits/data-bridge/agent/THIRUMURUGAN-VPS-TRANSFER-2026-10-27.md) with verification and recovery evidence.
 - No application logic, package version, image deployment, or credential change in this documentation task.
+
+## v-1.1.85
+
+### [v 1.1.85] 2026-10-28 4:37 pm - Harden local upgrades and dependency installation
+
+#### Database Changes
+
+- Database update: Yes (manual).
+- Verify a master backup and restore before startup, and validate isolated backups before migration and seed.
+- Skip missing inactive tenant databases during local updates. Fail if an active tenant database is missing.
+- Improve tenant seed handling and migration performance for standard columns.
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.85.
+- Add guarded local backups, database relay isolation, recovery checks, and migration sequencing.
+- Show tenant database setup progress and refresh proxy DNS after API replacement.
+- Pin npm 12.2.1 and record the install script policy for core-js and msgpackr-extract.
+- Test three isolated migration and seed cycles and one local deployment on version 1.1.84.
 
 ## v-1.1.84
 

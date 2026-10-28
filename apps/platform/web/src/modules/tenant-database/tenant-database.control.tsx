@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DatabaseIcon, DownloadIcon, RefreshCwIcon, RotateCcwIcon, WrenchIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -17,38 +17,92 @@ import { Spinner } from "@codexsun/ui/components/spinner";
 import { WorkspaceDetailTable, WorkspaceShowCard } from "@codexsun/ui/workspace/show";
 import { WorkspaceStatusBadge } from "@codexsun/ui/workspace/status";
 import { useTenantDatabaseDetailsQuery, useTenantDatabaseMutations } from "./tenant-database.hooks";
+import {
+  runningTenantDatabaseRun,
+  watchedDatabaseRun,
+  type WatchedDatabaseOperation
+} from "./tenant-database.watch";
 
 export function TenantDatabaseControl({ tenantId }: { tenantId: number }) {
   const [confirmReinstall, setConfirmReinstall] = useState(false);
-  const details = useTenantDatabaseDetailsQuery(tenantId, "manual");
+  const [checking, setChecking] = useState(false);
+  const [watch, setWatch] = useState<WatchedDatabaseOperation | null>(null);
+  const details = useTenantDatabaseDetailsQuery(tenantId, "manual", watch !== null);
   const mutations = useTenantDatabaseMutations();
-  const busy = Object.values(mutations).some((mutation) => mutation.isPending);
-  const setupPending = mutations.setup.isPending;
-  const reinstallPending = mutations.reinstall.isPending;
+  const busy =
+    checking || watch !== null || Object.values(mutations).some((mutation) => mutation.isPending);
   const database = details.data;
+  const watchedRun = watch && database ? watchedDatabaseRun(database.runs, watch) : undefined;
+  const setupPending =
+    mutations.setup.isPending ||
+    (watchedRun?.operation === "setup" && watchedRun.status === "running");
+  const reinstallPending =
+    mutations.reinstall.isPending ||
+    (watchedRun?.operation === "reinstall" && watchedRun.status === "running");
+
+  useEffect(() => {
+    if (!watchedRun || (watchedRun.status !== "completed" && watchedRun.status !== "failed"))
+      return;
+    setWatch(null);
+    if (watchedRun.status === "completed") toast.success("Tenant database operation completed");
+    else
+      toast.error("Tenant database operation failed", {
+        description:
+          typeof watchedRun.details.error === "string"
+            ? watchedRun.details.error
+            : "Check the recent database runs."
+      });
+  }, [watchedRun]);
+
+  const startOperation = async (operation: "setup" | "reinstall" | "migrate") => {
+    setChecking(true);
+    const current = await details.refetch();
+    setChecking(false);
+    if (!current.data) {
+      showError("Could not check database operations", current.error);
+      return;
+    }
+    const running = runningTenantDatabaseRun(current.data.runs);
+    if (running) {
+      setWatch({ afterId: running.id - 1, operation: running.operation });
+      toast.info("A tenant database operation is already running");
+      return;
+    }
+    const afterId = Math.max(0, ...current.data.runs.map((run) => run.id));
+    setWatch({ afterId, operation });
+    mutations[operation].mutate(tenantId, {
+      onError: async (error) => {
+        const result = await details.refetch();
+        if (!result.data) {
+          toast.error("Could not check the database operation", {
+            description:
+              "The request ended, but the operation status is unknown. Check the recent runs before retrying."
+          });
+          return;
+        }
+        if (!watchedDatabaseRun(result.data.runs, { afterId, operation })) {
+          setWatch(null);
+          showError("Database operation failed", error);
+        }
+      },
+      onSuccess: () => void details.refetch()
+    });
+  };
 
   const runSetup = () => {
-    mutations.setup.mutate(tenantId, {
-      onError: (error) => showError("Database setup failed", error),
-      onSuccess: () => {
-        toast.success("Tenant database is ready");
-        void details.refetch();
-      }
-    });
+    void startOperation("setup");
   };
 
   const runReinstall = () => {
     setConfirmReinstall(false);
-    mutations.reinstall.mutate(tenantId, {
-      onError: (error) => showError("Database re-install failed", error),
-      onSuccess: () => {
-        toast.success("Tenant database was repaired and reseeded");
-        void details.refetch();
-      }
-    });
+    void startOperation("reinstall");
   };
 
   const runMaintenance = (operation: "backup" | "migrate") => {
+    if (operation === "migrate") {
+      void startOperation("migrate");
+      return;
+    }
     const mutation = mutations[operation];
     mutation.mutate(tenantId, {
       onError: (error) => showError(`Database ${operation} failed`, error),
@@ -113,6 +167,15 @@ export function TenantDatabaseControl({ tenantId }: { tenantId: number }) {
           </Button>
         </div>
       </div>
+
+      {watch ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {watchedRun
+            ? `${watchedRun.operation}: ${watchedRun.status}. `
+            : "Starting database operation. "}
+          Watching the migration and seed status; this can take several minutes.
+        </p>
+      ) : null}
 
       {details.isLoading && !database ? (
         <GlobalLoader className="min-h-40" fullScreen={false} />

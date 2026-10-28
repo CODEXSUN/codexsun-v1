@@ -59,17 +59,56 @@ The existing `setup.sh`, `update.sh`, and VPS deployment implementation keep the
 ## Local replacement and app recovery
 
 Both commands share an atomic local operation lock under `.container/backups/local`.
-They do not create SQL, Redis, storage, or configuration backups.
+They create checksum-verified SQL, Redis, storage, and configuration backups after stopping app containers.
+The updater saves application schemas in `databases.sql` and the MariaDB system schema in `mysql-system.sql`.
+It first saves a preliminary backup. It then records and verifies a fresh master restore for normal API startup.
+The updater marks database changes as possible before it records the startup proof.
+It saves a final database and storage backup after the proof completes.
+They refuse tenant database targets outside the selected MariaDB container and storage engines other than InnoDB or MyISAM.
+The SQL dump holds a global read lock for its duration.
+The MariaDB event scheduler must be off and no other database connections may be active.
+The database user must have global PROCESS and backup privileges.
+MariaDB must not publish a host port during the update.
+If external local access is required, use a separately managed loopback-only database relay.
+MariaDB itself must have no published ports. Configure the relay explicitly in the private
+local deployment file as `relay` with its `name`, immutable container `id`, and host `port`.
+For example, add `"relay": {"name": "codexsun-mariadb-relay", "id": "<container-id>", "port": 13306}`
+to the top level of `.container/local-deploy.private.json` after provisioning the relay.
+The relay must be named `codexsun-mariadb-relay`, carry the label
+`io.codexsun.role=mariadb-relay`, and use the selected MariaDB image with entrypoint
+`/usr/bin/socat` and arguments `TCP-LISTEN:3306,fork,reuseaddr` and
+`TCP:<mariadb-container-name>:3306`. Override the image's declared database volume with
+`--tmpfs /var/lib/mysql:ro,nosuid,nodev,noexec,size=1m`. No persistent or writable mounts
+or added capabilities are allowed. Publish only `127.0.0.1:<port>:3306`. It must retain the image's default environment,
+use no restart policy, and share only networks attached to MariaDB without taking its alias.
+The updater stops the validated relay and reserves its loopback port while it checks and
+migrates data. It restores the relay after success or a failure before database changes.
+After a possible database change it leaves the relay stopped for review. An abrupt process
+termination can require manual relay recovery. The updater does not create the relay or
+convert an existing directly published MariaDB container.
+Unmanaged containers must not share a MariaDB network or write a protected volume.
+Stop the local File Browser before updating if it writes a protected media volume.
+Ensure no host process or external client writes to protected storage during the update.
+Before migration, the updater restores the application dump to a disposable MariaDB server.
+The server has no network or shared mounts. It disables networking and events, and uses a read-only root filesystem.
+The updater compares deterministic dumps of every application table and database object.
+It then signs the result for each existing migration target. Tables without primary keys fail verification.
+The sandbox uses temporary storage capped at 2 GiB. A larger restore fails closed.
+The updater provides this proof to its production preflight, migration and seed commands through a
+read-only mount. The ordinary application and its web routes continue to require their normal backup evidence.
 Updates stop only the five app containers before replacement.
 The script saves the previous app Compose model for an application-only rollback.
 It keeps MariaDB, Redis, and their volumes running and unchanged.
 
 The API keeps normal startup migration behavior. Reset and bootstrap-seeding flags must remain disabled.
 Review data migrations before applying a new local image. App rollback does not reverse database migrations.
-Production backup and migration gates remain separate and unchanged.
+The production backup and migration gates remain enabled. The isolated proof is accepted only by
+the explicitly opted-in local upgrade CLI commands.
 
-Failed updates restore the captured app images and configuration.
-Failed fresh deployments remove only newly created app containers. They retain all volumes and images.
+Before migrations start, failed updates restore the captured app images and configuration.
+After migrations start, failed updates stop candidate app containers and leave old images stopped for review.
+They do not assume that old images are compatible with a changed schema.
+Failed fresh deployments retain all volumes and images.
 No command prunes images, removes volumes, deletes backups, or force-kills an app.
 Ctrl+C cancels active Docker CLI work and attempts app recovery. Wait for recovery before interrupting again.
 An interrupted process can leave a lock directory. Confirm no deployment is active before removing that lock.

@@ -10,14 +10,25 @@ import {
   literal,
   sourceChecksum
 } from "./config.mjs";
-import { digest, privateDirectory, privateWrite } from "./files.mjs";
+import { digest, privateDirectory, privateWrite, readJson } from "./files.mjs";
 import { createSourceSnapshot, verifySourceSnapshot } from "./source-snapshot.mjs";
 import { currentRelease } from "./current-release.mjs";
+import { backup, verifyBackup } from "./backup.mjs";
+import { createIsolatedRestoreProof } from "./isolated-restore.mjs";
+import {
+  assertInfrastructurePortsUnpublished,
+  assertLocalDatabaseTargets,
+  runDatabaseCommand,
+  runMasterStartupProof
+} from "./database.mjs";
+import { prepareDatabase, withMigrationRecovery } from "./migration-sequence.mjs";
+import { DatabaseRelayLease } from "./database-relay.mjs";
 
 export async function release(docker, root, config, mode, base, options = {}) {
   const stamp = `${Date.now()}-${randomBytes(3).toString("hex")}`;
   const directory = await privateDirectory(join(base, stamp));
   const initial = inspectDeployment(docker, config, mode);
+  assertInfrastructurePortsUnpublished(initial);
   if (mode === "update") {
     const checksum = await sourceChecksum(root);
     const previous = await currentRelease(base, initial.model, checksum);
@@ -33,7 +44,9 @@ export async function release(docker, root, config, mode, base, options = {}) {
         databasePreserved: initial.database.Id,
         redisPreserved: initial.redis.Id
       });
-      console.log("No new source changes. All five running app images and health checks are current. No build or restart was needed.");
+      console.log(
+        "No new source changes. All five running app images and health checks are current. No build or restart was needed."
+      );
       return;
     }
   }
@@ -84,44 +97,122 @@ export async function release(docker, root, config, mode, base, options = {}) {
   await privateWrite(candidateFile, candidate);
   const stopped = [];
   let replaced = false;
+  const relay = current.relay ? new DatabaseRelayLease(docker, current.relay) : null;
   const previousFile = join(directory, "previous.private.json");
-  try {
-    await privateWrite(previousFile, current.model);
-    console.log("Stopping only the five app containers. MariaDB and Redis remain running.");
-    for (const item of current.containers) {
-      stopped.push(item.Id);
-      await docker.stop(item.Id);
+  await withMigrationRecovery(
+    async (markDatabaseChangesPossible) => {
+      await privateWrite(previousFile, current.model);
+      console.log("Stopping only the five app containers. MariaDB and Redis remain running.");
+      for (const item of current.containers) {
+        stopped.push(item.Id);
+        await docker.stop(item.Id);
+      }
+      if (relay) {
+        console.log("Stopping the local database relay and reserving its host port.");
+        await relay.isolate();
+      }
+      assertRetainedState(docker, current);
+      const backupDirectory = join(directory, "before-migration");
+      const preliminaryDirectory = join(directory, "before-startup-proof");
+      let backedUpDatabases;
+      let proof;
+      await prepareDatabase(
+        {
+          guard: () => {
+            assertRetainedState(docker, current);
+            relay?.assertIsolated();
+            assertLocalDatabaseTargets(docker, current, backedUpDatabases);
+          },
+          preliminaryBackup: async () => {
+            console.log("Creating a verified backup before the master startup proof.");
+            await backup(docker, current, preliminaryDirectory);
+            await verifyBackup(preliminaryDirectory);
+          },
+          startupProof: () =>
+            runMasterStartupProof(docker, config.project, candidateFile, directory),
+          backup: async () => {
+            console.log("Creating and verifying a local database, Redis, and storage backup.");
+            await backup(docker, current, backupDirectory);
+            await verifyBackup(backupDirectory);
+            backedUpDatabases = await readJson(join(backupDirectory, "databases.private.json"));
+            assertLocalDatabaseTargets(docker, current, backedUpDatabases);
+            console.log("Restoring and comparing the backup on a network-isolated MariaDB.");
+            proof = await createIsolatedRestoreProof(
+              docker, current, backupDirectory, join(directory, "isolated-proof")
+            );
+          },
+          verify: () => verifyBackup(backupDirectory),
+          preflight: () =>
+            runDatabaseCommand(
+              docker,
+              config.project,
+              candidateFile,
+              directory,
+              "migrations:preflight",
+              proof
+            ),
+          migrate: () =>
+            runDatabaseCommand(docker, config.project, candidateFile, directory, "migrations:run", proof),
+          seed: () => runDatabaseCommand(docker, config.project, candidateFile, directory, "seed", proof)
+        },
+        markDatabaseChangesPossible
+      );
+      assertRetainedState(docker, current);
+      assert.deepEqual(
+        await bindingChecksums(initial.model),
+        bindings,
+        "Local proxy configuration changed before replacement."
+      );
+      replaced = true;
+      await replaceApplications(
+        docker,
+        config.project,
+        candidateFile,
+        join(directory, "replace.log")
+      );
+      await verifyRuntime(docker, candidate);
+      if (relay) await relay.restore();
+      docker.assertActive?.();
+      const next = capture(docker, root, config);
+      inspectDeployment(docker, next, "update");
+      await privateWrite(join(root, configurationName), next);
+      await privateWrite(join(directory, "result.json"), {
+        success: true,
+        sourceChecksum: fingerprint,
+        workingTreeChangedDuringBuild,
+        databasePreserved: current.database.Id,
+        redisPreserved: current.redis.Id,
+        backupDirectory
+      });
+      console.log(`Local deployment passed. Private logs: ${directory}`);
+    },
+    async () => {
+      try {
+        await recover(docker, config, mode, replaced, candidate, previousFile, stopped, directory);
+      } finally {
+        if (relay) await relay.restore();
+      }
+    },
+    async () => {
+      docker.resumeForRecovery?.();
+      await privateWrite(join(directory, "result.json"), {
+        success: false,
+        databaseChangesPossible: true,
+        applicationRecoveryCompleted: false,
+        databaseRollbackAttempted: false
+      });
+      if (relay) await relay.keepStopped();
+      for (const name of applications) {
+        if (!docker.exists(name)) continue;
+        const item = docker.inspect(name);
+        if (item.State.Running && item.Image === candidate.services[name].image)
+          await docker.stop(name);
+      }
+      console.error(
+        `Database changes may have occurred. Previous images were not restarted. Review backup and logs in ${directory}.`
+      );
     }
-    assertRetainedState(docker, current);
-    assert.deepEqual(
-      await bindingChecksums(initial.model),
-      bindings,
-      "Local proxy configuration changed before replacement."
-    );
-    replaced = true;
-    await replaceApplications(
-      docker,
-      config.project,
-      candidateFile,
-      join(directory, "replace.log")
-    );
-    await verifyRuntime(docker, candidate);
-    docker.assertActive?.();
-    const next = capture(docker, root);
-    inspectDeployment(docker, next, "update");
-    await privateWrite(join(root, configurationName), next);
-    await privateWrite(join(directory, "result.json"), {
-      success: true,
-      sourceChecksum: fingerprint,
-      workingTreeChangedDuringBuild,
-      databasePreserved: current.database.Id,
-      redisPreserved: current.redis.Id
-    });
-    console.log(`Local deployment passed. Private logs: ${directory}`);
-  } catch (error) {
-    await recover(docker, config, mode, replaced, candidate, previousFile, stopped, directory);
-    throw error;
-  }
+  );
 }
 
 export async function replaceApplications(docker, project, file, log) {
@@ -180,7 +271,9 @@ export async function verifyStorefront(url) {
     body.error?.code === "NOT_FOUND" &&
     body.error?.message === "The public application is not available for this domain."
   ) {
-    console.warn("Storefront proxy reached the API; loopback has no active storefront. Verify a configured storefront domain separately.");
+    console.warn(
+      "Storefront proxy reached the API; loopback has no active storefront. Verify a configured storefront domain separately."
+    );
     return;
   }
   assert.equal(response.status, 200, "Local storefront bootstrap failed.");
