@@ -11,6 +11,9 @@ import { CommonTableImportService } from "../../devkits/data-bridge/api/src/modu
 for (const legacy of [false, true]) {
   test(`Data Bridge snapshot migration preserves ${legacy ? "legacy" : "fresh"} reviews`, async () => {
     const name = `codexsun_bridge_test_${randomBytes(5).toString("hex")}`;
+    const sourceName = `${name}_source`;
+    const sourceUser = `br_${randomBytes(4).toString("hex")}`;
+    const sourcePassword = randomBytes(16).toString("hex");
     const config = {
       host: process.env.DB_HOST!,
       port: Number(process.env.DB_PORT),
@@ -21,6 +24,9 @@ for (const legacy of [false, true]) {
     let database: Kysely<unknown> | undefined;
     try {
       await admin.query(`CREATE DATABASE \`${name}\``);
+      await admin.query(`CREATE DATABASE \`${sourceName}\``);
+      await admin.query(`CREATE USER '${sourceUser}'@'%' IDENTIFIED BY '${sourcePassword}'`);
+      await admin.query(`GRANT SELECT ON \`${sourceName}\`.* TO '${sourceUser}'@'%'`);
       database = new Kysely<unknown>({
         dialect: new MysqlDialect({ pool: createPool({ ...config, database: name }) })
       });
@@ -101,6 +107,12 @@ for (const legacy of [false, true]) {
         await sql`INSERT INTO core_bank_names (uuid, id, name) VALUES
           (${String(106 - id).padStart(8, "0")}, ${id}, ${`Bank ${id}`})`.execute(database);
       }
+      await admin.query(
+        `CREATE TABLE \`${sourceName}\`.core_bank_names LIKE \`${name}\`.core_bank_names`
+      );
+      await admin.query(
+        `INSERT INTO \`${sourceName}\`.core_bank_names SELECT * FROM \`${name}\`.core_bank_names`
+      );
       const connection = { ...config, id: 2, label: "Test", database: name };
       const service = new CommonTableImportService({
         database,
@@ -109,7 +121,13 @@ for (const legacy of [false, true]) {
         resolveTenant: async () => connection,
         dataMigration: {
           listSources: async () => [],
-          resolveSource: async () => ({ ...connection, tlsMode: "disabled" as const })
+          resolveSource: async () => ({
+            ...connection,
+            database: sourceName,
+            user: sourceUser,
+            password: sourcePassword,
+            tlsMode: "disabled" as const
+          })
         }
       });
       const first = await service.preview({
@@ -269,6 +287,10 @@ for (const legacy of [false, true]) {
       await sql`INSERT INTO core_months (name, start_date, end_date) VALUES ('January', '2026-01-01', '2026-01-31')`.execute(
         database
       );
+      await admin.query(`CREATE TABLE \`${sourceName}\`.core_months LIKE \`${name}\`.core_months`);
+      await admin.query(
+        `INSERT INTO \`${sourceName}\`.core_months SELECT * FROM \`${name}\`.core_months`
+      );
       const dates = await service.save({
         sourceId: 1,
         targetTenantId: 2,
@@ -281,6 +303,8 @@ for (const legacy of [false, true]) {
       assert.equal((await service.auditSaved(dates.id, "test")).rows[0]?.status, "existing");
     } finally {
       await database?.destroy();
+      await admin.query(`DROP USER IF EXISTS '${sourceUser}'@'%'`);
+      await admin.query(`DROP DATABASE IF EXISTS \`${sourceName}\``);
       await admin.query(`DROP DATABASE IF EXISTS \`${name}\``);
       await admin.end();
     }

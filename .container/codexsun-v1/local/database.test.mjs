@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertDatabaseIdle, assertLocalDatabaseTargets, runDatabaseCommand, runMasterStartupProof } from "./database.mjs";
+import {
+  assertDatabaseIdle,
+  assertLocalDatabaseTargets,
+  assertMigrationLedgersSettled,
+  runDatabaseCommand,
+  runMasterStartupProof
+} from "./database.mjs";
 import { dumpArguments } from "./backup.mjs";
 
 function response(args, options, tenantResult = "0\n") {
@@ -36,6 +42,27 @@ const state = {
   }
 };
 
+test("preflight rejects unfinished tenant migrations before stopping applications", () => {
+  const docker = {
+    run: (_args, options) => {
+      if (options.input.includes("SELECT DISTINCT")) return "tenant_a\n";
+      if (options.input.includes("information_schema.tables")) return "1\n";
+      return options.input.includes("`tenant_a`") ? "1\n" : "0\n";
+    }
+  };
+  assert.throws(
+    () => assertMigrationLedgersSettled(docker, state),
+    /tenant_a has an unfinished migration/
+  );
+  docker.run = (_args, options) =>
+    options.input.includes("SELECT DISTINCT")
+      ? "tenant_a\n"
+      : options.input.includes("information_schema.tables")
+        ? "1\n"
+        : "0\n";
+  assert.doesNotThrow(() => assertMigrationLedgersSettled(docker, state));
+});
+
 test("rejects remote or missing active tenant targets and permits absent inactive targets", () => {
   let targetQuery;
   const docker = {
@@ -65,7 +92,11 @@ test("candidate database commands are fixed and preserve production environment"
 test("candidate commands mount isolated proof read-only and do not put its key in arguments", async () => {
   const calls = [];
   const docker = { logged: async (...args) => calls.push(args) };
-  const proof = { directory: "private-proof", secret: "s".repeat(64), sourceContainerId: "a".repeat(64) };
+  const proof = {
+    directory: "private-proof",
+    secret: "s".repeat(64),
+    sourceContainerId: "a".repeat(64)
+  };
   await runDatabaseCommand(docker, "project", "candidate.json", "private", "seed", proof);
   const [args, , environment] = calls[0];
   assert.ok(args.includes("--isolated-evidence"));
@@ -85,7 +116,10 @@ test("master startup proof uses a unique explicit sandbox and production CLI", a
   assert.ok(!args.includes("--isolated-evidence"));
   assert.equal(environment.CODEXSUN_MASTER_PROOF_CONFIRM, "BACKUP_MASTER_STARTUP");
   assert.match(environment.CODEXSUN_RESTORE_TEST_DB_NAME, /^codexsun_master_proof_[a-f0-9]{16}$/u);
-  assert.notEqual(environment.CODEXSUN_RESTORE_TEST_DB_NAME, calls[1][2].CODEXSUN_RESTORE_TEST_DB_NAME);
+  assert.notEqual(
+    environment.CODEXSUN_RESTORE_TEST_DB_NAME,
+    calls[1][2].CODEXSUN_RESTORE_TEST_DB_NAME
+  );
 });
 
 test("rejects remote API targets and exposed local database ports", () => {

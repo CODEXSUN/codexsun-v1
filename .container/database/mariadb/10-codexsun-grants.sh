@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# MariaDB sources initialization hooks. Keep strict options in this subshell.
+(
 set -euo pipefail
 
 # CODEXSUN provisions one database per tenant. The deployment app user needs
@@ -26,3 +28,4 @@ ALTER USER '${escaped_user}'@'%' IDENTIFIED BY '${escaped_password}';
 GRANT ALL PRIVILEGES ON *.* TO '${escaped_user}'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 SQL
+)

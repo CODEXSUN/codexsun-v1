@@ -38,8 +38,6 @@ export class TransferService {
       this.host.dataMigration.resolveSource(sourceId),
       this.host.resolveTenant(targetTenantId)
     ]);
-    if (source.database === target.database && source.port === target.port)
-      throw AppError.validation("Source and target must be different databases.");
     await withConnections(source, target, async (db, to) => {
       await db.query("SELECT 1");
       await to.query("SELECT 1");

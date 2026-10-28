@@ -30,7 +30,7 @@ jobs:
           cache: npm
 
       - name: Use the repository npm version
-        run: npm install --global npm@12.2.0
+        run: npm install --global npm@12.2.1
 
       - name: Install locked dependencies
         run: npm ci

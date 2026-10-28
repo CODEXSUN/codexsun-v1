@@ -43,6 +43,9 @@ const config = {
   password: process.env.DB_PASSWORD!
 };
 assert.ok(["127.0.0.1", "localhost", "::1"].includes(config.host), "Local databases only");
+const sourceUser = process.env.CODEXSUN_BRIDGE_SOURCE_USER;
+const sourcePassword = process.env.CODEXSUN_BRIDGE_SOURCE_PASSWORD;
+assert.ok(sourceUser && sourcePassword, "Supply a dedicated read-only source account.");
 const pairs = [
   { source: "sukraa_cloud_db", target: "sukraa_db" },
   { source: "altex_cloud_db", target: "altex_db" }
@@ -67,7 +70,13 @@ try {
   await migrateDataBridgeDatabase(reports);
   for (const [index, pair] of pairs.entries()) {
     console.log(`START ${pair.source} -> ${pair.target}`);
-    const source = await createConnection({ ...config, database: pair.source, timezone: "Z" });
+    const source = await createConnection({
+      ...config,
+      user: sourceUser,
+      password: sourcePassword,
+      database: pair.source,
+      timezone: "Z"
+    });
     let target: Connection | undefined;
     try {
       const before = await fingerprint(source);
@@ -99,6 +108,8 @@ try {
           listSources: async () => [],
           resolveSource: async () => ({
             ...config,
+            user: sourceUser,
+            password: sourcePassword,
             id: index + 1,
             label: pair.source,
             database: pair.source,

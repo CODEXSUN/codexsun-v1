@@ -46,6 +46,8 @@ bash update-local.sh
 
 `--plan` describes the possible actions without inspecting Docker or changing data.
 Update requires all five local app containers to be healthy and owned by `codexsun-local-cloud`.
+Before building, update checks existing master and tenant migration ledgers for unfinished entries.
+Resolve any unfinished migration with a reviewed recovery before retrying. The updater does not change the ledger.
 The script copies tracked and non-ignored build sources into a private snapshot before building.
 It checks source consistency during capture and validates every copied file with SHA-256 after building.
 Later working-tree edits go into the next update. They do not alter the captured build.

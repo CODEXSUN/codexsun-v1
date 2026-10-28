@@ -7,6 +7,7 @@ import type { CommonTableImportHost } from "./modules/import-review/import-revie
 export { migrateDataBridgeDatabase };
 export { CommonBulkService } from "./modules/report/report.bulk.service.js";
 export type { CommonTableImportHost } from "./modules/import-review/import-review.types.js";
+export { withConnections as withSafeBridgeConnections } from "./modules/import-review/index.js";
 export const dataBridgeApiModuleKeys = [
   dataBridgeModule.key,
   "data-bridge.legacy-preparation",

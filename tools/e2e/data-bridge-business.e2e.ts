@@ -23,6 +23,8 @@ test("business import orders groups, maps renamed invoice descendants, preserves
     password: process.env.DB_PASSWORD!
   };
   const suffix = randomBytes(4).toString("hex");
+  const sourceUser = `br_${suffix}`;
+  const sourcePassword = randomBytes(16).toString("hex");
   const names = ["source", "target", "master"].map(
     (part) => `codexsun_bridge_business_${part}_${suffix}`
   );
@@ -33,6 +35,8 @@ test("business import orders groups, maps renamed invoice descendants, preserves
   let target: Awaited<ReturnType<typeof createConnection>> | undefined;
   try {
     for (const name of names) await admin.query(`CREATE DATABASE \`${name}\``);
+    await admin.query(`CREATE USER '${sourceUser}'@'%' IDENTIFIED BY '${sourcePassword}'`);
+    await admin.query(`GRANT SELECT ON \`${names[0]}\`.* TO '${sourceUser}'@'%'`);
     source = await createConnection({ ...config, database: names[0] });
     target = await createConnection({ ...config, database: names[1] });
     database = new Kysely({
@@ -100,6 +104,8 @@ test("business import orders groups, maps renamed invoice descendants, preserves
           assert.equal(id, 1);
           return {
             ...config,
+            user: sourceUser,
+            password: sourcePassword,
             id,
             label: "Disposable source",
             database: names[0]!,
@@ -194,6 +200,9 @@ test("business import orders groups, maps renamed invoice descendants, preserves
       ),
       /target context/u
     );
+    const [sourceBefore] = await source.query(
+      "CHECKSUM TABLE core_units, core_products, legacy_invoices, legacy_lines"
+    );
     const started = await service.start(1, 9, "test:business", "fixture");
     assert.equal(started.id, queued);
     assert.equal((await service.start(1, 9, "test:business", "fixture")).id, started.id);
@@ -202,6 +211,10 @@ test("business import orders groups, maps renamed invoice descendants, preserves
     const result = await service.run(started.id, 9, async (p) => {
       if (phases.at(-1) !== p.phase) phases.push(p.phase);
     });
+    const [sourceAfter] = await source.query(
+      "CHECKSUM TABLE core_units, core_products, legacy_invoices, legacy_lines"
+    );
+    assert.deepEqual(sourceAfter, sourceBefore);
     assert.deepEqual(phases, ["common", "masters", "billing", "invoices", "complete"]);
     assert.equal(
       result.status,
@@ -310,6 +323,7 @@ test("business import orders groups, maps renamed invoice descendants, preserves
     await source?.end();
     await target?.end();
     await database?.destroy();
+    await admin.query(`DROP USER IF EXISTS '${sourceUser}'@'%'`);
     for (const name of names) await admin.query(`DROP DATABASE IF EXISTS \`${name}\``);
     await admin.end();
   }

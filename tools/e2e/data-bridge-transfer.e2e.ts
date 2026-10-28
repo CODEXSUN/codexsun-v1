@@ -15,11 +15,15 @@ test("six-stage transfer maps different tables and fields, blocks invalid stages
     password: process.env.DB_PASSWORD!
   };
   const suffix = randomBytes(4).toString("hex");
+  const sourceUser = `br_${suffix}`;
+  const sourcePassword = randomBytes(16).toString("hex");
   const names = ["source", "target", "master"].map((s) => `codexsun_transfer_${s}_${suffix}`);
   const admin = await createConnection(config);
   let database: Kysely<unknown> | undefined;
   try {
     for (const name of names) await admin.query(`CREATE DATABASE \`${name}\``);
+    await admin.query(`CREATE USER '${sourceUser}'@'%' IDENTIFIED BY '${sourcePassword}'`);
+    await admin.query(`GRANT SELECT ON \`${names[0]}\`.* TO '${sourceUser}'@'%'`);
     const source = await createConnection({ ...config, database: names[0] });
     const target = await createConnection({ ...config, database: names[1] });
     database = new Kysely({
@@ -49,6 +53,8 @@ test("six-stage transfer maps different tables and fields, blocks invalid stages
           listSources: async () => [],
           resolveSource: async () => ({
             ...config,
+            user: sourceUser,
+            password: sourcePassword,
             id: 1,
             label: "Source",
             database: names[0]!,
@@ -380,6 +386,7 @@ test("six-stage transfer maps different tables and fields, blocks invalid stages
     }
   } finally {
     await database?.destroy();
+    await admin.query(`DROP USER IF EXISTS '${sourceUser}'@'%'`);
     for (const name of names) await admin.query(`DROP DATABASE IF EXISTS \`${name}\``);
     await admin.end();
   }

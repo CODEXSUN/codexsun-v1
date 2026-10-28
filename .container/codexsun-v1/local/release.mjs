@@ -23,6 +23,7 @@ import {
 } from "./database.mjs";
 import { prepareDatabase, withMigrationRecovery } from "./migration-sequence.mjs";
 import { DatabaseRelayLease } from "./database-relay.mjs";
+import { fetchReady } from "./runtime-health.mjs";
 
 export async function release(docker, root, config, mode, base, options = {}) {
   const stamp = `${Date.now()}-${randomBytes(3).toString("hex")}`;
@@ -138,7 +139,10 @@ export async function release(docker, root, config, mode, base, options = {}) {
             assertLocalDatabaseTargets(docker, current, backedUpDatabases);
             console.log("Restoring and comparing the backup on a network-isolated MariaDB.");
             proof = await createIsolatedRestoreProof(
-              docker, current, backupDirectory, join(directory, "isolated-proof")
+              docker,
+              current,
+              backupDirectory,
+              join(directory, "isolated-proof")
             );
           },
           verify: () => verifyBackup(backupDirectory),
@@ -152,8 +156,16 @@ export async function release(docker, root, config, mode, base, options = {}) {
               proof
             ),
           migrate: () =>
-            runDatabaseCommand(docker, config.project, candidateFile, directory, "migrations:run", proof),
-          seed: () => runDatabaseCommand(docker, config.project, candidateFile, directory, "seed", proof)
+            runDatabaseCommand(
+              docker,
+              config.project,
+              candidateFile,
+              directory,
+              "migrations:run",
+              proof
+            ),
+          seed: () =>
+            runDatabaseCommand(docker, config.project, candidateFile, directory, "seed", proof)
         },
         markDatabaseChangesPossible
       );
@@ -254,8 +266,7 @@ export async function verifyRuntime(docker, model) {
     `${web}/api/app/ready`,
     `${web}/api/app/public/runtime-config`
   ]) {
-    const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
-    assert.equal(response.status, 200, `Local endpoint failed: ${new URL(url).pathname}`);
+    const response = await fetchReady(url);
     if (response.headers.get("content-type")?.includes("application/json"))
       assert.notEqual((await response.json()).success, false, "Local API returned an error.");
   }

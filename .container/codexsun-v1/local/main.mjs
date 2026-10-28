@@ -7,7 +7,10 @@ import { LocalDocker } from "./docker.mjs";
 import { privateWrite, readJson, withLock } from "./files.mjs";
 import { parseLocalOptions } from "./options.mjs";
 import { release } from "./release.mjs";
-import { assertInfrastructurePortsUnpublished } from "./database.mjs";
+import {
+  assertInfrastructurePortsUnpublished,
+  assertMigrationLedgersSettled
+} from "./database.mjs";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const [mode, ...arguments_] = process.argv.slice(2);
@@ -51,7 +54,10 @@ try {
       if (options.check) {
         const config = existsSync(path) ? await readJson(path) : capture(docker, root);
         const state = inspectDeployment(docker, config, mode);
-        if (mode === "update") assertInfrastructurePortsUnpublished(state);
+        if (mode === "update") {
+          assertInfrastructurePortsUnpublished(state);
+          assertMigrationLedgersSettled(docker, state);
+        }
         console.log(`Local ${mode} preflight passed. No files or containers changed.`);
       } else
         await withLock(root, async (base) => {
@@ -62,7 +68,8 @@ try {
           );
           const config = saved ? await readJson(path) : capture(docker, root);
           // Configuration capture validates the running stack, even before a future fresh deployment.
-          inspectDeployment(docker, config, options.configure ? "update" : mode);
+          const state = inspectDeployment(docker, config, options.configure ? "update" : mode);
+          if (mode === "update" && !options.configure) assertMigrationLedgersSettled(docker, state);
           if (!saved) await privateWrite(path, config);
           if (options.configure)
             console.log(`Captured private local configuration: ${path}. Containers unchanged.`);

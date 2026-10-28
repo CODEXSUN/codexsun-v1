@@ -1,6 +1,10 @@
 import { CompanySeedReuse } from "../master-tables/index.js";
 import { createHash, randomUUID } from "node:crypto";
 import { createConnection, type Connection, type RowDataPacket } from "mysql2/promise";
+import {
+  requireDistinctDatabases,
+  requireReadOnlySource
+} from "./import-review.connection-safety.js";
 import { AppError } from "@codexsun/framework/errors";
 import { CommonTableImportRepository } from "./import-review.repository.js";
 import { CommonTableRowAudit } from "./import-review.audit.js";
@@ -519,6 +523,7 @@ export async function withConnections<T>(
   });
   let targetDb: Connection | undefined;
   try {
+    await requireReadOnlySource(sourceDb);
     targetDb = await createConnection({
       host: target.host,
       port: target.port,
@@ -528,6 +533,7 @@ export async function withConnections<T>(
       dateStrings: true,
       connectTimeout: 10_000
     });
+    await requireDistinctDatabases(sourceDb, targetDb);
     return await operation(sourceDb, targetDb);
   } finally {
     await Promise.allSettled([sourceDb.end(), targetDb?.end() ?? Promise.resolve()]);

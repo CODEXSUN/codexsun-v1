@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.85
+Current version: 1.1.86
 
-Release tag: v-1.1.85
+Release tag: v-1.1.86
 
-Changelog label: v 1.1.85
+Changelog label: v 1.1.86
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -37,6 +37,27 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Update the [Thirumurugan migration guide](../../devkits/data-bridge/agent/thirumurugan-migration.md) with the completed VPS phase.
 - Add the [dated operation log](../../devkits/data-bridge/agent/THIRUMURUGAN-VPS-TRANSFER-2026-10-27.md) with verification and recovery evidence.
 - No application logic, package version, image deployment, or credential change in this documentation task.
+
+## v-1.1.86
+
+### [v 1.1.86] 2026-10-28 7:00 pm - Protect Data Bridge sources and local upgrades
+
+#### Database Changes
+
+- Database update: Yes (manual).
+- Require read-only source grants and sessions for Data Bridge imports and tenant user copies.
+- Reject source and target aliases that resolve to the same MariaDB server and schema.
+- Recover the interrupted local ALTEX migration after a backup and checksum and schema verification.
+- Apply the remaining ALTEX migrations through the local updater. Keep all imported tenant records inactive.
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.86.
+- Use npm 12.2.1 in Docker builds and GitHub workflows.
+- Stop local updates early when an existing database has an unfinished migration ledger entry.
+- Retry transient proxy readiness errors during container startup.
+- Preserve the MariaDB entrypoint shell options during fresh database initialization.
+- Verify Data Bridge imports with read-only accounts on a disposable MariaDB server.
 
 ## v-1.1.85
 

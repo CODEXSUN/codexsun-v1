@@ -17,6 +17,16 @@ Technical transfer, snapshot, report, connection, and transport concerns remain 
 
 ## Import behavior
 
+Use a dedicated source account with only `SELECT` and, when needed, `SHOW VIEW` grants.
+Data Bridge rejects writable, administrative, grantable, and role grants. It opens the source session in read-only mode.
+The connection guard covers previews, mapped transfers, common and business imports, reports, and tenant user copies.
+The guard checks the connected schema names and uses a target advisory lock to detect aliases of the same server and schema.
+This check does not prove that separate servers, proxies, Galera nodes, replicas, or shared storage are independent.
+Before a real import, verify the full routing and replication topology and use separate source and target storage.
+The database guard does not protect source media storage. Verify media source access and routing separately.
+The local-clients E2E requires `CODEXSUN_BRIDGE_SOURCE_USER` and `CODEXSUN_BRIDGE_SOURCE_PASSWORD` for an existing read-only account.
+It does not create or change source database grants. Its target and report databases must be disposable.
+
 Inspect live tables, fields, indexes, defaults, and relationships before mapping.
 Support different table and field names through explicit mapping.
 Select stable source records and business fields. Resolve source parents through target business identity.

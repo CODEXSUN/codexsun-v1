@@ -39,6 +39,8 @@ test("bulk imports all common tables in parent order, persists attention and rep
     password: process.env.DB_PASSWORD!
   };
   const suffix = randomBytes(4).toString("hex");
+  const sourceUser = `br_${suffix}`;
+  const sourcePassword = randomBytes(16).toString("hex");
   const names = ["source", "target", "master"].map(
     (part) => `codexsun_bridge_bulk_${part}_${suffix}`
   );
@@ -46,6 +48,8 @@ test("bulk imports all common tables in parent order, persists attention and rep
   let database: Kysely<unknown> | undefined;
   try {
     for (const name of names) await admin.query(`CREATE DATABASE \`${name}\``);
+    await admin.query(`CREATE USER '${sourceUser}'@'%' IDENTIFIED BY '${sourcePassword}'`);
+    await admin.query(`GRANT SELECT ON \`${names[0]}\`.* TO '${sourceUser}'@'%'`);
     const source = await createConnection({ ...config, database: names[0] });
     const target = await createConnection({ ...config, database: names[1] });
     database = new Kysely({
@@ -101,6 +105,8 @@ test("bulk imports all common tables in parent order, persists attention and rep
           listSources: async () => [],
           resolveSource: async () => ({
             ...config,
+            user: sourceUser,
+            password: sourcePassword,
             id: 1,
             label: "Source",
             database: names[0]!,
@@ -259,6 +265,7 @@ test("bulk imports all common tables in parent order, persists attention and rep
     }
   } finally {
     await database?.destroy();
+    await admin.query(`DROP USER IF EXISTS '${sourceUser}'@'%'`);
     for (const name of names) await admin.query(`DROP DATABASE IF EXISTS \`${name}\``);
     await admin.end();
   }

@@ -2,7 +2,6 @@ import { selectUserRole } from "./modules/tenant-user-role/index.js";
 import { CredentialRecoveryRepository } from "./modules/credential-recovery/index.js";
 import { copyBridgeUsers } from "./modules/tenant-user/index.js";
 import { getTenantDatabase } from "./database/tenant-database.js";
-import { createConnection } from "mysql2/promise";
 import type { Kysely } from "kysely";
 import {
   billingDashboardProjection,
@@ -26,6 +25,7 @@ import {
   registerDataBridgeApi,
   CommonBulkService,
   TransferService,
+  withSafeBridgeConnections,
   businessImportWorker,
   type CommonTableImportHost
 } from "@codexsun/data-bridge-api";
@@ -128,16 +128,8 @@ export function registerDataBridgeBackground(
       const source = await createDataMigrationBridgeAccess(migrationHost).resolveSource(
         input.sourceId
       );
-      const connection = await createConnection({
-        host: source.host,
-        port: source.port,
-        user: source.user,
-        password: source.password,
-        database: source.database,
-        timezone: "Z",
-        ...(source.tlsMode === "required" ? { ssl: { rejectUnauthorized: true } } : {})
-      });
-      try {
+      const target = await host.resolveTenant(tenant.id);
+      return withSafeBridgeConnections(source, target, async (connection) => {
         const database = getTenantDatabase(tenant);
         const accessDatabase = database as unknown as Kysely<unknown>;
         if (!(await hasActiveTransferCompanyContext(accessDatabase)))
@@ -159,10 +151,8 @@ export function registerDataBridgeBackground(
         await seedCoreStandardUserAccess(accessDatabase);
         await seedBillingStandardUserAccess(accessDatabase);
         await seedCrmUserAccess(accessDatabase);
-        return await copyBridgeUsers(connection, database, authorize, selectUserRole);
-      } finally {
-        await connection.end();
-      }
+        return copyBridgeUsers(connection, database, authorize, selectUserRole);
+      });
     },
     dataMigration: createDataMigrationBridgeAccess(migrationHost),
     authorize(request) {

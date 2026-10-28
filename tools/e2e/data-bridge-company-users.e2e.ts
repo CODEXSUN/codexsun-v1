@@ -42,6 +42,8 @@ const config = {
 
 test("Data Bridge reuses one company seed, preserves references and copies supported user credentials", async (t) => {
   assert.ok(["127.0.0.1", "localhost", "::1"].includes(config.host));
+  const sourceUser = `br_${randomBytes(4).toString("hex")}`;
+  const sourcePassword = randomBytes(16).toString("hex");
   const names = ["source", "target", "master", "legacy", "business"].map(
     (side) => `codexsun_company_${side}_${randomBytes(5).toString("hex")}`
   );
@@ -60,6 +62,8 @@ test("Data Bridge reuses one company seed, preserves references and copies suppo
         })
       );
     }
+    await admin.query(`CREATE USER '${sourceUser}'@'%' IDENTIFIED BY '${sourcePassword}'`);
+    await admin.query(`GRANT SELECT ON \`${names[0]}\`.* TO '${sourceUser}'@'%'`);
     const source = connections[0]!,
       target = connections[1]!;
     const rows = async (connection: typeof source, sql: string) =>
@@ -86,6 +90,8 @@ test("Data Bridge reuses one company seed, preserves references and copies suppo
         listSources: async () => [],
         resolveSource: async () => ({
           ...config,
+          user: sourceUser,
+          password: sourcePassword,
           id: 1,
           label: "Source",
           database: names[0]!,
@@ -556,6 +562,7 @@ test("Data Bridge reuses one company seed, preserves references and copies suppo
     await closeCoreDatabase();
     await Promise.all(connections.map((c) => c.end()));
     await Promise.all(pools.map((p) => p.destroy()));
+    await admin.query(`DROP USER IF EXISTS '${sourceUser}'@'%'`);
     for (const name of names) await admin.query(`DROP DATABASE IF EXISTS \`${name}\``);
     await admin.end();
   }

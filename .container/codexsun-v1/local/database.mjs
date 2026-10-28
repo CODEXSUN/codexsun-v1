@@ -11,6 +11,52 @@ export function assertInfrastructurePortsUnpublished(state) {
     );
 }
 
+export function assertMigrationLedgersSettled(docker, state) {
+  const api = state.model.services["codexsun-api"].environment;
+  const host = state.database.Name.slice(1);
+  const master = literal(api.DB_MASTER_NAME);
+  assert.match(master, /^[a-zA-Z0-9_]+$/u, "Invalid master database name.");
+  const query = (sql) =>
+    docker
+      .run(
+        [
+          "exec",
+          "-i",
+          "-e",
+          "MYSQL_PWD",
+          host,
+          "mariadb",
+          "--no-defaults",
+          `-u${literal(api.DB_USER)}`,
+          "-N",
+          "--batch",
+          master
+        ],
+        { input: sql, env: { ...process.env, MYSQL_PWD: literal(api.DB_PASSWORD) } }
+      )
+      .trim();
+  const rows = query(
+    "SELECT DISTINCT s.SCHEMA_NAME FROM information_schema.SCHEMATA s JOIN tenants t ON t.db_name = s.SCHEMA_NAME WHERE t.db_name IS NOT NULL AND t.db_name <> ''"
+  );
+  const databases = [master, ...rows.split(/\r?\n/u).filter(Boolean)];
+  for (const name of new Set(databases)) {
+    assert.match(name, /^[a-zA-Z0-9_]+$/u, "Invalid tenant database name.");
+    const hasLedger = query(
+      `SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${name}' AND table_name = 'migration_schema'`
+    );
+    assert.match(hasLedger, /^[01]$/u, "Could not verify migration ledger.");
+    if (hasLedger === "0") continue;
+    const unsettled = query(
+      `SELECT COUNT(*) FROM \`${name}\`.migration_schema WHERE status <> 'applied' OR status IS NULL`
+    );
+    assert.equal(
+      unsettled,
+      "0",
+      `Database ${name} has an unfinished migration. Review its ledger before updating.`
+    );
+  }
+}
+
 export function assertLocalDatabaseTargets(docker, state, backedUpDatabases) {
   const service = state.model.services["codexsun-api"];
   const api = service.environment;
@@ -143,7 +189,8 @@ export function assertLocalDatabaseTargets(docker, state, backedUpDatabases) {
           master
         ],
         {
-          input: "SELECT DISTINCT t.db_name FROM tenants t INNER JOIN information_schema.SCHEMATA s ON s.SCHEMA_NAME = t.db_name WHERE t.db_name IS NOT NULL AND t.db_name <> ''",
+          input:
+            "SELECT DISTINCT t.db_name FROM tenants t INNER JOIN information_schema.SCHEMATA s ON s.SCHEMA_NAME = t.db_name WHERE t.db_name IS NOT NULL AND t.db_name <> ''",
           env: { ...process.env, MYSQL_PWD: literal(api.DB_PASSWORD) }
         }
       )
@@ -208,9 +255,14 @@ export async function runDatabaseCommand(docker, project, file, directory, comma
     const source = resolve(proof.directory).replaceAll("\\", "/");
     environment.CODEXSUN_ISOLATED_ATTESTATION_KEY = proof.secret;
     environment.CODEXSUN_ISOLATED_SOURCE_CONTAINER_ID = proof.sourceContainerId;
-    flags.push("--volume", `${source}:/run/codexsun-upgrade-evidence:ro`,
-      "--env", "CODEXSUN_ISOLATED_ATTESTATION_KEY",
-      "--env", "CODEXSUN_ISOLATED_SOURCE_CONTAINER_ID");
+    flags.push(
+      "--volume",
+      `${source}:/run/codexsun-upgrade-evidence:ro`,
+      "--env",
+      "CODEXSUN_ISOLATED_ATTESTATION_KEY",
+      "--env",
+      "CODEXSUN_ISOLATED_SOURCE_CONTAINER_ID"
+    );
   }
   await docker.logged(
     [
@@ -243,11 +295,27 @@ export async function runMasterStartupProof(docker, project, file, directory) {
     CODEXSUN_RESTORE_TEST_DB_NAME: `codexsun_master_proof_${randomBytes(8).toString("hex")}`
   };
   await docker.logged(
-    ["compose", "-p", project, "-f", file, "run", "--rm", "--no-deps",
-      "--env", "CODEXSUN_MASTER_PROOF_CONFIRM", "--env", "CODEXSUN_RESTORE_TEST_DB_NAME",
-      "--entrypoint", "node", "codexsun-api", "--import",
+    [
+      "compose",
+      "-p",
+      project,
+      "-f",
+      file,
+      "run",
+      "--rm",
+      "--no-deps",
+      "--env",
+      "CODEXSUN_MASTER_PROOF_CONFIRM",
+      "--env",
+      "CODEXSUN_RESTORE_TEST_DB_NAME",
+      "--entrypoint",
+      "node",
+      "codexsun-api",
+      "--import",
       "./tools/register-production-package-resolution.mjs",
-      "dist/apps/platform/api/database/db-cli.js", "master:startup-proof"],
+      "dist/apps/platform/api/database/db-cli.js",
+      "master:startup-proof"
+    ],
     join(directory, "master-startup-proof.log"),
     environment
   );
