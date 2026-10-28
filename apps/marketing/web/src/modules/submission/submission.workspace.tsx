@@ -8,13 +8,10 @@ import { WorkspaceFilters } from "@codexsun/ui/workspace/filters";
 import { WorkspacePagination } from "@codexsun/ui/workspace/pagination";
 import { WorkspaceDateRangePicker } from "@codexsun/ui/workspace/date-range-picker";
 import { buildShowingLabel } from "@codexsun/ui/workspace/utils";
-import {
-  useWorkspaceQueryState,
-  useWorkspaceQueryValue
-} from "@codexsun/ui/workspace/navigation";
+import { useWorkspaceQueryState, useWorkspaceQueryValue } from "@codexsun/ui/workspace/navigation";
 import { useMarketingTransport } from "../../transport";
 import { useSubmissions, useSubmissionDetail } from "./submission.hooks";
-import { saveSubmission, retrySubmission, countSubmissions } from "./submission.services";
+import { saveSubmission, handoffSubmission, countSubmissions } from "./submission.services";
 import { SubmissionList } from "./submission.list";
 import { SubmissionForm } from "./submission.form";
 import { SubmissionShow } from "./submission.show";
@@ -41,7 +38,14 @@ export function SubmissionWorkspace() {
     page: 1,
     pageSize: 50,
     fromDate: "",
-    toDate: ""
+    toDate: "",
+    filterName: "",
+    filterCampaign: "",
+    filterEmail: "",
+    filterPhone: "",
+    filterStatus: "",
+    filterLead: "",
+    columnSearch: ""
   });
 
   const { search, status, page, pageSize, fromDate, toDate } = queryParams;
@@ -63,15 +67,46 @@ export function SubmissionWorkspace() {
   }, [hiddenColumns]);
 
   const [isImporting, setIsImporting] = useState(false);
-  const [showInlineFilters, setShowInlineFilters] = useState(false);
-  const [columnFilters, setColumnFilters] = useState<SubmissionColumnFilters>({});
+  const showInlineFilters = queryParams.columnSearch === "1";
+  const setShowInlineFilters = (value: boolean) =>
+    setQueryParams((prev) => ({ ...prev, columnSearch: value ? "1" : "" }));
+  const columnFilters: SubmissionColumnFilters = {
+    name: queryParams.filterName,
+    campaignLabel: queryParams.filterCampaign,
+    email: queryParams.filterEmail,
+    phone: queryParams.filterPhone,
+    status: queryParams.filterStatus,
+    leadUuid: queryParams.filterLead
+  };
+  const filterKeys: Record<
+    keyof SubmissionColumnFilters,
+    "filterName" | "filterCampaign" | "filterEmail" | "filterPhone" | "filterStatus" | "filterLead"
+  > = {
+    name: "filterName",
+    campaignLabel: "filterCampaign",
+    email: "filterEmail",
+    phone: "filterPhone",
+    status: "filterStatus",
+    leadUuid: "filterLead"
+  };
+  function setColumnFilter(column: keyof SubmissionColumnFilters, value: string) {
+    setQueryParams((prev) => ({ ...prev, [filterKeys[column]]: value, page: 1 }));
+  }
   const deferredSearch = useDeferredValue(search);
   const deferredColumnFilters = useDeferredValue(columnFilters);
 
-  const query = useSubmissions(page, deferredSearch.trim(), status, pageSize);
+  const filters = {
+    ...deferredColumnFilters,
+    search: deferredSearch.trim(),
+    status,
+    columnStatus: deferredColumnFilters.status ?? "",
+    fromDate,
+    toDate
+  };
+  const query = useSubmissions(page, filters, pageSize);
   const count = useQuery({
-    queryKey: ["marketing", api.scopeKey, "submission-count", deferredSearch.trim(), status],
-    queryFn: () => countSubmissions(api, deferredSearch.trim(), status)
+    queryKey: ["marketing", api.scopeKey, "submission-count", filters],
+    queryFn: () => countSubmissions(api, filters)
   });
 
   const detail = useSubmissionDetail(showKey || null);
@@ -83,59 +118,24 @@ export function SubmissionWorkspace() {
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ["marketing", api.scopeKey] });
       setFormMode("");
-      toast.success("Submission recorded and queued for delivery.");
+      toast.success("Submission recorded. Open it to create a lead if it remains pending.");
     },
     onError: (error) => toast.error("Unable to save submission", { description: error.message })
   });
 
   const retry = useMutation({
-    mutationFn: (uuid: string) => retrySubmission(api, uuid),
+    mutationFn: (uuid: string) => handoffSubmission(api, uuid),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ["marketing", api.scopeKey] });
-      toast.success("Submission handoff re-enqueued.");
+      toast.success("Submission delivered to Marketing Leads.");
     },
     onError: (error) => toast.error("Handoff retry failed", { description: error.message })
   });
 
   const activeColumnFilters = Object.values(columnFilters).filter((value) => value?.trim()).length;
 
-  const filteredRecords = useMemo(() => {
-    let items = query.data ?? [];
-    if (fromDate || toDate) {
-      items = items.filter((item) => {
-        const itemDate = item.createdAt.slice(0, 10);
-        if (fromDate && itemDate < fromDate) return false;
-        if (toDate && itemDate > toDate) return false;
-        return true;
-      });
-    }
-    if (activeColumnFilters > 0) {
-      items = items.filter((item) => {
-        if (deferredColumnFilters.name && !item.name.toLowerCase().includes(deferredColumnFilters.name.toLowerCase())) {
-          return false;
-        }
-        if (deferredColumnFilters.campaignLabel && !item.campaignLabel.toLowerCase().includes(deferredColumnFilters.campaignLabel.toLowerCase())) {
-          return false;
-        }
-        if (deferredColumnFilters.email && !item.email.toLowerCase().includes(deferredColumnFilters.email.toLowerCase())) {
-          return false;
-        }
-        if (deferredColumnFilters.phone && !item.phone.toLowerCase().includes(deferredColumnFilters.phone.toLowerCase())) {
-          return false;
-        }
-        if (deferredColumnFilters.status && !item.status.toLowerCase().includes(deferredColumnFilters.status.toLowerCase())) {
-          return false;
-        }
-        if (deferredColumnFilters.leadUuid && !(item.leadUuid || "").toLowerCase().includes(deferredColumnFilters.leadUuid.toLowerCase())) {
-          return false;
-        }
-        return true;
-      });
-    }
-    return items;
-  }, [query.data, fromDate, toDate, activeColumnFilters, deferredColumnFilters]);
-
-  const total = count.data?.total ?? filteredRecords.length;
+  const filteredRecords = query.data ?? [];
+  const total = count.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const currentPage = Math.min(page, totalPages);
 
@@ -215,7 +215,12 @@ export function SubmissionWorkspace() {
               fromDate={fromDate}
               toDate={toDate}
               onValueChange={(val) => {
-                setQueryParams((prev) => ({ ...prev, fromDate: val.fromDate, toDate: val.toDate, page: 1 }));
+                setQueryParams((prev) => ({
+                  ...prev,
+                  fromDate: val.fromDate,
+                  toDate: val.toDate,
+                  page: 1
+                }));
               }}
             />
             <Button
@@ -225,7 +230,7 @@ export function SubmissionWorkspace() {
               title="Toggle column search filters"
               type="button"
               variant={showInlineFilters ? "default" : "outline"}
-              onClick={() => setShowInlineFilters((prev) => !prev)}
+              onClick={() => setShowInlineFilters(!showInlineFilters)}
             >
               <SlidersHorizontal className="size-4" aria-hidden="true" />
               {activeColumnFilters > 0 ? (
@@ -240,16 +245,14 @@ export function SubmissionWorkspace() {
           onCheckedChange: (checked) => {
             setHiddenColumnKeys((prev) => {
               const current = prev.split(",").filter(Boolean);
-              const next = checked ? current.filter((id) => id !== column.id) : [...current, column.id];
+              const next = checked
+                ? current.filter((id) => id !== column.id)
+                : [...current, column.id];
               return next.join(",");
             });
             if (!checked) {
-              setColumnFilters((prev) => {
-                const next = { ...prev };
-                delete next[column.id as keyof SubmissionColumnFilters];
-                return next;
-              });
-              setQueryParams((prev) => ({ ...prev, page: 1 }));
+              if (column.id in filterKeys)
+                setColumnFilter(column.id as keyof SubmissionColumnFilters, "");
             }
           }
         }))}
@@ -276,6 +279,11 @@ export function SubmissionWorkspace() {
           {query.error.message}
         </p>
       ) : null}
+      {count.error ? (
+        <p role="alert" className="text-sm text-destructive">
+          Unable to load submission count.
+        </p>
+      ) : null}
 
       <SubmissionList
         records={filteredRecords}
@@ -284,32 +292,36 @@ export function SubmissionWorkspace() {
         showInlineFilters={showInlineFilters}
         columnFilters={columnFilters}
         onColumnFilterChange={(col, val) => {
-          setColumnFilters((prev) => ({ ...prev, [col]: val }));
-          setQueryParams((prev) => ({ ...prev, page: 1 }));
+          setColumnFilter(col, val);
         }}
         onHideInlineFilters={() => setShowInlineFilters(false)}
         onView={(record) => {
           setShowingLocal(record.uuid);
           setShowKey(record.uuid);
         }}
-        onRetry={(record) => retry.mutate(record.uuid)}
       />
 
-      <WorkspacePagination
-        page={currentPage}
-        rowsPerPage={pageSize}
-        rowsPerPageOptions={[20, 50, 100]}
-        showingLabel={buildShowingLabel(currentPage, pageSize, total)}
-        singularLabel="submission"
-        totalCount={total}
-        totalPages={totalPages}
-        onNextPage={() => setQueryParams((prev) => ({ ...prev, page: Math.min(totalPages, currentPage + 1) }))}
-        onPageChange={(next) => setQueryParams((prev) => ({ ...prev, page: next }))}
-        onPreviousPage={() => setQueryParams((prev) => ({ ...prev, page: Math.max(1, currentPage - 1) }))}
-        onRowsPerPageChange={(nextSize) => {
-          setQueryParams((prev) => ({ ...prev, pageSize: nextSize, page: 1 }));
-        }}
-      />
+      {count.data ? (
+        <WorkspacePagination
+          page={currentPage}
+          rowsPerPage={pageSize}
+          rowsPerPageOptions={[20, 50, 100]}
+          showingLabel={buildShowingLabel(currentPage, pageSize, total)}
+          singularLabel="submission"
+          totalCount={total}
+          totalPages={totalPages}
+          onNextPage={() =>
+            setQueryParams((prev) => ({ ...prev, page: Math.min(totalPages, currentPage + 1) }))
+          }
+          onPageChange={(next) => setQueryParams((prev) => ({ ...prev, page: next }))}
+          onPreviousPage={() =>
+            setQueryParams((prev) => ({ ...prev, page: Math.max(1, currentPage - 1) }))
+          }
+          onRowsPerPageChange={(nextSize) => {
+            setQueryParams((prev) => ({ ...prev, pageSize: nextSize, page: 1 }));
+          }}
+        />
+      ) : null}
     </WorkspacePage>
   );
 }

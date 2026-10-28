@@ -2,8 +2,13 @@ import { lookupBrand } from "../brand/index.js";
 import { AppError } from "@codexsun/framework/errors";
 import type { MarketingContext } from "../../context.js";
 import { SubmissionRepository } from "./submission.repository.js";
-import type { SubmissionInput, SubmissionDependencies } from "./submission.types.js";
+import type {
+  SubmissionInput,
+  SubmissionDependencies,
+  SubmissionFilters
+} from "./submission.types.js";
 import { processSubmissionHandoff } from "./submission.worker.js";
+import { LeadService } from "../lead/index.js";
 
 export class SubmissionService {
   private readonly repository: SubmissionRepository;
@@ -34,9 +39,9 @@ export class SubmissionService {
     }
     return saved;
   }
-  async list(limit: number, offset: number, search = "", status = "all") {
+  async list(limit: number, offset: number, filters: SubmissionFilters = {}) {
     await this.ctx.authorize("marketing.submission.record.view");
-    return this.repository.list(limit, offset, undefined, search, status);
+    return this.repository.list(limit, offset, undefined, filters);
   }
   async get(uuid: string) {
     await this.ctx.authorize("marketing.submission.record.view");
@@ -44,9 +49,9 @@ export class SubmissionService {
     if (!row) throw AppError.notFound("Submission was not found.");
     return row;
   }
-  async count(search: string, status: string) {
+  async count(filters: SubmissionFilters) {
     await this.ctx.authorize("marketing.submission.record.view");
-    return this.repository.count(search, status);
+    return this.repository.count(filters);
   }
   async retry(uuid: string) {
     await this.ctx.authorize("marketing.submission.record.create");
@@ -57,6 +62,13 @@ export class SubmissionService {
     return row;
   }
   async handoff(uuid: string) {
-    return processSubmissionHandoff(this.ctx, uuid);
+    return processSubmissionHandoff(this.ctx, uuid, async (row) => {
+      const capture = await this.deps.capture(this.ctx, row.captureUuid);
+      const brand = await lookupBrand(this.ctx, capture.brandUuid);
+      const campaign = await this.deps.campaign(this.ctx, row.campaignUuid);
+      if (capture.status !== "active" || brand.status !== "active" || campaign.status !== "active")
+        throw AppError.conflict("The capture source is inactive.");
+      return new LeadService(this.ctx).intake(row);
+    });
   }
 }

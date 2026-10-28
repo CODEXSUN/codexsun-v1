@@ -7,6 +7,7 @@ import { upgradeConnectionIntegrity } from "./modules/connection/index.js";
 import { migrateCaptureLimits } from "./modules/capture/index.js";
 import { migrateConnectionAuthorization } from "./modules/connection/index.js";
 import { submissionModule, migrateSubmission, seedSubmission } from "./modules/submission/index.js";
+import { migrateSubmissionImport } from "./modules/submission/index.js";
 import type { SubmissionDependencies } from "./modules/submission/index.js";
 import type { FastifyInstance } from "fastify";
 import { AppError } from "@codexsun/framework/errors";
@@ -199,6 +200,13 @@ export const marketingMigrationBatch = {
       description: "Marketing conversations, messages, nurture rules, and enrollments.",
       version: 14,
       up: migrateConversation
+    },
+    {
+      name: "marketing.submission.import.v1",
+      checksum: "marketing.submission.import.v1",
+      description: "Durable submission import sessions and receipts.",
+      version: 15,
+      up: migrateSubmissionImport
     }
   ]
 };
@@ -292,6 +300,7 @@ export { EmailCampaignService, EmailCampaignRepository } from "./modules/email-c
 export { ConversationService, ConversationRepository } from "./modules/conversation/index.js";
 export {
   SubmissionService,
+  purgeExpiredSubmissionImports,
   processSubmissionHandoff,
   createSubmissionHandoffJob,
   pendingSubmissionHandoffs,

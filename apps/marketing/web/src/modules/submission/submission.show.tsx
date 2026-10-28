@@ -73,7 +73,7 @@ export function SubmissionShow({
           {record.status === "pending" ? (
             <Button disabled={retryPending} onClick={onRetry}>
               <RefreshCw className="mr-1 size-4" />
-              {retryPending ? "Retrying…" : "Retry handoff"}
+              {retryPending ? "Creating lead…" : "Create lead"}
             </Button>
           ) : record.leadUuid ? (
             <Button variant="outline" asChild>
@@ -115,7 +115,7 @@ export function SubmissionShow({
                       View Lead ({record.leadUuid})
                     </a>
                   ) : (
-                    <span className="text-muted-foreground">Pending delivery</span>
+                    <span className="text-muted-foreground">Pending — select Create lead to process this submission.</span>
                   )
                 ],
                 ["Received At", formatDateTime(record.createdAt)],

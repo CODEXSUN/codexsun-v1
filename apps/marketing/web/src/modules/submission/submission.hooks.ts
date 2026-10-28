@@ -4,22 +4,23 @@ import {
   listSubmissions,
   getSubmission,
   countSubmissions,
-  captureOptions
+  captureOptions,
+  type SubmissionFilters
 } from "./submission.services";
 
-export function useSubmissions(page: number, search = "", status = "all", pageSize = 50) {
+export function useSubmissions(page: number, filters: SubmissionFilters, pageSize = 50) {
   const api = useMarketingTransport();
   return useQuery({
-    queryKey: ["marketing", api.scopeKey, "submissions", page, search, status, pageSize],
-    queryFn: () => listSubmissions(api, page, search, status, pageSize)
+    queryKey: ["marketing", api.scopeKey, "submissions", page, filters, pageSize],
+    queryFn: () => listSubmissions(api, page, filters, pageSize)
   });
 }
 
-export function useSubmissionCount(search = "", status = "all") {
+export function useSubmissionCount(filters: SubmissionFilters) {
   const api = useMarketingTransport();
   return useQuery({
-    queryKey: ["marketing", api.scopeKey, "submission-count", search, status],
-    queryFn: () => countSubmissions(api, search, status)
+    queryKey: ["marketing", api.scopeKey, "submission-count", filters],
+    queryFn: () => countSubmissions(api, filters)
   });
 }
 

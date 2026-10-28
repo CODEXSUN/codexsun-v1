@@ -1,11 +1,29 @@
 import type { MarketingTransport } from "../../transport";
-import type { SubmissionInput, SubmissionRecord } from "./submission.types";
+import type {
+  SubmissionInput,
+  SubmissionRecord,
+  SubmissionColumnFilters
+} from "./submission.types";
+
+export type SubmissionFilters = Omit<SubmissionColumnFilters, "status"> & {
+  search: string;
+  status: string;
+  columnStatus: string;
+  fromDate: string;
+  toDate: string;
+};
+function filterQuery(filters: SubmissionFilters) {
+  return new URLSearchParams(
+    Object.entries(filters).filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string"
+    )
+  ).toString();
+}
 
 export const listSubmissions = (
   api: MarketingTransport,
-  page = 1,
-  search = "",
-  status = "all",
+  page: number,
+  filters: SubmissionFilters,
   pageSize = 50
 ) =>
   api.get<SubmissionRecord[]>(
@@ -13,17 +31,17 @@ export const listSubmissions = (
       pageSize +
       "&offset=" +
       Math.max(0, page - 1) * pageSize +
-      "&search=" +
-      encodeURIComponent(search) +
-      "&status=" +
-      status
+      "&" +
+      filterQuery(filters)
   );
 
 export const saveSubmission = (api: MarketingTransport, input: SubmissionInput) =>
   api.post<SubmissionRecord>("/marketing/submissions", input);
 
-export const retrySubmission = (api: MarketingTransport, uuid: string) =>
-  api.post<SubmissionRecord>("/marketing/submissions/" + uuid + "/retry", {});
+export const handoffSubmission = (api: MarketingTransport, uuid: string) =>
+  api.post<{ uuid: string; leadUuid: string | null; status: string }>(
+    "/marketing/submissions/" + uuid + "/handoff", {}
+  );
 
 export const captureOptions = (api: MarketingTransport) =>
   api.get<
@@ -33,7 +51,5 @@ export const captureOptions = (api: MarketingTransport) =>
 export const getSubmission = (api: MarketingTransport, uuid: string) =>
   api.get<SubmissionRecord>("/marketing/submissions/" + uuid);
 
-export const countSubmissions = (api: MarketingTransport, search = "", status = "all") =>
-  api.get<{ total: number }>(
-    "/marketing/submissions/count?search=" + encodeURIComponent(search) + "&status=" + status
-  );
+export const countSubmissions = (api: MarketingTransport, filters: SubmissionFilters) =>
+  api.get<{ total: number }>("/marketing/submissions/count?" + filterQuery(filters));

@@ -1,4 +1,16 @@
 import type { MarketingContext } from "../../context.js";
+export type SubmissionFilters = {
+  search?: string;
+  status?: string;
+  fromDate?: string;
+  toDate?: string;
+  name?: string;
+  campaignLabel?: string;
+  email?: string;
+  phone?: string;
+  columnStatus?: string;
+  leadUuid?: string;
+};
 export type SubmissionInput = {
   captureUuid: string;
   sourceKey: string;

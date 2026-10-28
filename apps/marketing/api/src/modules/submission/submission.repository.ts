@@ -2,7 +2,12 @@ import { createHash, randomBytes } from "node:crypto";
 import { sql } from "kysely";
 import { AppError } from "@codexsun/framework/errors";
 import type { MarketingContext } from "../../context.js";
-import type { SubmissionInput, SubmissionRecord, CaptureSnapshot } from "./submission.types.js";
+import type {
+  SubmissionInput,
+  SubmissionRecord,
+  CaptureSnapshot,
+  SubmissionFilters
+} from "./submission.types.js";
 export class SubmissionRepository {
   constructor(private readonly ctx: MarketingContext) {}
   async accept(input: SubmissionInput, capture: CaptureSnapshot, campaignLabel: string) {
@@ -26,18 +31,28 @@ export class SubmissionRepository {
   async get(uuid: string) {
     return (await this.list(100, 0, uuid))[0] ?? null;
   }
-  async list(limit = 50, offset = 0, uuid?: string, search = "", status = "all") {
+  private filters(filters: SubmissionFilters) {
+    const like = (value: string | undefined) => `%${(value ?? "").replace(/[\\%_]/g, "\\$&")}%`;
+    return sql`AND (${filters.status ?? "all"}='all' OR status=${filters.status ?? "all"})
+      AND (name LIKE ${like(filters.search)} OR source_key LIKE ${like(filters.search)} OR email LIKE ${like(filters.search)} OR campaign_label LIKE ${like(filters.search)})
+      AND name LIKE ${like(filters.name)} AND campaign_label LIKE ${like(filters.campaignLabel)}
+      AND email LIKE ${like(filters.email)} AND phone LIKE ${like(filters.phone)}
+      AND status LIKE ${like(filters.columnStatus)} AND COALESCE(lead_uuid, '') LIKE ${like(filters.leadUuid)}
+      ${filters.fromDate ? sql`AND created_at >= ${filters.fromDate}` : sql``}
+      ${filters.toDate ? sql`AND created_at < DATE_ADD(${filters.toDate}, INTERVAL 1 DAY)` : sql``}`;
+  }
+  async list(limit = 50, offset = 0, uuid?: string, filters: SubmissionFilters = {}) {
     const ctx = this.ctx;
     const brands = ctx.allowedBrands.length
       ? sql`AND brand_uuid IN (${sql.join(ctx.allowedBrands)})`
       : sql`AND 1=0`;
     return (
-      await sql<SubmissionRecord>`SELECT uuid,company_id AS companyId,brand_uuid AS brandUuid,capture_uuid AS captureUuid,campaign_uuid AS campaignUuid,campaign_label AS campaignLabel,source_key AS sourceKey,name,email,phone,message,source_reference AS sourceReference,source_consented_at AS sourceConsentAt,source_notice_version AS sourceNoticeVersion,privacy_consent AS privacyConsent,notice_version AS noticeVersion,consent_notice AS consentNotice,DATE_FORMAT(created_at,'%Y-%m-%dT%H:%i:%s.000Z') AS createdAt,created_by AS createdBy,status,lead_uuid AS leadUuid FROM marketing_submissions WHERE company_id=${ctx.companyId} ${brands} AND (${status}='all' OR status=${status}) AND (name LIKE ${"%" + search + "%"} OR source_key LIKE ${"%" + search + "%"}) ${uuid ? sql`AND uuid=${uuid}` : sql``} ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`.execute(
+      await sql<SubmissionRecord>`SELECT uuid,company_id AS companyId,brand_uuid AS brandUuid,capture_uuid AS captureUuid,campaign_uuid AS campaignUuid,campaign_label AS campaignLabel,source_key AS sourceKey,name,email,phone,message,source_reference AS sourceReference,source_consented_at AS sourceConsentAt,source_notice_version AS sourceNoticeVersion,privacy_consent AS privacyConsent,notice_version AS noticeVersion,consent_notice AS consentNotice,DATE_FORMAT(created_at,'%Y-%m-%dT%H:%i:%s.000Z') AS createdAt,created_by AS createdBy,status,lead_uuid AS leadUuid FROM marketing_submissions WHERE company_id=${ctx.companyId} ${brands} ${this.filters(filters)} ${uuid ? sql`AND uuid=${uuid}` : sql``} ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`.execute(
         ctx.database
       )
     ).rows.map((row) => ({ ...row, privacyConsent: true as const }));
   }
-  async count(search = "", status = "all") {
+  async count(filters: SubmissionFilters = {}) {
     const ctx = this.ctx;
     const brands = ctx.allowedBrands.length
       ? sql`AND brand_uuid IN (${sql.join(ctx.allowedBrands)})`
@@ -46,7 +61,7 @@ export class SubmissionRepository {
       (
         await sql<{
           total: number;
-        }>`SELECT COUNT(*) AS total FROM marketing_submissions WHERE company_id=${ctx.companyId} ${brands} AND (${status}='all' OR status=${status}) AND (name LIKE ${"%" + search + "%"} OR source_key LIKE ${"%" + search + "%"})`.execute(
+        }>`SELECT COUNT(*) AS total FROM marketing_submissions WHERE company_id=${ctx.companyId} ${brands} ${this.filters(filters)}`.execute(
           ctx.database
         )
       ).rows[0]?.total ?? 0

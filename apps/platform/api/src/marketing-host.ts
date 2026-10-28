@@ -20,6 +20,7 @@ import {
   lookupBrand,
   createSubmissionHandoffJob,
   pendingSubmissionHandoffs,
+  purgeExpiredSubmissionImports,
   processSubmissionHandoff,
   LeadService,
   type MarketingContext,
@@ -205,6 +206,25 @@ export function registerMarketingBackground(app: FastifyInstance, queue: QueueMa
       return new LeadService(context).intake(row);
     });
   });
+  let activeCleanup: Promise<void> | undefined;
+  const cleanup = async () => {
+    for (const tenant of await new TenantRepository().list()) {
+      if (tenant.status !== "active") continue;
+      try {
+        const identity = await tenantIdentity(tenant.uuid, "", "marketing");
+        await purgeExpiredSubmissionImports(identity.database as never);
+      } catch (error) {
+        if (!(error instanceof AppError && error.code === "FORBIDDEN"))
+          app.log.warn({ tenantId: tenant.uuid }, "Marketing import cleanup tenant is unavailable.");
+      }
+    }
+  };
+  const cleanupTimer = setInterval(() => {
+    if (!activeCleanup) activeCleanup = cleanup().catch(() => app.log.error("Marketing import cleanup failed."))
+      .finally(() => { activeCleanup = undefined; });
+  }, 60 * 60 * 1000);
+  cleanupTimer.unref();
+  app.addHook("onClose", async () => { clearInterval(cleanupTimer); await activeCleanup; });
   if (!queue.canExecute()) return;
   let running = false;
   let activeRelay: Promise<void> | undefined;

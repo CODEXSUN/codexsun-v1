@@ -1,5 +1,6 @@
 export { submissionModule } from "./submission.module.js";
 export { migrateSubmission } from "./submission.migration.js";
+export { migrateSubmissionImport, purgeExpiredSubmissionImports } from "./submission.import-session.js";
 export { seedSubmission } from "./submission.seed.js";
 export { SubmissionService } from "./submission.service.js";
 export { processSubmissionHandoff } from "./submission.worker.js";
