@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.83
+Current version: 1.1.84
 
-Release tag: v-1.1.83
+Release tag: v-1.1.84
 
-Changelog label: v 1.1.83
+Changelog label: v 1.1.84
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -37,6 +37,20 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Update the [Thirumurugan migration guide](../../devkits/data-bridge/agent/thirumurugan-migration.md) with the completed VPS phase.
 - Add the [dated operation log](../../devkits/data-bridge/agent/THIRUMURUGAN-VPS-TRANSFER-2026-10-27.md) with verification and recovery evidence.
 - No application logic, package version, image deployment, or credential change in this documentation task.
+
+## v-1.1.84
+
+### [v 1.1.84] 2026-10-28 9:08 am - Update workspace version and preserve Platform work
+
+#### Database Changes
+
+- Database update: No (manual).
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.84.
+- Preserve the unfinished Platform startup commit f57b4d3d in the backup-platform-2026-10-28 tag; it is not included in main.
+- Keep the existing Platform stash intact. No application or database changes are included in this version update.
 
 ## v-1.1.83
 
