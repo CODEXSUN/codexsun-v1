@@ -20,8 +20,10 @@ test("expired and discarded imports remove staged data without touching other ow
   try {
     await admin.query(`CREATE DATABASE \`${name}\` CHARACTER SET utf8mb4`);
     db = new Kysely({ dialect: new MysqlDialect({ pool: createCallbackPool({ ...config, database: name }) }) });
-    const importBatch = { ...marketingMigrationBatch, steps: marketingMigrationBatch.steps.filter((step) => [15, 18].includes(step.version)) };
-    await runMigrationBatch(db, { ...importBatch, steps: importBatch.steps.filter((step) => step.version === 15) });
+    const importBatch = { ...marketingMigrationBatch, steps: marketingMigrationBatch.steps.filter((step) => step.version <= 15 || step.version === 18) };
+    await runMigrationBatch(db, { ...importBatch, steps: importBatch.steps.filter((step) => step.version <= 15) });
+    await sql`INSERT INTO marketing_brands (uuid,company_id,name,timezone,created_by,updated_by)
+      VALUES ('aaaaaaaa',1,'Existing brand','UTC','fixture','fixture')`.execute(db);
     await sql`INSERT INTO marketing_submission_imports(uuid, company_id, actor_email, filename, mapping_json, rows_json, total, created_at) VALUES
       ('11111111', 1, 'a', 'expired.csv', '{}', '[{"private":"expired"}]', 1, DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 8 DAY)),
       ('22222222', 1, 'a', 'cancel.csv', '{}', '[{"private":"cancel"}]', 1, CURRENT_TIMESTAMP),
@@ -29,8 +31,10 @@ test("expired and discarded imports remove staged data without touching other ow
     await sql`INSERT INTO marketing_submission_import_receipts(import_uuid,row_index,submission_uuid) VALUES ('11111111',0,'aaaaaaaa'),('22222222',0,'bbbbbbbb')`.execute(db);
     await runMigrationBatch(db, importBatch);
     await runMigrationBatch(db, importBatch);
-    const ledger = await sql<{ version: number; status: string }>`SELECT version,status FROM migration_schema WHERE scope='marketing' ORDER BY version`.execute(db);
+    const ledger = await sql<{ version: number; status: string }>`SELECT version,status FROM migration_schema WHERE scope='marketing' AND version IN (15,18) ORDER BY version`.execute(db);
     assert.deepEqual(ledger.rows.map((row) => [Number(row.version), row.status]), [[15, "applied"], [18, "applied"]]);
+    const brands = await sql<{ name: string }>`SELECT name FROM marketing_brands WHERE uuid='aaaaaaaa'`.execute(db);
+    assert.equal(brands.rows[0]?.name, "Existing brand");
     for (const table of ["marketing_submission_imports", "marketing_submission_import_receipts"]) {
       const columns = await sql<{ COLUMN_NAME: string }>`SELECT COLUMN_NAME FROM information_schema.COLUMNS
         WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=${table}`.execute(db);
