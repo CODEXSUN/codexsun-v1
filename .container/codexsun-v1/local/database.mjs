@@ -282,10 +282,33 @@ export async function runDatabaseCommand(docker, project, file, directory, comma
       "./tools/register-production-package-resolution.mjs",
       "dist/apps/platform/api/database/db-cli.js",
       command,
-      ...(proof ? ["--isolated-evidence"] : [])
+      ...(proof ? [proof.reused ? "--reused-isolated-evidence" : "--isolated-evidence"] : [])
     ],
     join(directory, `${command.replace(":", "-")}.log`),
     environment
+  );
+}
+
+export async function verifyMasterStartupEvidence(docker, project, file, directory) {
+  await docker.logged(
+    [
+      "compose",
+      "-p",
+      project,
+      "-f",
+      file,
+      "run",
+      "--rm",
+      "--no-deps",
+      "--entrypoint",
+      "node",
+      "codexsun-api",
+      "--import",
+      "./tools/register-production-package-resolution.mjs",
+      "dist/apps/platform/api/database/db-cli.js",
+      "master:verify-startup-evidence"
+    ],
+    join(directory, "master-verify-startup-evidence.log")
   );
 }
 

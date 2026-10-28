@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.86
+Current version: 1.1.87
 
-Release tag: v-1.1.86
+Release tag: v-1.1.87
 
-Changelog label: v 1.1.86
+Changelog label: v 1.1.87
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -37,6 +37,22 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Update the [Thirumurugan migration guide](../../devkits/data-bridge/agent/thirumurugan-migration.md) with the completed VPS phase.
 - Add the [dated operation log](../../devkits/data-bridge/agent/THIRUMURUGAN-VPS-TRANSFER-2026-10-27.md) with verification and recovery evidence.
 - No application logic, package version, image deployment, or credential change in this documentation task.
+
+## v-1.1.87
+
+### [v 1.1.87] 2026-10-28 8:10 pm - Reuse verified backups for local updates
+
+#### Database Changes
+
+- Database update: No (manual).
+- Verify a reused backup in an isolated database before local migrations. Later changes are not included in that backup.
+
+#### App Codebase Changes
+
+- Bumped workspace version to 1.1.87.
+- Allow two local updates to reuse a verified backup made on the same day with `--nobackup`.
+- Reject VPS `--nobackup` until its backup and restore verification covers the required data.
+- Keep VPS application writers stopped for review if a deployment fails after migrations may have changed data.
 
 ## v-1.1.86
 

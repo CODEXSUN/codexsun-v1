@@ -12,11 +12,13 @@ for option in "$@"; do
   case "$option" in
     --yes) ASSUME_YES=true ;;
     --check) CHECK_ONLY=true ;;
+    --nobackup) fail '--nobackup is unavailable for VPS updates until complete Redis, bridge, and isolated restore verification are supported. Run without this option.' ;;
     --expected-revision=*) EXPECTED_REVISION="${option#*=}" ;;
     --help|-h)
-      echo 'Usage: bash update.sh [--check] [--yes] [--expected-revision=<full-SHA>]'
-      echo 'Linux VPS only. Back up, fast-forward GitHub source, build, migrate, verify, and roll back failed application replacement.'
+      echo 'Usage: bash update.sh [--check] [--yes] [--nobackup] [--expected-revision=<full-SHA>]'
+      echo 'Linux VPS only. Back up, fast-forward GitHub source, build, migrate, and verify. Failures after migration require database review.'
       echo '--check validates local source and deployment without fetching or changing anything.'
+      echo '--nobackup is currently unavailable for VPS updates.'
       exit 0 ;;
     *) fail "Unknown update option: $option" ;;
   esac

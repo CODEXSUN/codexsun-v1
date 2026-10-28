@@ -44,6 +44,12 @@ bash update-local.sh --check
 bash update-local.sh
 ```
 
+For the second or third update on the same local calendar day, `bash update-local.sh --nobackup` reuses a verified backup from an earlier successful update.
+Use `bash update-local.sh --check --nobackup` to check backup eligibility without changing the stack.
+The command refuses a missing, changed, expired, or mismatched backup. It also checks the existing master startup evidence.
+At most two successful updates may reuse one full backup. A failed reuse requires a new full backup.
+Data, Redis, and files changed after the reused backup are not recoverable from that backup. Run a normal update for a new recovery point.
+
 `--plan` describes the possible actions without inspecting Docker or changing data.
 Update requires all five local app containers to be healthy and owned by `codexsun-local-cloud`.
 Before building, update checks existing master and tenant migration ledgers for unfinished entries.

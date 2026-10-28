@@ -87,6 +87,11 @@ bash update.sh --check
 bash update.sh
 ```
 
+`--nobackup` is not yet available on the VPS. The update stops before making changes when it is supplied.
+VPS backup reuse needs verified Redis and Data Bridge storage coverage, writer isolation, and an isolated restore check.
+The production application also requires its own backup and restore evidence before migrations.
+If a migration starts and the update fails, app writers stay stopped for database review.
+
 `--check` validates current VPS configuration and source without fetching, building, migrating, or replacing containers.
 It does not verify a future fetched target. The updater selects the fetched branch revision and displays
 the current and available source versions. Optionally supply `--expected-revision=<SHA>` or
@@ -125,8 +130,9 @@ The final update backup stops selected application writers before both snapshots
 Shared Media is not backed up by v1 because it is not bound to this deployment.
 Redis is preserved during updates. Cleanup backs up an owned Redis volume before removing it.
 
-Failed application replacement verifies backup checksums, removes newly introduced services, restores previous images and configuration, and waits for health.
-Originally stopped services remain stopped. A failure before replacement resumes the original running services.
+Before migration begins, a failure resumes services that the updater stopped.
+After migration begins, a failure stops application writers and leaves them stopped for database review.
+The updater does not automatically restore previous application images after a possible database change.
 Raw Docker configuration needs dollar-sign escaping when rendered as Compose JSON. Rendered candidate models already contain this escaping.
 Database migrations are not automatically reversed. Keep old image IDs until the rollback window closes.
 After failure, the Git checkout may remain at the candidate commit while previous containers run.

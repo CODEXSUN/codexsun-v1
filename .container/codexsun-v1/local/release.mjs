@@ -14,16 +14,21 @@ import { digest, privateDirectory, privateWrite, readJson } from "./files.mjs";
 import { createSourceSnapshot, verifySourceSnapshot } from "./source-snapshot.mjs";
 import { currentRelease } from "./current-release.mjs";
 import { backup, verifyBackup } from "./backup.mjs";
-import { createIsolatedRestoreProof } from "./isolated-restore.mjs";
+import {
+  createIsolatedRestoreProof,
+  createReusedIsolatedRestoreProof
+} from "./isolated-restore.mjs";
 import {
   assertInfrastructurePortsUnpublished,
   assertLocalDatabaseTargets,
   runDatabaseCommand,
-  runMasterStartupProof
+  runMasterStartupProof,
+  verifyMasterStartupEvidence
 } from "./database.mjs";
 import { prepareDatabase, withMigrationRecovery } from "./migration-sequence.mjs";
 import { DatabaseRelayLease } from "./database-relay.mjs";
 import { fetchReady } from "./runtime-health.mjs";
+import { findReusableBackup } from "./reusable-backup.mjs";
 
 export async function release(docker, root, config, mode, base, options = {}) {
   const stamp = `${Date.now()}-${randomBytes(3).toString("hex")}`;
@@ -50,6 +55,14 @@ export async function release(docker, root, config, mode, base, options = {}) {
       );
       return;
     }
+  }
+  const previousBackup = options.noBackup
+    ? await findReusableBackup(base, initial, new Date(), directory)
+    : null;
+  if (previousBackup) {
+    console.warn(
+      `--nobackup will reuse the backup from ${previousBackup.createdAt}. Changes since that backup cannot be recovered from it.`
+    );
   }
   console.log("Capturing and verifying a fixed snapshot of the current build sources.");
   const snapshot = await createSourceSnapshot(root, directory);
@@ -113,7 +126,7 @@ export async function release(docker, root, config, mode, base, options = {}) {
         await relay.isolate();
       }
       assertRetainedState(docker, current);
-      const backupDirectory = join(directory, "before-migration");
+      const backupDirectory = previousBackup?.directory ?? join(directory, "before-migration");
       const preliminaryDirectory = join(directory, "before-startup-proof");
       let backedUpDatabases;
       let proof;
@@ -129,21 +142,33 @@ export async function release(docker, root, config, mode, base, options = {}) {
             await backup(docker, current, preliminaryDirectory);
             await verifyBackup(preliminaryDirectory);
           },
-          startupProof: () =>
-            runMasterStartupProof(docker, config.project, candidateFile, directory),
+          startupProof: previousBackup
+            ? undefined
+            : () => runMasterStartupProof(docker, config.project, candidateFile, directory),
           backup: async () => {
-            console.log("Creating and verifying a local database, Redis, and storage backup.");
-            await backup(docker, current, backupDirectory);
-            await verifyBackup(backupDirectory);
+            if (previousBackup) {
+              const verified = await findReusableBackup(base, current, new Date(), directory);
+              assert.equal(
+                verified.directory,
+                backupDirectory,
+                "The reusable backup changed during the build."
+              );
+              await verifyMasterStartupEvidence(docker, config.project, candidateFile, directory);
+              await privateWrite(join(directory, "reuse-attempt.json"), {
+                baseline: previousBackup.operation
+              });
+              console.log("Reusing the verified earlier backup. Later changes are not included.");
+            } else {
+              console.log("Creating and verifying a local database, Redis, and storage backup.");
+              await backup(docker, current, backupDirectory);
+              await verifyBackup(backupDirectory);
+            }
             backedUpDatabases = await readJson(join(backupDirectory, "databases.private.json"));
             assertLocalDatabaseTargets(docker, current, backedUpDatabases);
             console.log("Restoring and comparing the backup on a network-isolated MariaDB.");
-            proof = await createIsolatedRestoreProof(
-              docker,
-              current,
-              backupDirectory,
-              join(directory, "isolated-proof")
-            );
+            proof = await (
+              previousBackup ? createReusedIsolatedRestoreProof : createIsolatedRestoreProof
+            )(docker, current, backupDirectory, join(directory, "isolated-proof"));
           },
           verify: () => verifyBackup(backupDirectory),
           preflight: () =>
@@ -194,7 +219,9 @@ export async function release(docker, root, config, mode, base, options = {}) {
         workingTreeChangedDuringBuild,
         databasePreserved: current.database.Id,
         redisPreserved: current.redis.Id,
-        backupDirectory
+        backupDirectory,
+        noBackup: !!previousBackup,
+        ...(previousBackup ? { reusedBackupCreatedAt: previousBackup.createdAt } : {})
       });
       console.log(`Local deployment passed. Private logs: ${directory}`);
     },

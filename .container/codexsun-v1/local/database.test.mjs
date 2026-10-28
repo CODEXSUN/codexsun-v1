@@ -5,7 +5,8 @@ import {
   assertLocalDatabaseTargets,
   assertMigrationLedgersSettled,
   runDatabaseCommand,
-  runMasterStartupProof
+  runMasterStartupProof,
+  verifyMasterStartupEvidence
 } from "./database.mjs";
 import { dumpArguments } from "./backup.mjs";
 
@@ -104,6 +105,22 @@ test("candidate commands mount isolated proof read-only and do not put its key i
   assert.ok(!args.some((arg) => arg.includes(proof.secret)));
   assert.equal(environment.CODEXSUN_ISOLATED_ATTESTATION_KEY, proof.secret);
   assert.equal(environment.CODEXSUN_ISOLATED_SOURCE_CONTAINER_ID, proof.sourceContainerId);
+});
+
+test("reused evidence and read-only startup verification are explicit", async () => {
+  const calls = [];
+  const docker = { logged: async (...args) => calls.push(args) };
+  await runDatabaseCommand(docker, "project", "candidate.json", "private", "migrations:run", {
+    directory: "private-proof",
+    secret: "s".repeat(64),
+    sourceContainerId: "a".repeat(64),
+    reused: true
+  });
+  assert.ok(calls[0][0].includes("--reused-isolated-evidence"));
+  assert.ok(!calls[0][0].includes("--isolated-evidence"));
+  await verifyMasterStartupEvidence(docker, "project", "candidate.json", "private");
+  assert.ok(calls[1][0].includes("master:verify-startup-evidence"));
+  assert.ok(!calls[1][0].includes("master:startup-proof"));
 });
 
 test("master startup proof uses a unique explicit sandbox and production CLI", async () => {

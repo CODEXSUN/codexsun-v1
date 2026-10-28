@@ -4,11 +4,12 @@ import { IsolatedBackupVerifier } from "../modules/database-maintenance/database
 import type { MigrationBackupVerifier } from "../modules/database-maintenance/database-maintenance.migration-backup.js";
 
 /** Called only by the database CLI after an explicit opt-in. */
-export function isolatedCliBackupVerifier(): MigrationBackupVerifier {
+export function isolatedCliBackupVerifier(reused = false): MigrationBackupVerifier {
   const verifier = new IsolatedBackupVerifier(
     "/run/codexsun-upgrade-evidence",
     process.env.CODEXSUN_ISOLATED_ATTESTATION_KEY || "",
-    process.env.CODEXSUN_ISOLATED_SOURCE_CONTAINER_ID || ""
+    process.env.CODEXSUN_ISOLATED_SOURCE_CONTAINER_ID || "",
+    reused
   );
   return {
     master: () =>

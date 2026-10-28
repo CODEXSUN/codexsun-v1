@@ -1,5 +1,8 @@
 export function isolatedEvidenceRequested(command: string, nodeEnv: string, args: string[]) {
-  if (args.length > 1 || (args.length === 1 && args[0] !== "--isolated-evidence"))
+  if (
+    args.length > 1 ||
+    (args.length === 1 && !["--isolated-evidence", "--reused-isolated-evidence"].includes(args[0]!))
+  )
     throw new Error("Unsupported database CLI argument.");
   if (args.length === 0) return false;
   if (

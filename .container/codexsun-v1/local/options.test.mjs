@@ -19,4 +19,8 @@ test("local options reject unknown, repeated, and incompatible flags", () => {
   assert.throws(() => parseLocalOptions("update", ["--check", "--check"]), /repeat/u);
   assert.throws(() => parseLocalOptions("update", ["--configure", "--check"]), /own/u);
   assert.throws(() => parseLocalOptions("update", ["--fix"]), /Unknown/u);
+  assert.equal(parseLocalOptions("update", ["--nobackup"]).noBackup, true);
+  assert.throws(() => parseLocalOptions("deploy", ["--nobackup"]), /only for local updates/u);
+  assert.equal(parseLocalOptions("update", ["--nobackup", "--check"]).check, true);
+  assert.throws(() => parseLocalOptions("update", ["--nobackup", "--plan"]), /only for an update/u);
 });

@@ -61,8 +61,18 @@ export function verifyIsolatedRestoreAttestation(
     .digest();
   if (!timingSafeEqual(Buffer.from(signature, "hex"), expectedSignature))
     throw new Error("Attestation signature does not match.");
+  if (input.version !== 1) throw new Error("Invalid isolated restore attestation version.");
+  validateIsolatedRestoreFields(input, target, now);
+  return input;
+}
+
+/** Validate shared target, isolation and freshness fields after authenticating the evidence. */
+export function validateIsolatedRestoreFields(
+  input: Omit<IsolatedRestoreAttestation, "version">,
+  target: IsolatedRestoreTarget,
+  now = Date.now()
+) {
   if (
-    input.version !== 1 ||
     !["master", "tenant"].includes(input.scope) ||
     typeof input.targetKey !== "string" ||
     !input.targetKey.trim() ||
@@ -105,5 +115,4 @@ export function verifyIsolatedRestoreAttestation(
     now - createdAt > maxAgeMs
   )
     throw new Error("Attestation is expired or has invalid timestamps.");
-  return input;
 }

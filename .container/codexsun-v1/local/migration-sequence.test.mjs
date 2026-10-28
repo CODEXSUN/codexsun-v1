@@ -98,3 +98,27 @@ test("master proof runs between preliminary and final backups before production 
     "guard"
   ]);
 });
+
+test("a reuse check runs before migration without creating a master startup backup", async () => {
+  const calls = [];
+  const steps = Object.fromEntries(
+    ["guard", "backup", "preflight", "verify", "migrate", "seed"].map((name) => [
+      name,
+      async () => calls.push(name)
+    ])
+  );
+  await prepareDatabase(steps, () => calls.push("changes-possible"));
+  assert.deepEqual(calls, [
+    "guard",
+    "backup",
+    "guard",
+    "preflight",
+    "verify",
+    "guard",
+    "changes-possible",
+    "migrate",
+    "guard",
+    "seed",
+    "guard"
+  ]);
+});

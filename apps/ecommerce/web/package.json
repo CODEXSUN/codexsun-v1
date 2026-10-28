@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/ecommerce-web",
-  "version": "1.1.86",
+  "version": "1.1.87",
   "private": true,
   "type": "module",
   "exports": {
@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@codexsun/blog": "1.0.16",
-    "@codexsun/ui": "^1.1.86",
+    "@codexsun/ui": "^1.1.87",
     "@tanstack/react-query": "^5.105.0",
     "@tanstack/react-router": "^1.170.46",
     "lucide-react": "^1.62.0",

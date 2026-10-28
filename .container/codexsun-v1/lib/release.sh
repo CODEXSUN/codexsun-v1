@@ -27,7 +27,14 @@ on_release_exit() {
   trap - EXIT
   if [ "$result" -ne 0 ] && [ -n "${BACKUP_DIR:-}" ]; then
     status=failed-before-replacement
-    if [ "${REPLACEMENT_STARTED:-false}" = true ]; then
+    if [ "${DATABASE_CHANGES_POSSIBLE:-false}" = true ]; then
+      status=database-review-required
+      for name in "${SERVICES[@]}"; do
+        if container_exists "$name" && [ "$(docker inspect -f '{{.State.Running}}' "$name")" = true ]; then
+          if ! graceful_stop "$name"; then status=database-review-runtime-stop-failed; fi
+        fi
+      done
+    elif [ "${REPLACEMENT_STARTED:-false}" = true ]; then
       status=rollback-failed
       if [ -s "$BACKUP_DIR/rollback.json" ] && rollback_release; then
         status=application-rolled-back
@@ -106,11 +113,13 @@ PY
   verify_backup
   if [ "${FRESH_INSTALL:-false}" = true ]; then
     # Preflight reads the tenant registry, which does not exist in an empty installation.
+    DATABASE_CHANGES_POSSIBLE=true
     database_command migrations:run
     database_command migrations:preflight
     if [ "${SEED_FRESH_INSTALL:-false}" = true ]; then database_command seed 1; fi
   else
     database_command migrations:preflight
+    DATABASE_CHANGES_POSSIBLE=true
     database_command migrations:run
   fi
   python3 "$CONFIG" metadata "$BACKUP_DIR" migrated "$CODEXSUN_VERSION" "$CODEXSUN_REVISION"

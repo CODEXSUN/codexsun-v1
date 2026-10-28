@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
-if [ "$#" -eq 0 ]; then
+if [ "$#" -eq 0 ] || { [ "$#" -eq 1 ] && [ "$1" = "--nobackup" ]; }; then
   node --input-type=module <<'NODE'
 import { readFileSync } from 'node:fs';
 

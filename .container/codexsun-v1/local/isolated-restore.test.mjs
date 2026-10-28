@@ -6,7 +6,11 @@ import { join } from "node:path";
 import test from "node:test";
 import { verifyBackup } from "./backup.mjs";
 import { digest } from "./files.mjs";
-import { signRestoreTarget, verifyRestoredData } from "./isolated-restore.mjs";
+import {
+  signRestoreTarget,
+  signReusedRestoreTarget,
+  verifyRestoredData
+} from "./isolated-restore.mjs";
 import { assertSandbox, sandboxCreateArguments } from "./isolated-sandbox.mjs";
 
 const sourceId = "a".repeat(64);
@@ -76,6 +80,36 @@ test("restore proof signs the fixed evidence fields and target", () => {
   );
   assert.equal(attestation.networkNone, true);
   assert.equal(attestation.eventSchedulerDisabled, true);
+});
+
+test("reused backup is signed as a distinct evidence type without claiming current source match", () => {
+  const target = {
+    scope: "tenant",
+    targetKey: "1",
+    databaseName: "codexsun_db",
+    host: "db",
+    port: 3306
+  };
+  const evidence = {
+    sourceContainerId: sourceId,
+    sandboxContainerId: sandboxId,
+    backupChecksum: "d".repeat(64),
+    inventoryChecksum: "e".repeat(64),
+    createdAt: "2026-10-28T01:00:00.000Z",
+    restoredAt: "2026-10-28T01:01:00.000Z"
+  };
+  const secret = "x".repeat(64);
+  const { attestation, signature } = signReusedRestoreTarget(target, evidence, secret);
+  assert.equal(attestation.version, 2);
+  assert.equal(attestation.evidenceType, "reused-prior-backup");
+  assert.equal(attestation.matchesCurrentSource, false);
+  assert.equal(
+    signature,
+    createHmac("sha256", secret)
+      .update("codexsun:isolated-restore-attestation:v2\n")
+      .update(JSON.stringify(attestation))
+      .digest("hex")
+  );
 });
 
 test("restore evidence rejects different data and a changed original backup", async () => {

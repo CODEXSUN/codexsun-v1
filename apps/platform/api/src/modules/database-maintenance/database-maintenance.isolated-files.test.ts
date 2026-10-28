@@ -9,6 +9,10 @@ import {
   type IsolatedRestoreAttestation
 } from "./database-maintenance.isolated-attestation.js";
 import { IsolatedBackupVerifier } from "./database-maintenance.isolated-files.js";
+import {
+  reusedAttestationPayload,
+  type ReusedRestoreAttestation
+} from "./database-maintenance.reused-attestation.js";
 
 const key = "test-key-with-at-least-thirty-two-bytes";
 const target = {
@@ -85,6 +89,37 @@ test("rejects duplicate attestations and symlinked backup files", async () => {
       throw error;
     }
     await assert.rejects(verifier.verify(target));
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("reused proof requires explicit opt-in and cannot be presented as current proof", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "codexsun-reused-evidence-"));
+  try {
+    const original = await fixture(directory);
+    const { version: _version, ...fields } = original.attestation;
+    const attestation: ReusedRestoreAttestation = {
+      version: 2,
+      ...fields,
+      evidenceType: "reused-prior-backup",
+      matchesCurrentSource: false
+    };
+    const signature = createHmac("sha256", key)
+      .update("codexsun:isolated-restore-attestation:v2\n")
+      .update(reusedAttestationPayload(attestation))
+      .digest("hex");
+    await writeFile(
+      join(directory, "attestations.json"),
+      JSON.stringify({ version: 2, attestations: [{ attestation, signature }] })
+    );
+    await new IsolatedBackupVerifier(directory, key, source, true).verify(target);
+    await assert.rejects(new IsolatedBackupVerifier(directory, key, source).verify(target));
+    await assert.rejects(
+      new IsolatedBackupVerifier(directory, key, "f".repeat(64), true).verify(target)
+    );
+    await writeFile(join(directory, "databases.sql"), "different data");
+    await assert.rejects(new IsolatedBackupVerifier(directory, key, source, true).verify(target));
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

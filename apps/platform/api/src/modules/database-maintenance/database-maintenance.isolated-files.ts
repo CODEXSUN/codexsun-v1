@@ -7,21 +7,32 @@ import {
   type IsolatedRestoreAttestation,
   type IsolatedRestoreTarget
 } from "./database-maintenance.isolated-attestation.js";
+import {
+  verifyReusedRestoreAttestation,
+  type ReusedRestoreAttestation
+} from "./database-maintenance.reused-attestation.js";
 
-type AttestationEntry = { attestation: IsolatedRestoreAttestation; signature: string };
+type AttestationEntry = {
+  attestation: IsolatedRestoreAttestation | ReusedRestoreAttestation;
+  signature: string;
+};
 
 export class IsolatedBackupVerifier {
   constructor(
     private readonly directory: string,
     private readonly key: string,
-    private readonly sourceContainerId: string
+    private readonly sourceContainerId: string,
+    private readonly reused = false
   ) {
     if (!/^[a-f0-9]{64}$/u.test(sourceContainerId)) throw new Error("Invalid source container ID.");
     if (Buffer.byteLength(key, "utf8") < 32) throw new Error("Attestation key is too short.");
   }
 
   async verify(target: Omit<IsolatedRestoreTarget, "sourceContainerId" | "backupChecksum">) {
-    const entries = await readManifest(join(this.directory, "attestations.json"));
+    const entries = await readManifest(
+      join(this.directory, "attestations.json"),
+      this.reused ? 2 : 1
+    );
     const matches = entries.filter(
       (entry) =>
         entry?.attestation?.scope === target.scope &&
@@ -30,15 +41,21 @@ export class IsolatedBackupVerifier {
     if (matches.length !== 1)
       throw new Error("Expected exactly one isolated backup attestation for the target.");
     const backupChecksum = await hashFile(join(this.directory, "databases.sql"));
-    verifyIsolatedRestoreAttestation(matches[0]!.attestation, matches[0]!.signature, this.key, {
+    const entry = matches[0]!;
+    const expected = {
       ...target,
       sourceContainerId: this.sourceContainerId,
       backupChecksum
-    });
+    };
+    if (this.reused && entry.attestation.version === 2)
+      verifyReusedRestoreAttestation(entry.attestation, entry.signature, this.key, expected);
+    else if (!this.reused && entry.attestation.version === 1)
+      verifyIsolatedRestoreAttestation(entry.attestation, entry.signature, this.key, expected);
+    else throw new Error("Backup attestation type does not match the requested mode.");
   }
 }
 
-async function readManifest(path: string): Promise<AttestationEntry[]> {
+async function readManifest(path: string, expectedVersion: 1 | 2): Promise<AttestationEntry[]> {
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const stat = await file.stat();
@@ -49,7 +66,7 @@ async function readManifest(path: string): Promise<AttestationEntry[]> {
       !manifest ||
       typeof manifest !== "object" ||
       !("version" in manifest) ||
-      manifest.version !== 1 ||
+      manifest.version !== expectedVersion ||
       !("attestations" in manifest) ||
       !Array.isArray(manifest.attestations) ||
       manifest.attestations.length > 10000

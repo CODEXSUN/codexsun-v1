@@ -6,6 +6,7 @@ import { capture, configurationName, inspectDeployment } from "./config.mjs";
 import { LocalDocker } from "./docker.mjs";
 import { privateWrite, readJson, withLock } from "./files.mjs";
 import { parseLocalOptions } from "./options.mjs";
+import { findReusableBackup } from "./reusable-backup.mjs";
 import { release } from "./release.mjs";
 import {
   assertInfrastructurePortsUnpublished,
@@ -19,11 +20,12 @@ try {
   if (options.help) {
     const usage =
       mode === "update"
-        ? "Usage: bash update-local.sh [--plan] [--check] [--configure]\n" +
+        ? "Usage: bash update-local.sh [--plan] [--check] [--configure] [--nobackup]\n" +
           "  update: build and update the five services\n" +
           "  --plan: show the actions without changing anything\n" +
           "  --check: check the configuration without changes\n" +
-          "  --configure: capture initial configuration"
+          "  --configure: capture initial configuration\n" +
+          "  --nobackup: reuse a verified same-day backup; later changes are not backed up"
         : "Usage: bash deploy-local.sh [--check | --configure]\n" +
           "  --check: check the configuration without changes\n" +
           "  --configure: capture the existing local configuration";
@@ -57,6 +59,15 @@ try {
         if (mode === "update") {
           assertInfrastructurePortsUnpublished(state);
           assertMigrationLedgersSettled(docker, state);
+          if (options.noBackup) {
+            const prior = await findReusableBackup(
+              resolve(root, ".container/backups/local"),
+              state
+            );
+            console.log(
+              `Eligible earlier backup: ${prior.createdAt}. Later changes are not included. Master startup evidence is checked during update.`
+            );
+          }
         }
         console.log(`Local ${mode} preflight passed. No files or containers changed.`);
       } else
