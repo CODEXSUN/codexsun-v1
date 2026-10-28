@@ -5,8 +5,9 @@ import { createConnection } from "mysql2/promise";
 import { createPool as createCallbackPool } from "mysql2";
 import { Kysely, MysqlDialect, sql } from "kysely";
 import { env } from "../../apps/platform/api/src/env.js";
-import { migrateSubmissionImport, purgeExpiredSubmissionImports, SubmissionImportSession } from "../../apps/marketing/api/src/modules/submission/submission.import-session.js";
-import { migrateSubmissionImportContract } from "../../apps/marketing/api/src/modules/submission/submission.import-contract.migration.js";
+import { purgeExpiredSubmissionImports, SubmissionImportSession } from "../../apps/marketing/api/src/modules/submission/submission.import-session.js";
+import { runMigrationBatch } from "@codexsun/framework/db";
+import { marketingMigrationBatch } from "../../apps/marketing/api/src/index.js";
 import type { MarketingDatabase } from "../../apps/marketing/api/src/context.js";
 
 test("expired and discarded imports remove staged data without touching other owners", async () => {
@@ -19,14 +20,17 @@ test("expired and discarded imports remove staged data without touching other ow
   try {
     await admin.query(`CREATE DATABASE \`${name}\` CHARACTER SET utf8mb4`);
     db = new Kysely({ dialect: new MysqlDialect({ pool: createCallbackPool({ ...config, database: name }) }) });
-    await migrateSubmissionImport(db);
+    const importBatch = { ...marketingMigrationBatch, steps: marketingMigrationBatch.steps.filter((step) => [15, 18].includes(step.version)) };
+    await runMigrationBatch(db, { ...importBatch, steps: importBatch.steps.filter((step) => step.version === 15) });
     await sql`INSERT INTO marketing_submission_imports(uuid, company_id, actor_email, filename, mapping_json, rows_json, total, created_at) VALUES
       ('11111111', 1, 'a', 'expired.csv', '{}', '[{"private":"expired"}]', 1, DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 8 DAY)),
       ('22222222', 1, 'a', 'cancel.csv', '{}', '[{"private":"cancel"}]', 1, CURRENT_TIMESTAMP),
       ('33333333', 1, 'b', 'other.csv', '{}', '[{"private":"other"}]', 1, CURRENT_TIMESTAMP)`.execute(db);
     await sql`INSERT INTO marketing_submission_import_receipts(import_uuid,row_index,submission_uuid) VALUES ('11111111',0,'aaaaaaaa'),('22222222',0,'bbbbbbbb')`.execute(db);
-    await migrateSubmissionImportContract(db);
-    await migrateSubmissionImportContract(db);
+    await runMigrationBatch(db, importBatch);
+    await runMigrationBatch(db, importBatch);
+    const ledger = await sql<{ version: number; status: string }>`SELECT version,status FROM migration_schema WHERE scope='marketing' ORDER BY version`.execute(db);
+    assert.deepEqual(ledger.rows.map((row) => [Number(row.version), row.status]), [[15, "applied"], [18, "applied"]]);
     for (const table of ["marketing_submission_imports", "marketing_submission_import_receipts"]) {
       const columns = await sql<{ COLUMN_NAME: string }>`SELECT COLUMN_NAME FROM information_schema.COLUMNS
         WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=${table}`.execute(db);
