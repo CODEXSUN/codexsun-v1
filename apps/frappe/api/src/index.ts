@@ -38,6 +38,7 @@ export {
   type ContactExportDatabase
 } from "./modules/export/export.contact.js";
 export { linkEnquiryCustomerIdentity } from "./modules/contact-import/contact-import.service.js";
+export { findEnquiryCustomerIdentity } from "./modules/contact-import/contact-import.service.js";
 export { frappeActivityImportModule } from "./modules/activity-import/index.js";
 export {
   frappeExportModule,

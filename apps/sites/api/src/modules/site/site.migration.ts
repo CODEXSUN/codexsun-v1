@@ -1,6 +1,7 @@
 import { migrateDeploymentModule } from "./deployment/index.js";
 import { sql, type Kysely } from "kysely";
 import type { SitesDatabase } from "./site.types.js";
+import { runMigrationBatch } from "@codexsun/framework/db";
 import { migratePageModule } from "./page/index.js";
 import { migrateBlogModule } from "./blog/index.js";
 import { migratePublicationModule } from "./publication/index.js";
@@ -11,6 +12,16 @@ export const siteMigration = {
 };
 
 export async function migrateSiteModule(database: Kysely<SitesDatabase>) {
+  await runMigrationBatch(database, {
+    batch: 1,
+    scope: "sites",
+    description: "Sites tenant schema",
+    version: "1",
+    steps: [{ ...siteMigration, version: 1, checksum: "sites.site.portfolio:v1", up: migrateSitesSchema }]
+  });
+}
+
+async function migrateSitesSchema(database: Kysely<SitesDatabase>) {
   await sql`
     CREATE TABLE IF NOT EXISTS sites_portfolio_sites (
       id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,

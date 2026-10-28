@@ -2,11 +2,11 @@
 
 ## Version State
 
-Current version: 1.1.82
+Current version: 1.1.83
 
-Release tag: v-1.1.82
+Release tag: v-1.1.83
 
-Changelog label: v 1.1.82
+Changelog label: v 1.1.83
 
 This changelog starts fresh from the cleaned CODEXSUN foundation. Earlier copied application history was intentionally removed because it did not represent the current workspace.
 
@@ -37,6 +37,26 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Update the [Thirumurugan migration guide](../../devkits/data-bridge/agent/thirumurugan-migration.md) with the completed VPS phase.
 - Add the [dated operation log](../../devkits/data-bridge/agent/THIRUMURUGAN-VPS-TRANSFER-2026-10-27.md) with verification and recovery evidence.
 - No application logic, package version, image deployment, or credential change in this documentation task.
+
+## v-1.1.83
+
+### [v 1.1.83] 2026-10-28 8:22 am - Harden migrations and Frappe integration
+
+#### Database Changes
+
+- Database update: Yes (manual).
+- Add Frappe enquiry source identity columns and backfill unambiguous links.
+- Add migration coordination, backup evidence, rollback guards, and recovery checks for platform and tenant databases.
+- Update Sites and Sportsclub migration handling and add migration lifecycle coverage.
+- No database migration or deployment was run for this version update.
+
+#### App Codebase Changes
+
+- Bump workspace version to 1.1.83.
+- Preserve CRM enquiry numbering and improve Frappe contact import and outbound comment matching.
+- Update deployment promotion and recovery checks for the retained Data Bridge volume.
+- Update database migration operations guidance and repository documentation.
+- Record the local Docker audit: pending tenant migrations blocked application replacement. Redis and MariaDB were retained.
 
 ## v-1.1.82
 

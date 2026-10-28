@@ -32,9 +32,7 @@ export class DatabaseMaintenanceRepository {
       user: env.DB_USER
     });
     return {
-      backupStatus: process.env.CODEXSUN_BACKUP_VERIFY_ID
-        ? ("verified" as const)
-        : ("operator-required" as const),
+      backupStatus: "operator-required" as const,
       databaseName,
       host: env.DB_HOST,
       migrations: await this.masterMigrations(databaseName),
@@ -227,6 +225,20 @@ export class DatabaseMaintenanceRepository {
       .limit(1)
       .execute();
     return rows[0] ? toRun(rows[0]) : null;
+  }
+
+  async completedRestores(scope: DatabaseScope, targetKey: string) {
+    const rows = await getPlatformDatabase()
+      .selectFrom("database_maintenance_runs")
+      .selectAll()
+      .where("database_scope", "=", scope)
+      .where("target_key", "=", targetKey)
+      .where("operation", "=", "restore")
+      .where("status", "=", "completed")
+      .orderBy("id", "desc")
+      .limit(100)
+      .execute();
+    return rows.map(toRun);
   }
 
   async completedMasterBackups() {

@@ -34,11 +34,26 @@ const comment = {
   request_id: "request-1"
 };
 
-function database(comments: object[] = [comment], events: object[] = [event], linked = true) {
+function database(
+  comments: object[] = [comment],
+  events: object[] = [event],
+  linked = true,
+  linkOrigin = settings.baseUrl
+) {
   const tables: Record<string, object[]> = {
     crm_enquiry_sync_events: events,
     crm_enquiry_comments: comments,
-    frappe_enquiry_sync: linked ? [{ enquiry_id: 42, remote_name: "Q930" }] : []
+    frappe_enquiry_sync: linked
+      ? [
+          {
+            enquiry_id: 42,
+            remote_name: "Q930",
+            source_site_key: createHash("sha256")
+              .update(new URL(linkOrigin).origin.toLowerCase())
+              .digest("hex")
+          }
+        ]
+      : []
   };
   return {
     selectFrom: (table: string) => {
@@ -62,6 +77,23 @@ function database(comments: object[] = [comment], events: object[] = [event], li
     }
   } as unknown as Kysely<FrappeDatabase>;
 }
+
+test("a link from another site cannot send a comment to the current site", async () => {
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests++;
+    throw new Error("Unexpected remote request");
+  };
+  await assert.rejects(
+    postEnquiryComment(
+      database([comment], [event], true, "https://old.example"),
+      event.id,
+      settings
+    ),
+    /Sync the enquiry before posting its comments/
+  );
+  assert.equal(requests, 0);
+});
 
 test("an unlinked comment reports the parent Customer mapping failure without a remote write", async () => {
   let requests = 0;

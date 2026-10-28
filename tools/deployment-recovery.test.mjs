@@ -189,8 +189,8 @@ test("retained data-volume setup requires reuse approval and never seeds retaine
   assert.deepEqual(vps.readState().records, initial.records);
 });
 
-test("updater rejects an absent or malformed reviewed SHA before any Docker call", () => {
-  for (const expected of ["", "main", "a".repeat(39)]) {
+test("updater rejects a malformed optional SHA before any Docker call", () => {
+  for (const expected of ["main", "a".repeat(39)]) {
     const vps = createVpsFixture(state());
     vps.env.CODEXSUN_EXPECTED_REVISION = expected;
     const result = vps.run("update.sh");
@@ -208,11 +208,21 @@ test("a fetched SHA mismatch stops before source merge, build, quiescence, or mi
   vps.env.CODEXSUN_EXPECTED_REVISION = "c".repeat(40);
   const result = vps.run("update.sh");
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /Fetched source differs from the reviewed SHA/u);
+  assert.match(result.stderr, /Fetched source differs from the requested SHA/u);
   assert.equal(vps.readState().commit, "a".repeat(40));
   assert.equal(vps.readState().builds, undefined);
   assert.equal(vps.readState().migrations, undefined);
   assert.doesNotMatch(vps.calls(), /merge --ff-only|^stop /mu);
+});
+
+test("updater can select the fetched branch revision without an explicit SHA", () => {
+  const vps = createVpsFixture(state());
+  approveNext(vps);
+  delete vps.env.CODEXSUN_EXPECTED_REVISION;
+  const result = vps.run("update.sh");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Source version: .*available version:/u);
+  assert.equal(vps.readState().commit, "b".repeat(40));
 });
 
 for (const [name, flags] of [

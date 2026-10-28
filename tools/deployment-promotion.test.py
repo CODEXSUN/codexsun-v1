@@ -118,6 +118,23 @@ class PromotionTests(unittest.TestCase):
     def test_complete_synthetic_policy(self):
         self.policy().validate()
 
+    def test_data_bridge_removal_requires_exact_read_only_mount_and_rollback(self):
+        target = "/storage/data-bridge-sources/cxapp"
+        bridge = ("volume", "cxapp-bridge", target, False)
+        adoption = {"dataBridgeRemoval": {"approved": True, "volume": "cxapp-bridge"}}
+        rollback = {"services": {"codexsun-api": {"volumes": [{"type": "volume",
+                    "source": "bridge", "target": target, "read_only": True}]}},
+                    "volumes": {"bridge": {"external": True, "name": "cxapp-bridge"}}}
+        PROMOTE.verify_mounts("codexsun-api", [bridge], [], adoption, rollback)
+        with self.assertRaises(ValueError):
+            PROMOTE.verify_mounts("codexsun-api", [bridge], [], {}, rollback)
+        with self.assertRaises(ValueError):
+            PROMOTE.verify_mounts("codexsun-api", [("volume", "cxapp-bridge", target, True)], [], adoption, rollback)
+        with self.assertRaises(ValueError):
+            PROMOTE.verify_mounts("codexsun-api", [bridge], [], adoption, {})
+        with self.assertRaises(ValueError):
+            PROMOTE.verify_mounts("codexsun-web", [bridge], [], adoption, rollback)
+
     def test_two_backups_cannot_cover_wider_migrations(self):
         self.data["recovery"]["coveredTargets"] = ["techmedia_db", "rainbow_db"]
         with self.assertRaisesRegex(ValueError, "all actual migration targets"):

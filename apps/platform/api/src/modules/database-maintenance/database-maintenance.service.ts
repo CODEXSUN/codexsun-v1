@@ -1,5 +1,4 @@
 import {
-  createMasterDatabase,
   migratePlatformDatabase,
   platformDatabaseName
 } from "../../database/platform-database.js";
@@ -16,6 +15,9 @@ import { MasterBackupFiles } from "./database-maintenance.backups.js";
 import { TenantBackupFiles } from "./database-maintenance.tenant-backups.js";
 import { restoreSandboxName } from "./database-maintenance.executor.js";
 import type { DatabaseActionPayload } from "./database-maintenance.types.js";
+import {
+  verifyTenantMigrationBackup
+} from "./database-maintenance.migration-backup.js";
 
 export class DatabaseMaintenanceService {
   constructor(
@@ -67,7 +69,6 @@ export class DatabaseMaintenanceService {
       targetKey: "master"
     });
     try {
-      await createMasterDatabase();
       await migratePlatformDatabase();
       const run = await this.repository.updateRunStatus(started.id, "completed", input);
       await this.activity.recordActivity({
@@ -147,6 +148,9 @@ export class DatabaseMaintenanceService {
       targetKey: String(tenant.id)
     });
     try {
+      if (env.NODE_ENV === "production" && operation !== "setup") {
+        await verifyTenantMigrationBackup(tenant);
+      }
       const result = await provisionTenantDatabase(tenant);
       const completedDetails = { ...details, ...result };
       const run = await this.repository.updateRunStatus(started.id, "completed", completedDetails);

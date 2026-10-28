@@ -15,6 +15,7 @@ import {
 } from "@codexsun/crm-api";
 
 import { tenantAccessContext } from "./auth/tenant-access-context.js";
+import { findEnquiryCustomerIdentity, type FrappeDatabase } from "@codexsun/frappe-api";
 
 const enquiryContactLookup = new EnquiryContactLookup();
 
@@ -31,7 +32,15 @@ export const enquiryRelations = (
     name: string;
     mobile: string;
   }) => {
-    const resolved = await resolveExternalContactForDatabase(context.tenantDatabase, input);
+    const existingContactId = await findEnquiryCustomerIdentity(
+      context.database as unknown as import("kysely").Kysely<FrappeDatabase>,
+      input.externalKey,
+      input.externalCode
+    );
+    const resolved = await resolveExternalContactForDatabase(context.tenantDatabase, {
+      ...input,
+      ...(existingContactId ? { existingContactId } : {})
+    });
     const contact = await getActiveContactForDatabase(context.tenantDatabase, resolved.id);
     return { id: resolved.id, name: contact?.name ?? input.name };
   },

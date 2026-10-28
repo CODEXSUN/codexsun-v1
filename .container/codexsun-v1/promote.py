@@ -45,7 +45,7 @@ class ImagePromotion:
             planned = sorted((m["type"], p.model["volumes"][m["source"]].get("name", m["source"]),
                               m["target"], not m.get("read_only", False))
                              for m in p.model["services"][name].get("volumes", []))
-            require(mounts == planned, "Promotion would change an existing application mount")
+            verify_mounts(name, mounts, planned, p.adoption, p.rollback)
             existing_env = dict(v.split("=", 1) for v in item["Config"].get("Env", []) if "=" in v)
             planned_env = p.model["services"][name].get("environment", {})
             for key in ["DB_HOST", "DB_PORT", "DB_MASTER_NAME", "DB_USER", "DB_PASSWORD", "JWT_SECRET",
@@ -178,6 +178,27 @@ class ImagePromotion:
                                 text=True, timeout=timeout, check=False)
         require(result.returncode == 0, "Docker operation failed; inspect restricted operator logs")
         return result.stdout
+
+
+def verify_mounts(name, mounts, planned, adoption, rollback):
+    if mounts == planned:
+        return
+    removal = adoption.get("dataBridgeRemoval")
+    require(name == "codexsun-api" and isinstance(removal, dict),
+            "Promotion would change an existing application mount")
+    volume = removal.get("volume")
+    target = "/storage/data-bridge-sources/cxapp"
+    bridge = ("volume", volume, target, False)
+    require(removal.get("approved") is True and isinstance(volume, str) and volume and
+            mounts.count(bridge) == 1 and sorted(mounts) == sorted(planned + [bridge]),
+            "Only the reviewed read-only Data Bridge mount may be disconnected")
+    previous = rollback.get("services", {}).get(name, {}).get("volumes", [])
+    volumes = rollback.get("volumes", {})
+    require(any(m.get("type") == "volume" and m.get("target") == target and
+                m.get("read_only") is True and
+                volumes.get(m.get("source"), {}).get("name", m.get("source")) == volume and
+                volumes.get(m.get("source"), {}).get("external") is True for m in previous),
+            "Rollback must preserve the original Data Bridge mount")
 
 
 def main():

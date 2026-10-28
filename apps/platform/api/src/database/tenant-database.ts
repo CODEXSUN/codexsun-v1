@@ -5,6 +5,7 @@ import { env } from "../env.js";
 import type { Tenant } from "../modules/tenant/tenant.types.js";
 import { assertDatabaseName, quoteIdentifier } from "./database-utils.js";
 import type { TenantDatabase } from "./schema.js";
+import { createMigrationDatabase } from "./create-migration-database.js";
 
 const tenantConnections = new Map<string, Kysely<TenantDatabase>>();
 const tenantDatabaseOwners = new Map<string, string>();
@@ -27,9 +28,12 @@ export async function createTenantDatabase(target: string | Tenant) {
     timezone: "Z"
   });
   try {
-    await connection.query(
-      `CREATE DATABASE IF NOT EXISTS ${quoteIdentifier(name)} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
-    );
+    await createMigrationDatabase(connection, name, async () => {
+      if (env.NODE_ENV !== "production") return;
+      if (!tenant) throw new Error("Existing production tenant databases require a registered tenant for backup verification.");
+      const { verifyTenantMigrationBackup } = await import("../modules/database-maintenance/database-maintenance.migration-backup.js");
+      await verifyTenantMigrationBackup(tenant);
+    });
     console.info(`[database] tenant database ready: "${name}"`);
   } finally {
     await connection.end();

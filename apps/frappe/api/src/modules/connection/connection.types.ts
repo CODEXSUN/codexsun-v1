@@ -32,6 +32,7 @@ export type FrappeConnectionRow = {
 export type FrappeSyncRow = {
   enquiry_id: number;
   remote_name: string;
+  source_site_key: ColumnType<string | null, string | null | undefined, string | null>;
   synced_at: ColumnType<string, string | undefined, string>;
   source_modified_at: ColumnType<string | Date | null, string | undefined, string>;
 };

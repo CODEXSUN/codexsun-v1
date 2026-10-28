@@ -2,6 +2,28 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { planEnquiryNumbers } from "./enquiry.numbering.js";
 
+test("a different site's protected enquiry keeps its number during reconciliation", () => {
+  const records = [
+    { id: 1, enquiryNo: 1 },
+    { id: 2, enquiryNo: 9 },
+    { id: 3, enquiryNo: 2 }
+  ];
+  const plan = planEnquiryNumbers(
+    records,
+    [
+      { enquiryId: 2, remoteName: "Q1" },
+      { enquiryId: 3, remoteName: "Q3" }
+    ],
+    10,
+    new Set([1])
+  );
+  assert.equal(
+    plan.moves.some((move) => move.id === 1 || move.id === 2),
+    false
+  );
+  assert.equal(plan.moves.find((move) => move.id === 3)?.after, 3);
+});
+
 test("Frappe serials replace CRM serials without losing colliding local records", () => {
   const records = [
     { id: 1, enquiryNo: 2075 },

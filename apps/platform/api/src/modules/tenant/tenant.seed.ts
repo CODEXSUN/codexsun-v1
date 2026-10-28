@@ -11,10 +11,9 @@ import { env } from "../../env.js";
 import { syncCrmTenantPermissions } from "@codexsun/crm-api";
 import {
   migrateSelectedTenantApps,
-  rollbackSelectedTenantApps,
   seedSelectedTenantApps
 } from "../../database/tenant-app-database.js";
-import { migrateTenantRuntimeModule, rollbackTenantRuntimeModule } from "./tenant.migration.js";
+import { migrateTenantRuntimeModule } from "./tenant.migration.js";
 import { TenantRepository } from "./tenant.repository.js";
 import { normalizeTenantDomain } from "../tenant-domain/tenant-domain.repository.js";
 import { EntitlementAccessService } from "../entitlement/entitlement.access.js";
@@ -31,12 +30,17 @@ import { seedTenantRolePermissionModule } from "../tenant-role-permission/index.
 import { seedTenantRoleModule } from "../tenant-role/index.js";
 import { seedTenantUserRoleModule } from "../tenant-user-role/index.js";
 import { seedTenantUserModule } from "../tenant-user/index.js";
+import { withCoordinatedMigration } from "../../database/migration-coordination.js";
 
 export const tenantSeed = {
   records: []
 } as const;
 
 export async function provisionTenantDatabase(tenant: Tenant) {
+  return withCoordinatedMigration(() => provisionTenantDatabaseLocked(tenant));
+}
+
+async function provisionTenantDatabaseLocked(tenant: Tenant) {
   console.info(
     `[database] provisioning tenant database "${tenant.dbName}" for tenant "${tenant.tenantCode}"`
   );
@@ -47,6 +51,7 @@ export async function provisionTenantDatabase(tenant: Tenant) {
     const migrated = await migrateSelectedTenantApps(database, tenant);
     await seedTenantRuntimeModule(database, tenant);
     const seeded = await seedSelectedTenantApps(database, tenant);
+    await seedTenantRolePermissionModule(database);
     console.info(`[database] tenant database provisioned: "${tenant.dbName}"`);
     return { ...migrated, ...seeded };
   } finally {
@@ -55,6 +60,10 @@ export async function provisionTenantDatabase(tenant: Tenant) {
 }
 
 export async function migrateTenantDatabase(tenant: Tenant) {
+  return withCoordinatedMigration(() => migrateTenantDatabaseLocked(tenant));
+}
+
+async function migrateTenantDatabaseLocked(tenant: Tenant) {
   await createTenantDatabase(tenant);
   const database = getTenantDatabase(tenant);
   try {
@@ -66,13 +75,19 @@ export async function migrateTenantDatabase(tenant: Tenant) {
 }
 
 export async function seedTenantDatabase(tenant: Tenant) {
+  return withCoordinatedMigration(() => seedTenantDatabaseLocked(tenant));
+}
+
+async function seedTenantDatabaseLocked(tenant: Tenant) {
   await createTenantDatabase(tenant);
   const database = getTenantDatabase(tenant);
   try {
     await migrateTenantRuntimeModule(database);
     await migrateSelectedTenantApps(database, tenant);
     await seedTenantRuntimeModule(database, tenant);
-    return await seedSelectedTenantApps(database, tenant);
+    const seeded = await seedSelectedTenantApps(database, tenant);
+    await seedTenantRolePermissionModule(database);
+    return seeded;
   } finally {
     await closeTenantDatabase(tenant);
   }
@@ -87,15 +102,10 @@ export async function syncTenantCrmPermissions(tenant: Tenant) {
   }
 }
 
-export async function rollbackTenantDatabase(tenant: Tenant) {
-  await createTenantDatabase(tenant);
-  const database = getTenantDatabase(tenant);
-  try {
-    await rollbackSelectedTenantApps(database, tenant);
-    return rollbackTenantRuntimeModule(database);
-  } finally {
-    await closeTenantDatabase(tenant);
-  }
+export async function rollbackTenantDatabase(_tenant: Tenant) {
+  throw new Error(
+    "Tenant rollback is unavailable until all release scopes have a verified safe reverse plan."
+  );
 }
 
 export async function provisionTenantStorage(tenant: Tenant) {

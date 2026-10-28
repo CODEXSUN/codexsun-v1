@@ -24,7 +24,10 @@ export async function postEnquiryComment(
   if (!event?.entity_id) throw new Error("The comment sync event has no comment identity.");
   const comment = await sync.commentForSync(event.enquiry_id, event.entity_id);
   if (!comment) throw new Error("The enquiry comment was not found.");
-  const linked = await new FrappeConnectionRepository(database).get(event.enquiry_id);
+  const linked = await new FrappeConnectionRepository(database).get(
+    event.enquiry_id,
+    settings.baseUrl
+  );
   if (!linked) {
     const upsert = await sync.latestUpsert(event.enquiry_id);
     throw new Error(

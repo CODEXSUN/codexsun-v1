@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
-import { createConnection } from "mysql2/promise";
+import { createConnection, type RowDataPacket } from "mysql2/promise";
 import { closeAllAccountsDatabases } from "@codexsun/accounts-api";
 import { closeAllBillingDatabases } from "@codexsun/billing-api";
 import { closeCoreDatabase } from "@codexsun/core-api";
@@ -18,6 +18,7 @@ import {
 } from "../../apps/platform/api/src/modules/tenant/tenant.seed.js";
 import type { Tenant } from "../../apps/platform/api/src/modules/tenant/tenant.types.js";
 import { restoreDumpInSandbox } from "./restore-dump-sandbox.js";
+import { populateTenantFixture, assertTenantFixtureUnchanged } from "./populated-tenant-fixture.js";
 
 const dumpPath = process.argv[2];
 if (env.NODE_ENV === "production" || !dumpPath) {
@@ -86,20 +87,66 @@ try {
   }
   for (const app of [
     "application",
+    "qcafe",
+    "marketing",
+    "hrms",
+    "docs",
+    "sites",
     "ecommerce",
+    "tconnect",
+    "sportsclub",
     "crm",
     "frappe",
     "auditor",
     "zetro",
     "billing",
-    "logicx-erp",
     "accounts",
     "mail",
+    "notes",
+    "chat",
     "task-manager",
+    "codexsun",
     "blog"
   ]) {
     assert.ok(migrated.provisionedApps.includes(app), `${app} schema was not installed.`);
   }
+  const populated = await populateTenantFixture(admin, databaseName);
+  if (dumpPath === "--fresh") {
+    await admin.query(
+      `INSERT INTO \`${databaseName}\`.core_companies (uuid,code,name) VALUES (?,?,?)`,
+      ["c0def123", "fixture-upgrade-company", "Existing upgrade company"]
+    );
+    const [existing] = await admin.query<RowDataPacket[]>(
+      `SELECT * FROM \`${databaseName}\`.core_companies WHERE uuid=?`,
+      ["c0def123"]
+    );
+    assert.ok(existing[0]);
+    populated.push({
+      app: "core",
+      table: "core_companies",
+      id: Number(existing[0].id),
+      row: existing[0]
+    });
+    await admin.query(`ALTER TABLE \`${databaseName}\`.core_companies DROP COLUMN favicon_path`);
+    await admin.query(
+      `DELETE FROM \`${databaseName}\`.migration_schema WHERE scope='core' AND name='core.organisation.company-favicon-v2'`
+    );
+  }
+  await migrateTenantDatabase(tenant);
+  if (dumpPath === "--fresh") {
+    const [favicon] = await admin.query<RowDataPacket[]>(
+      "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME='core_companies' AND COLUMN_NAME='favicon_path'",
+      [databaseName]
+    );
+    assert.equal(favicon.length, 1, "Existing company schema was not upgraded.");
+    const [company] = await admin.query<RowDataPacket[]>(
+      `SELECT name,favicon_path FROM \`${databaseName}\`.core_companies WHERE uuid=?`,
+      ["c0def123"]
+    );
+    assert.equal(company[0]?.name, "Existing upgrade company");
+    assert.equal(company[0]?.favicon_path, null);
+  }
+  await assertTenantFixtureUnchanged(admin, databaseName, populated);
   const afterMigration = await tableCounts();
   for (const [table, count] of oldRows) {
     const currentTable = table;
@@ -136,16 +183,21 @@ try {
     true,
     "Legacy Accounts activation did not resolve to the current app."
   );
-  await seedTenantDatabase({ ...tenant, enabledModuleKeys: ["accounts.accounting"] });
+  await seedTenantDatabase({
+    ...tenant,
+    enabledModuleKeys: ["accounts.accounting"]
+  });
   const [legacyAccounts] = await admin.query<Array<{ enabled: number; status: string }>>(
     `SELECT enabled,status FROM \`${databaseName}\`.app_module_settings WHERE module_key='accounts.overview'`
   );
   assert.equal(Number(legacyAccounts[0]?.enabled), 1);
   assert.equal(legacyAccounts[0]?.status, "active");
+  await assertTenantFixtureUnchanged(admin, databaseName, populated);
   console.log("All tenant app upgrade passed", {
     databaseName,
     migrations: migrated.migrationOrder.length,
-    tables: firstSeedRows.size
+    tables: firstSeedRows.size,
+    populatedApps: new Set(populated.map(({ app }) => app)).size
   });
 } finally {
   await admin.end();

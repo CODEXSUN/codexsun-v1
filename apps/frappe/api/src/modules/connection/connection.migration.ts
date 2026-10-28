@@ -97,9 +97,33 @@ export const frappeTenantMigrationBatch: MigrationBatch<FrappeDatabase> = {
       description: "Hold sync outside tenant server hours and cache live connectivity.",
       version: 11,
       up: addFrappeAvailability
+    },
+    {
+      name: "frappe.connection.enquiry-source-key-v12",
+      checksum: "frappe.connection.enquiry-source-key-v12",
+      description: "Retain unambiguous Frappe enquiry source identities without changing links.",
+      version: 12,
+      up: addEnquirySourceKeys
     }
   ]
 };
+
+async function addEnquirySourceKeys(database: Kysely<FrappeDatabase>) {
+  await sql`ALTER TABLE frappe_enquiry_sync
+    ADD COLUMN IF NOT EXISTS source_site_key CHAR(64) NULL`.execute(database);
+  await sql`CREATE INDEX IF NOT EXISTS frappe_enquiry_sync_site_remote
+    ON frappe_enquiry_sync (source_site_key, remote_name)`.execute(database);
+  await sql`UPDATE frappe_enquiry_sync AS link
+    JOIN (
+      SELECT enquiry_id, MIN(LOWER(base_url)) AS source_url
+      FROM frappe_enquiry_snapshots
+      WHERE enquiry_id IS NOT NULL
+      GROUP BY enquiry_id
+      HAVING COUNT(DISTINCT LOWER(base_url)) = 1
+    ) AS source ON source.enquiry_id = link.enquiry_id
+    SET link.source_site_key = SHA2(source.source_url, 256)
+    WHERE link.source_site_key IS NULL`.execute(database);
+}
 
 async function addInboundCheckpoint(database: Kysely<FrappeDatabase>) {
   await sql`ALTER TABLE frappe_enquiry_sync

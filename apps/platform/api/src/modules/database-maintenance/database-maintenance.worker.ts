@@ -7,8 +7,13 @@ import { executeDatabaseBackup, executeDatabaseRestore } from "./database-mainte
 import { resolveTenantDatabasePassword } from "../../database/tenant-database.js";
 import { verifiedMasterBackupFile } from "./database-maintenance.backups.js";
 import { verifiedTenantBackupFile } from "./database-maintenance.tenant-backups.js";
+import { withCoordinatedMigration } from "../../database/migration-coordination.js";
 
 export async function processDatabaseMaintenanceJob(payload: Record<string, unknown>) {
+  return withCoordinatedMigration(() => processDatabaseMaintenanceJobLocked(payload));
+}
+
+async function processDatabaseMaintenanceJobLocked(payload: Record<string, unknown>) {
   const runId = Number(payload.runId);
   if (!Number.isInteger(runId) || runId <= 0) {
     throw new Error("Database maintenance job requires a valid runId.");
@@ -66,6 +71,9 @@ export async function processDatabaseMaintenanceJob(payload: Record<string, unkn
       ...run.details,
       executedAt,
       ...result,
+      host: target.host,
+      port: target.port,
+      ...(run.operation === "restore" ? await restoreEvidence(repository, run) : {}),
       queueStatus: "completed"
     };
     await repository.updateRunStatus(run.id, "completed", details);
@@ -85,6 +93,17 @@ export async function processDatabaseMaintenanceJob(payload: Record<string, unkn
     });
     throw error;
   }
+}
+
+async function restoreEvidence(
+  repository: DatabaseMaintenanceRepository,
+  run: NonNullable<Awaited<ReturnType<DatabaseMaintenanceRepository["findRun"]>>>
+) {
+  const backup = await repository.findRun(Number(run.details.backupRunId));
+  if (!backup || typeof backup.details.checksum !== "string") {
+    throw new Error("Restore backup checksum is missing.");
+  }
+  return { backupChecksum: backup.details.checksum };
 }
 
 async function restoreBackupPath(

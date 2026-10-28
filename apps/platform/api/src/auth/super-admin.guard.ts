@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type {} from "./auth-request-context.types.js";
 import { fail } from "@codexsun/framework/http";
 import { hasActiveSuperAdminSession } from "./auth-session-authority.js";
 

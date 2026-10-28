@@ -6,7 +6,6 @@ import { existsSync, writeFileSync } from "node:fs";
 import {
   applyTablePrefixPolicy,
   ensureStandardTableColumns,
-  rollbackMigrationBatch,
   rollbackTablePrefixPolicy,
   runMigrationBatch,
   type MigrationBatch
@@ -65,7 +64,9 @@ import {
 } from "../auth/auth-login-attempt.migration.js";
 import { migrateDataMigrationDatabase } from "@codexsun/data-migration-api";
 import { migrateDataBridgeDatabase } from "@codexsun/data-bridge-api";
-import { migrateZunoDatabase, rollbackZunoDatabase, type ZunoDatabase } from "@codexsun/zuno-api";
+import { createMigrationDatabase } from "./create-migration-database.js";
+import { withCoordinatedMigration } from "./migration-coordination.js";
+import { migrateZunoDatabase, type ZunoDatabase } from "@codexsun/zuno-api";
 
 let platformDatabase: Kysely<PlatformDatabase> | null = null;
 let bootstrapped = false;
@@ -313,6 +314,11 @@ export function getPlatformDatabase() {
 }
 
 export async function bootstrapPlatformDatabase() {
+  if (bootstrapped || process.env.CODEXSUN_DEV_SKIP_DB === "1") return bootstrapPlatformDatabaseLocked();
+  return withCoordinatedMigration(bootstrapPlatformDatabaseLocked);
+}
+
+async function bootstrapPlatformDatabaseLocked() {
   if (bootstrapped || process.env.CODEXSUN_DEV_SKIP_DB === "1") {
     if (process.env.CODEXSUN_DEV_SKIP_DB === "1") {
       console.info("[database] bootstrap skipped because CODEXSUN_DEV_SKIP_DB=1");
@@ -332,7 +338,6 @@ export async function bootstrapPlatformDatabase() {
   }
 
   console.info("[database] bootstrap started");
-  await createMasterDatabase();
   await migratePlatformDatabase();
   await seedPlatformDatabase();
   bootstrapped = true;
@@ -360,9 +365,11 @@ export async function createMasterDatabase() {
     timezone: "Z"
   });
   try {
-    await connection.query(
-      `CREATE DATABASE IF NOT EXISTS ${quoteIdentifier(databaseName)} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
-    );
+    await createMigrationDatabase(connection, databaseName, async () => {
+      if (env.NODE_ENV !== "production") return;
+      const { verifyMasterMigrationBackup } = await import("../modules/database-maintenance/database-maintenance.migration-backup.js");
+      await verifyMasterMigrationBackup();
+    });
     console.info(`[database] master database ready: "${databaseName}"`);
   } finally {
     await connection.end();
@@ -370,7 +377,12 @@ export async function createMasterDatabase() {
 }
 
 export async function migratePlatformDatabase() {
+  return withCoordinatedMigration(migratePlatformDatabaseLocked);
+}
+
+async function migratePlatformDatabaseLocked() {
   console.info(`[database] migrating platform database "${platformDatabaseName()}"`);
+  await createMasterDatabase();
   const database = getPlatformDatabase();
   const result = await runMigrationBatch(database, platformMigrationBatch, { batchSize: 8 });
   await migrateDataMigrationDatabase(database as unknown as Kysely<unknown>);
@@ -382,9 +394,9 @@ export async function migratePlatformDatabase() {
 }
 
 export async function rollbackPlatformDatabase() {
-  const database = getPlatformDatabase();
-  await rollbackZunoDatabase(database as unknown as Kysely<ZunoDatabase>);
-  return rollbackMigrationBatch(database, platformMigrationBatch);
+  throw new Error(
+    "Platform rollback is unavailable until all release scopes have a verified safe reverse plan."
+  );
 }
 
 export async function seedPlatformDatabase() {
@@ -396,13 +408,16 @@ export async function seedPlatformDatabase() {
 }
 
 export async function resetPlatformDatabases() {
+  return withCoordinatedMigration(resetPlatformDatabasesLocked);
+}
+
+async function resetPlatformDatabasesLocked() {
   assertDestructiveDatabaseAction("fresh database startup");
   console.warn(`
 DATABASE WARNING
 Fresh database mode is enabled. CODEXSUN will drop configured tenant databases and the master database, then recreate and seed them.
 `);
   await dropPlatformDatabases();
-  await createMasterDatabase();
   await migratePlatformDatabase();
   await seedPlatformDatabase();
   bootstrapped = true;

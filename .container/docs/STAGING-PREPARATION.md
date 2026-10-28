@@ -68,8 +68,9 @@ Do not launch that model unchanged for staging. A reviewed staging model with di
 Do not mount production volumes, connect production queues, or reuse the production tenant registry.
 
 The inspected production API has an additional read-only CXApp import mount.
-The existing v1 exact-mount guard rejects it. This change preserves that refusal.
-Review whether the import capability remains required, and define an explicit supported adoption plan before deployment.
+The current v1 contract supports this mount when `CODEXSUN_DATA_BRIDGE_VOLUME` names the existing volume.
+The older updater on the VPS does not support it and cannot safely update itself through its normal preflight.
+Review the exact mount and the operator-tooling transition before deployment; do not remove the mount to bypass the guard.
 Preserve MariaDB, Redis, Media, Frappe, Cloudflare, CXApp, tenant data, and unrelated resources.
 
 ## Ordered staging handoff — UNEXECUTED

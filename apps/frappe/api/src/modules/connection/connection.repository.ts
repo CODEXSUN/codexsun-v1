@@ -3,6 +3,7 @@ import type { FrappeDatabase } from "./connection.types.js";
 import type { FrappeConnectionInput } from "./connection.types.js";
 import { decryptFrappeCredential, encryptFrappeCredential } from "./connection.secrets.js";
 import { sql } from "kysely";
+import { createHash } from "node:crypto";
 import {
   EnquiryNumbering,
   type EnquiryDatabase,
@@ -126,12 +127,18 @@ export class FrappeConnectionRepository {
       .execute();
   }
 
-  get(enquiryId: number) {
-    return this.database
+  get(enquiryId: number, baseUrl?: string) {
+    let query = this.database
       .selectFrom("frappe_enquiry_sync")
       .select(["remote_name", "synced_at"])
-      .where("enquiry_id", "=", enquiryId)
-      .executeTakeFirst();
+      .where("enquiry_id", "=", enquiryId);
+    if (baseUrl) {
+      const sourceKey = createHash("sha256")
+        .update(new URL(baseUrl).origin.toLowerCase())
+        .digest("hex");
+      query = query.where("source_site_key", "=", sourceKey);
+    }
+    return query.executeTakeFirst();
   }
 
   byRemoteName(remoteName: string) {

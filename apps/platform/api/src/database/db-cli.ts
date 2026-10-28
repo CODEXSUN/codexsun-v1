@@ -1,28 +1,36 @@
-import { crmPermissionTargets, tenantMigrationTargets } from "./migration-targets.js";
+import {
+  crmPermissionTargets,
+  tenantMigrationTargets,
+} from "./migration-targets.js";
 import { createConnection } from "mysql2/promise";
 import { closeAllBillingDatabases } from "@codexsun/billing-api";
 import { closeAllAccountsDatabases } from "@codexsun/accounts-api";
 import { closeCoreDatabase } from "@codexsun/core-api";
 import {
   closePlatformDatabase,
-  createMasterDatabase,
   dropPlatformDatabases,
   migratePlatformDatabase,
   platformDatabaseName,
   resetPlatformDatabases,
-  rollbackPlatformDatabase,
-  seedPlatformDatabase
+  seedPlatformDatabase,
 } from "./platform-database.js";
 import { TenantRepository } from "../modules/tenant/tenant.repository.js";
 import {
   migrateTenantDatabase,
-  rollbackTenantDatabase,
   seedDefaultTenant,
   seedTenantDatabase,
-  syncTenantCrmPermissions
+  syncTenantCrmPermissions,
 } from "../modules/tenant/tenant.seed.js";
 import { env } from "../env.js";
 import { assertDatabaseName, quoteIdentifier } from "./database-utils.js";
+import { verifyMigrationBackups } from "../modules/database-maintenance/database-maintenance.migration-backup.js";
+import { withCoordinatedMigration } from "./migration-coordination.js";
+import {
+  assertDistinctRollbackTargets,
+  inspectRollbackLedger,
+  type RollbackTargetIdentity,
+} from "./rollback-assessment.js";
+import { resolveTenantDatabasePassword } from "./tenant-database.js";
 
 type DbCommand =
   | "migrate"
@@ -54,7 +62,7 @@ const validCommands: DbCommand[] = [
   "dump:create",
   "dump:download",
   "restore:test",
-  "backup:verify"
+  "backup:verify",
 ];
 
 const command = process.argv[2] as DbCommand | undefined;
@@ -69,7 +77,7 @@ async function main() {
   try {
     console.info(`[database] db:${command} started`);
     if (command === "migrate") {
-      await migrateAll();
+      await migrateAll(env.NODE_ENV === "production");
     }
 
     if (command === "seed") {
@@ -100,12 +108,10 @@ async function main() {
     }
 
     if (command === "migrations:run") {
-      await runMigrationPreflight();
-      await migrateAll();
+      await migrateAll(true);
     }
 
     if (command === "migrations:rollback") {
-      await runMigrationPreflight();
       await rollbackAll();
     }
 
@@ -131,16 +137,18 @@ async function main() {
       closeAllAccountsDatabases(),
       closeAllBillingDatabases(),
       closeCoreDatabase(),
-      closePlatformDatabase()
+      closePlatformDatabase(),
     ]);
   }
 }
 
-async function migrateAll() {
-  console.info("[database] running master and tenant migrations");
-  await createMasterDatabase();
-  await migratePlatformDatabase();
-  await migrateTenantAppDatabases();
+async function migrateAll(preflight = false) {
+  await withCoordinatedMigration(async () => {
+    if (preflight) await runMigrationPreflight();
+    console.info("[database] running master and tenant migrations");
+    await migratePlatformDatabase();
+    await migrateTenantAppDatabases();
+  });
 }
 
 async function rollbackAll() {
@@ -149,21 +157,97 @@ async function rollbackAll() {
     process.env.CODEXSUN_MIGRATION_ROLLBACK_CONFIRM !== "ROLLBACK"
   ) {
     throw new Error(
-      "production rollback refused. Set CODEXSUN_MIGRATION_ROLLBACK_CONFIRM=ROLLBACK after verifying the backup and rollback plan."
+      "production rollback refused. Set CODEXSUN_MIGRATION_ROLLBACK_CONFIRM=ROLLBACK after verifying the backup and rollback plan.",
     );
   }
+  await withCoordinatedMigration(async () => {
+    await runMigrationPreflight();
+    await assessRollbackTargets();
+    throw new Error(
+      "Release-wide rollback is unavailable: the release manifest and verified safe reverse plan are incomplete. Restore verified backups or prepare corrective forward migrations.",
+    );
+  });
+}
+
+async function assessRollbackTargets() {
   const tenants = tenantMigrationTargets(await new TenantRepository().list());
-  for (const tenant of [...tenants].reverse()) await rollbackTenantDatabase(tenant);
-  await rollbackPlatformDatabase();
+  const targets = [
+    {
+      label: "platform",
+      host: env.DB_HOST,
+      port: env.DB_PORT,
+      database: platformDatabaseName(),
+      user: env.DB_USER,
+      password: env.DB_PASSWORD,
+    },
+    ...tenants.map((tenant) => ({
+      label: `tenant ${tenant.tenantCode}`,
+      host: tenant.dbHost || env.DB_HOST,
+      port: tenant.dbPort || env.DB_PORT,
+      database: tenant.dbName,
+      user: tenant.dbUser || env.DB_USER,
+      password: resolveTenantDatabasePassword(tenant),
+    })),
+  ];
+  assertDistinctRollbackTargets(targets);
+  const resolved: RollbackTargetIdentity[] = [];
+  for (const target of targets) {
+    const connection = await createConnection({
+      host: target.host,
+      port: target.port,
+      user: target.user,
+      password: target.password,
+      database: target.database,
+      timezone: "Z",
+    });
+    try {
+      const [rows] = await connection.query<
+        import("mysql2/promise").RowDataPacket[]
+      >(
+        "SELECT @@hostname AS serverHost, @@port AS serverPort, DATABASE() AS schemaName",
+      );
+      const identity = rows[0];
+      if (
+        !identity ||
+        typeof identity.serverHost !== "string" ||
+        typeof identity.schemaName !== "string" ||
+        identity.schemaName.toLowerCase() !== target.database.toLowerCase()
+      ) {
+        throw new Error(
+          `Rollback assessment cannot verify database identity for ${target.label}.`,
+        );
+      }
+      resolved.push({
+        label: target.label,
+        host: identity.serverHost,
+        port: Number(identity.serverPort),
+        database: identity.schemaName,
+      });
+      const assessment = await inspectRollbackLedger(target.label, connection);
+      console.info(
+        `[database] rollback assessment ${assessment.target}: ${assessment.applied} applied, ${assessment.incomplete} incomplete`,
+      );
+      for (const scope of assessment.byScope) {
+        console.info(
+          `[database]   ${scope.scope}: ${scope.applied} applied, ${scope.incomplete} incomplete`,
+        );
+      }
+    } finally {
+      await connection.end();
+    }
+  }
+  assertDistinctRollbackTargets(resolved);
 }
 
 async function seedAll() {
-  console.info("[seeder] running master and tenant seeders");
-  await createMasterDatabase();
-  await migratePlatformDatabase();
-  await seedPlatformDatabase();
-  await seedDefaultTenant();
-  await seedTenantAppDatabases();
+  await withCoordinatedMigration(async () => {
+    if (env.NODE_ENV === "production") await runMigrationPreflight();
+    console.info("[seeder] running master and tenant seeders");
+    await migratePlatformDatabase();
+    await seedPlatformDatabase();
+    const defaultTenant = await seedDefaultTenant();
+    await seedTenantAppDatabases(defaultTenant?.id);
+  });
 }
 
 async function migrateTenantAppDatabases() {
@@ -171,18 +255,19 @@ async function migrateTenantAppDatabases() {
   console.info(`[database] tenant app migration targets: ${tenants.length}`);
   for (const tenant of tenants) {
     console.info(
-      `[database] migrating tenant app modules for "${tenant.tenantCode}" (${tenant.dbName})`
+      `[database] migrating tenant app modules for "${tenant.tenantCode}" (${tenant.dbName})`,
     );
     await migrateTenantDatabase(tenant);
   }
 }
 
-async function seedTenantAppDatabases() {
+async function seedTenantAppDatabases(alreadySeededTenantId?: number) {
   const tenants = tenantMigrationTargets(await new TenantRepository().list());
   console.info(`[seeder] tenant app seed targets: ${tenants.length}`);
   for (const tenant of tenants) {
+    if (tenant.id === alreadySeededTenantId) continue;
     console.info(
-      `[seeder] seeding tenant app modules for "${tenant.tenantCode}" (${tenant.dbName})`
+      `[seeder] seeding tenant app modules for "${tenant.tenantCode}" (${tenant.dbName})`,
     );
     await seedTenantDatabase(tenant);
   }
@@ -192,30 +277,36 @@ async function syncExistingCrmPermissions() {
   const tenants = crmPermissionTargets(await new TenantRepository().list());
   console.info(`[database] CRM permission targets: ${tenants.length}`);
   for (const tenant of tenants) {
-    console.info(`[database] syncing CRM permissions for "${tenant.tenantCode}"`);
+    console.info(
+      `[database] syncing CRM permissions for "${tenant.tenantCode}"`,
+    );
     await syncTenantCrmPermissions(tenant);
   }
 }
 
 async function listMigrationState() {
   const masterName = platformDatabaseName();
-  console.info(`[database] migration state for platform database "${masterName}"`);
+  console.info(
+    `[database] migration state for platform database "${masterName}"`,
+  );
   const connection = await createConnection({
     database: masterName,
     host: env.DB_HOST,
     password: env.DB_PASSWORD,
     port: env.DB_PORT,
     user: env.DB_USER,
-    timezone: "Z"
+    timezone: "Z",
   });
 
   try {
     const [platformRows] = await connection.query(
-      "SELECT scope,batch,version,name,checksum,status,applied_at,rolled_back_at FROM migration_schema ORDER BY batch,id"
+      "SELECT scope,batch,version,name,checksum,status,applied_at,rolled_back_at FROM migration_schema ORDER BY batch,id",
     );
     console.table(platformRows);
   } catch (error) {
-    console.warn(`[database] platform migration table is not readable yet: ${formatError(error)}`);
+    console.warn(
+      `[database] platform migration table is not readable yet: ${formatError(error)}`,
+    );
   } finally {
     await connection.end();
   }
@@ -229,17 +320,19 @@ async function listMigrationState() {
       password: env.DB_PASSWORD,
       port: tenant.dbPort || env.DB_PORT,
       user: tenant.dbUser || env.DB_USER,
-      timezone: "Z"
+      timezone: "Z",
     });
     try {
       const [tenantRows] = await tenantConnection.query(
-        "SELECT scope,batch,version,name,checksum,status,applied_at,rolled_back_at FROM migration_schema ORDER BY scope,batch,id"
+        "SELECT scope,batch,version,name,checksum,status,applied_at,rolled_back_at FROM migration_schema ORDER BY scope,batch,id",
       );
-      console.info(`[database] tenant "${tenant.tenantCode}" (${tenant.dbName})`);
+      console.info(
+        `[database] tenant "${tenant.tenantCode}" (${tenant.dbName})`,
+      );
       console.table(tenantRows);
     } catch (error) {
       console.warn(
-        `[database] tenant "${tenant.tenantCode}" migration table is not readable yet: ${formatError(error)}`
+        `[database] tenant "${tenant.tenantCode}" migration table is not readable yet: ${formatError(error)}`,
       );
     } finally {
       await tenantConnection.end();
@@ -250,59 +343,67 @@ async function listMigrationState() {
 async function runMigrationPreflight() {
   const masterName = platformDatabaseName();
   console.info(
-    `[database] preflight target: ${env.NODE_ENV} ${env.DB_HOST}:${env.DB_PORT}/${masterName}`
+    `[database] preflight target: ${env.NODE_ENV} ${env.DB_HOST}:${env.DB_PORT}/${masterName}`,
   );
   assertDatabaseName(masterName, "master database name");
 
-  if (env.NODE_ENV === "production" && !process.env.CODEXSUN_VERIFIED_BACKUP_ID) {
-    throw new Error(
-      "production migration preflight refused. Set CODEXSUN_VERIFIED_BACKUP_ID to the verified pre-migration backup id."
+  const tenants = tenantMigrationTargets(await new TenantRepository().list());
+  for (const tenant of tenants) {
+    assertDatabaseName(
+      tenant.dbName,
+      `tenant database name for ${tenant.tenantCode}`,
     );
   }
 
-  const tenants = tenantMigrationTargets(await new TenantRepository().list());
-  for (const tenant of tenants) {
-    assertDatabaseName(tenant.dbName, `tenant database name for ${tenant.tenantCode}`);
-  }
+  if (env.NODE_ENV === "production") await verifyMigrationBackups(tenants);
 
-  console.info(`[database] preflight checked ${tenants.length} tenant database target(s)`);
+  console.info(
+    `[database] preflight checked ${tenants.length} tenant database target(s)`,
+  );
 }
 
 async function runLocalMigrationTest() {
   if (env.NODE_ENV === "production") {
-    throw new Error("local restored-dump migration test refused in production.");
+    throw new Error(
+      "local restored-dump migration test refused in production.",
+    );
   }
 
   if (process.env.CODEXSUN_RESTORED_DUMP_TEST !== "1") {
     throw new Error(
-      "local migration test requires CODEXSUN_RESTORED_DUMP_TEST=1 after restoring a dump into the configured local databases."
+      "local migration test requires CODEXSUN_RESTORED_DUMP_TEST=1 after restoring a dump into the configured local databases.",
     );
   }
 
   await runMigrationPreflight();
   await migrateAll();
   console.info(
-    "[database] local restored-dump migration test completed. Run affected app/API tests before promoting the migration."
+    "[database] local restored-dump migration test completed. Run affected app/API tests before promoting the migration.",
   );
 }
 
 async function runRestoreTest() {
   if (env.NODE_ENV === "production") {
     throw new Error(
-      "restore test refused in production. Restore into a sandbox environment first."
+      "restore test refused in production. Restore into a sandbox environment first.",
     );
   }
 
   const restoreDatabaseName = process.env.CODEXSUN_RESTORE_TEST_DB_NAME;
   if (!restoreDatabaseName) {
     throw new Error(
-      "restore test requires CODEXSUN_RESTORE_TEST_DB_NAME set to an explicit sandbox database name."
+      "restore test requires CODEXSUN_RESTORE_TEST_DB_NAME set to an explicit sandbox database name.",
     );
   }
 
-  const sandboxName = assertDatabaseName(restoreDatabaseName, "restore test database name");
+  const sandboxName = assertDatabaseName(
+    restoreDatabaseName,
+    "restore test database name",
+  );
   if (sandboxName === platformDatabaseName()) {
-    throw new Error("restore test database must not be the configured platform master database.");
+    throw new Error(
+      "restore test database must not be the configured platform master database.",
+    );
   }
 
   const connection = await createConnection({
@@ -310,16 +411,18 @@ async function runRestoreTest() {
     password: env.DB_PASSWORD,
     port: env.DB_PORT,
     user: env.DB_USER,
-    timezone: "Z"
+    timezone: "Z",
   });
 
   try {
     await connection.query(
-      `CREATE DATABASE IF NOT EXISTS ${quoteIdentifier(sandboxName)} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+      `CREATE DATABASE IF NOT EXISTS ${quoteIdentifier(sandboxName)} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
     );
-    const [rows] = await connection.query(`SHOW TABLES FROM ${quoteIdentifier(sandboxName)}`);
+    const [rows] = await connection.query(
+      `SHOW TABLES FROM ${quoteIdentifier(sandboxName)}`,
+    );
     console.info(
-      `[database] restore-test sandbox "${sandboxName}" is reachable with ${Array.isArray(rows) ? rows.length : 0} table(s)`
+      `[database] restore-test sandbox "${sandboxName}" is reachable with ${Array.isArray(rows) ? rows.length : 0} table(s)`,
     );
   } finally {
     await connection.end();
@@ -330,18 +433,22 @@ async function runBackupVerify() {
   const backupId = process.env.CODEXSUN_BACKUP_VERIFY_ID;
   if (!backupId) {
     throw new Error(
-      "backup verification requires CODEXSUN_BACKUP_VERIFY_ID set to the backup artifact/run id being verified."
+      "backup verification requires CODEXSUN_BACKUP_VERIFY_ID set to the backup artifact/run id being verified.",
     );
   }
   console.info(
-    `[database] backup verification marker accepted for "${backupId}". Run db:restore:test against its sandbox restore before marking it verified.`
+    `[database] backup verification marker accepted for "${backupId}". Run db:restore:test against its sandbox restore before marking it verified.`,
   );
 }
 
-function printExternalToolingRequired(commandName: "dump:create" | "dump:download") {
-  console.info(`[database] ${commandName} is reserved as the stable CODEXSUN operator command.`);
+function printExternalToolingRequired(
+  commandName: "dump:create" | "dump:download",
+) {
   console.info(
-    "[database] Wire this command to the deployment provider dump/export tool before production use; every dump must be permission-checked and audited."
+    `[database] ${commandName} is reserved as the stable CODEXSUN operator command.`,
+  );
+  console.info(
+    "[database] Wire this command to the deployment provider dump/export tool before production use; every dump must be permission-checked and audited.",
   );
 }
 

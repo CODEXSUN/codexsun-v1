@@ -58,6 +58,10 @@ Migration completion does not authorize arbitrary destructive changes or imply d
 Adoption also requires `workerQueueOwnershipVerified` and `realtimeRoutingVerified`.
 Existing application mounts must match the proposed named volumes and read-only modes exactly.
 This preserves legitimate read-only import mounts rather than silently discarding them.
+For an explicitly reviewed Data Bridge disconnection, the adoption receipt may include
+`dataBridgeRemoval` with `approved: true` and the exact `volume` name. The only permitted
+change is removal of that read-only mount from the API. The captured rollback model must
+retain the same external volume and read-only mount. This does not delete the volume.
 Database identity, credentials, session keys, tenancy mode, and existing Redis URL cannot change during promotion.
 Worker and Chatb cannot acquire application/database mounts or unrelated environment credentials.
 

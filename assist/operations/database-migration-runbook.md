@@ -23,14 +23,32 @@ Use this runbook for CODEXSUN database changes that affect platform or tenant sc
 
 ## Production Preflight
 
-Production migration preflight requires a verified pre-migration backup:
+The production CLI migration preflight requires a completed backup for the
+Platform database and each target tenant database. Each backup must be no
+more than 24 hours old, identify the current database server, pass its file
+checksum check, and have a completed fresh sandbox restore linked to the
+same backup checksum. Restore evidence created before checksum recording was
+added must be refreshed with a new sandbox restore.
 
 ```text
-CODEXSUN_VERIFIED_BACKUP_ID=<backup-run-id>
 npm run db:migrations:preflight
 ```
 
 Do not continue if backup freshness, restore status, tenant targets, or rollback notes are missing.
+Production Platform startup and migration, and tenant setup, migration,
+seeding, and reinstall verify the target backup when its database already
+exists. A database created by the current operation does not need a prior
+backup. An existing Platform database without current verifiable backup and
+restore evidence will refuse startup migration, including on an ordinary
+restart. Restore evidence does not validate application-level data.
+The built-in SQL backup uses an InnoDB snapshot and rejects detected views,
+triggers, routines, events, and non-InnoDB tables. Use a complete external
+backup when those objects are present. Database privileges must permit full
+metadata inspection, and external schema changes must be controlled during
+backup and migration.
+Tenant schemas with Ecommerce functions or triggers cannot use the built-in
+SQL backup. The exporter rejects these objects. Do not rely on that backup
+path for tenant migration or reinstall until a complete format supports them.
 
 ## Running Migrations
 
@@ -47,10 +65,13 @@ operator, timestamps, and failure text. Applied checksums are immutable:
 change the schema through a new versioned step instead of editing an applied
 step.
 
-The runner holds a database advisory lock and processes a bounded number of
+The CLI, startup, tenant provisioning, and database maintenance jobs share a
+release advisory lock. The CLI holds it across preflight and the Platform and
+tenant migration sequence. The runner also holds a database advisory lock per
+batch and processes a bounded number of
 steps at a time. Reruns skip only checksum-validated applied steps. A failed
-step remains visible in the ledger, and automatically reversible steps from
-the current attempt are rolled back in reverse order.
+step remains visible in the ledger. Earlier successful steps stay applied so
+recovery can account for any partial DDL in the failed step.
 
 Database naming is part of the ownership boundary:
 
@@ -74,17 +95,23 @@ List the checksum ledger with:
 npm run db:migrations:list
 ```
 
-Run a guarded rollback with:
+The release-wide rollback command currently refuses to run before changing
+any database because not every app has a verified safe reverse plan. The
+Platform and tenant rollback entry points also refuse for the same reason:
 
 ```text
 npm run db:migrations:rollback
 ```
 
-Production also requires
-`CODEXSUN_MIGRATION_ROLLBACK_CONFIRM=ROLLBACK`. A baseline step without a
-declared safe `down` refuses rollback and requires the verified backup or a
-new corrective forward migration. The command never silently drops a table or
-column.
+Under the release lock, the CLI checks target identities and reads each
+target's migration ledger. It reports applied and incomplete steps by scope,
+then refuses rollback until a release manifest and verified safe reverse
+catalog exist. An unreadable ledger or duplicate target also blocks the
+assessment. Use verified backups or a reviewed corrective forward migration.
+Individual batch rollback checks all applied steps before reversing that batch,
+but does not provide release-wide coordination.
+The release rollback planner is not wired to the CLI. It does not validate
+dependencies between app scopes or authenticate a stored release manifest.
 
 ## Consolidated Lifecycle Order
 
@@ -116,6 +143,9 @@ For production, run during the approved release window and keep logs with the re
 
 - Stop the rollout.
 - Preserve logs and failed migration status.
+- A `running` or `failed` step is not retried automatically. Inspect its actual
+  schema and data, reconcile partial changes using a reviewed recovery plan,
+  and reconcile the ledger before retrying.
 - Do not edit an already-applied migration.
 - Add a corrective forward migration unless the approved rollback plan says otherwise.
 - Re-run preflight before retrying.

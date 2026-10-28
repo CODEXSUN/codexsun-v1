@@ -84,15 +84,13 @@ This approval confirms expand-contract compatibility with the running release. I
 
 ```bash
 bash update.sh --check
-bash update.sh --expected-revision=<full-reviewed-SHA>
+bash update.sh
 ```
 
 `--check` validates current VPS configuration and source without fetching, building, migrating, or replacing containers.
-It does not verify a future fetched target. Mutating updates require the full reviewed SHA
-through `--expected-revision=<SHA>` or the process environment variable `CODEXSUN_EXPECTED_REVISION`.
-This per-operation value is not read from the private deployment environment file.
-The fetched SHA must match before a source merge, build, migration, or replacement.
-Missing or malformed expected SHAs fail before configuration loading or backup creation.
+It does not verify a future fetched target. The updater selects the fetched branch revision and displays
+the current and available source versions. Optionally supply `--expected-revision=<SHA>` or
+`CODEXSUN_EXPECTED_REVISION` to pin it. An invalid or mismatched supplied SHA stops the update.
 This guard does not convert the updater into immutable image promotion.
 
 Use [Staging preparation](STAGING-PREPARATION.md) for read-only candidate input checks.

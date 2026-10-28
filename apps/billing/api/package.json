@@ -1,6 +1,6 @@
 {
   "name": "@codexsun/billing-api",
-  "version": "1.1.82",
+  "version": "1.1.83",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,7 +12,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@codexsun/framework": "^1.1.82",
+    "@codexsun/framework": "^1.1.83",
     "fastify": "^5.12.5",
     "kysely": "^0.29.7",
     "mysql2": "^3.24.6",

@@ -95,6 +95,10 @@ export class ContactService {
           `The Frappe ${contactType.toLowerCase()} ID is already used by a different contact type.`
         );
       if (existing.code !== code) {
+        if (existingContactId && existing.code === normalizeCode(code, name)) {
+          await this.repository.attachExternalCustomerPhone(existing.id, mobile);
+          return { id: existing.id, uuid: existing.uuid, code: existing.code };
+        }
         if (existing.code !== legacyCode)
           throw AppError.conflict(
             "The linked Core contact code does not match this Frappe customer. Resolve the mismatch before importing."
@@ -113,7 +117,7 @@ export class ContactService {
       typeId: type.id,
       phones: [{ phone: mobile, phoneType: "Mobile", isPrimary: true }]
     });
-    return { id: created.id, uuid: created.uuid, code };
+    return { id: created.id, uuid: created.uuid, code: created.code };
   }
 
   async update(id: string, input: ContactSaveInput) {

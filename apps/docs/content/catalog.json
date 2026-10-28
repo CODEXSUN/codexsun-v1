@@ -3993,6 +3993,19 @@
       "sortOrder": 50
     },
     {
+      "pageKey": "codeit/modules/prompt-manager",
+      "appKey": "codeit",
+      "appLabel": "Codeit",
+      "groupKey": "modules",
+      "groupLabel": "Modules",
+      "moduleKey": "prompt-manager",
+      "title": "Prompt Manager",
+      "summary": "Saved prompts and authorized Codex chat runs.",
+      "sourcePath": "applications/codeit/modules/prompt-manager.md",
+      "sourceHash": "6622bdfcaac66c0da54265f399431aec1e2047e82f8aace1c2e78a4d05d54894",
+      "sortOrder": 65
+    },
+    {
       "pageKey": "codeit/modules/project",
       "appKey": "codeit",
       "appLabel": "Codeit",
@@ -7044,7 +7057,7 @@
       "title": "assist/architecture/deployment-model.md",
       "summary": "Deployment Model — assist/architecture/deployment-model.md",
       "sourcePath": "applications/repository/sources/f2710b05bdd6ff67.md",
-      "sourceHash": "cbb40e338b449ae8ff919def7e7d937fbc0e7348882a16bccbe4fa3d459a9bb3",
+      "sourceHash": "917817aaf8f0e7d4102f91dd30b0f6fb18db911db1d596aaf547aa09a6f818c0",
       "sortOrder": 18000
     },
     {
@@ -7785,7 +7798,7 @@
       "title": "assist/operations/database-migration-runbook.md",
       "summary": "Database Migration Runbook — assist/operations/database-migration-runbook.md",
       "sourcePath": "applications/repository/sources/333240f7a9b4d7b2.md",
-      "sourceHash": "ca5bfb9611aef3a5f0e81fd247cc319e5890b68d119a060b75c70dae1dd90238",
+      "sourceHash": "37ba91eb314e9be4cb741860917df238ac1fdb2600f82ab54c06a59a66a4b8c6",
       "sortOrder": 22200
     },
     {
@@ -8006,7 +8019,7 @@
       "title": "devkits/codeit/README.md",
       "summary": "Codeit — devkits/codeit/README.md",
       "sourcePath": "applications/repository/sources/2d14e4e06694d954.md",
-      "sourceHash": "2b11b085270fe1d68dcee0d692b89ca86fef0e7c51bf75fb06aba05d5c106c15",
+      "sourceHash": "3fc11a18ac1b08b47955d76d7b9bcb44803b4f818e6ff9045f5a3f2bc7ae7845",
       "sortOrder": 23900
     },
     {

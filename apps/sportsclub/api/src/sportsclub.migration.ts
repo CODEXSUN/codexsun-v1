@@ -2,7 +2,9 @@ import type { Kysely } from "kysely";
 import type { SportsclubDatabase } from "./sportsclub.types.js";
 import { migrateProgramModule } from "./modules/program/program.migration.js";
 import { migrateMasterModule } from "./modules/master/master.migration.js";
-import { migrateMemberModule } from "./modules/member/member.migration.js";
+import { migrateMemberModule, migrateMemberPhotoModule } from "./modules/member/member.migration.js";
+import { runMigrationBatch } from "@codexsun/framework/db";
+import { isSqliteDatabase } from "./sportsclub.dialect.js";
 import { migrateSessionModule } from "./modules/session/session.migration.js";
 import { migrateAttendanceModule } from "./modules/attendance/attendance.migration.js";
 import { migrateProgressModule } from "./modules/progress/progress.migration.js";
@@ -22,6 +24,20 @@ export const sportsclubMemberPhotoMigration = {
 export const sportsclubTenantMigrations = [sportsclubMigration, sportsclubMemberPhotoMigration];
 
 export async function migrateSportsclubDatabase(db: Kysely<SportsclubDatabase>): Promise<void> {
+  if (isSqliteDatabase(db)) return migrateSportsclubSchema(db);
+  await runMigrationBatch(db, {
+    batch: 1,
+    scope: "sportsclub",
+    description: "Sportsclub tenant schema",
+    version: "1",
+    steps: [
+      { ...sportsclubMigration, version: 1, checksum: "sportsclub.tenant.baseline:v1", up: migrateSportsclubSchema },
+      { ...sportsclubMemberPhotoMigration, version: 2, checksum: "sportsclub.member.photos:v1", up: migrateMemberPhotoModule }
+    ]
+  });
+}
+
+async function migrateSportsclubSchema(db: Kysely<SportsclubDatabase>): Promise<void> {
   await migrateProgramModule(db);
   await migrateMasterModule(db);
   await migrateMemberModule(db);

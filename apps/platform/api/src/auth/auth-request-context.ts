@@ -9,8 +9,9 @@ import {
   normalizeTenantDomain
 } from "../modules/tenant-domain/tenant-domain.repository.js";
 import { getTenantDatabase, resolveTenantDatabasePassword } from "../database/tenant-database.js";
-import { AuthSessionRepository, type AuthSessionRecord } from "./auth-session.repository.js";
+import { AuthSessionRepository } from "./auth-session.repository.js";
 import { verifyAuthToken, type AuthTokenPayload } from "./jwt.js";
+import type {} from "./auth-request-context.types.js";
 import { readEncryptedSessionCookie, clearInvalidSessionCookies } from "./session-cookie.js";
 import { isSingleTenantMode } from "../tenancy-mode.js";
 import { env } from "../env.js";
@@ -25,16 +26,6 @@ import {
 export { claimsMatchSession } from "./auth-session-authority.js";
 
 export { requestHost } from "./request-host.js";
-
-declare module "fastify" {
-  interface FastifyRequest {
-    authContext?: {
-      payload: AuthTokenPayload;
-      session: AuthSessionRecord;
-      source: "bearer" | "cookie";
-    };
-  }
-}
 
 const sessions = new AuthSessionRepository();
 const tenants = new TenantRepository();

@@ -88,7 +88,7 @@ class PreparationTests(unittest.TestCase):
         self.manifest["services"]["worker"] = {"image": None}
         checker = self.checker()
         checker.check_images()
-        self.assertTrue(any("both Worker and Chatb" in error for error in checker.errors))
+        self.assertTrue(any("Select API/Web, API/Web/Shop, or all five services" in error for error in checker.errors))
         self.enable_realtime()
         self.manifest["excludedServices"] = {"chatb": "stale exclusion"}
         checker = self.checker()

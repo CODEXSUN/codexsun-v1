@@ -8,15 +8,24 @@ export type EnquiryNumberLink = { enquiryId: number; remoteName: string };
 export function planEnquiryNumbers(
   records: Array<{ id: number; enquiryNo: number }>,
   links: EnquiryNumberLink[],
-  nextNumber: number
+  nextNumber: number,
+  protectedIds: ReadonlySet<number> = new Set()
 ) {
   const targets = new Map<number, number>();
   const owners = new Map<number, number>();
+  const protectedNumbers = new Map(
+    records
+      .filter((record) => protectedIds.has(record.id))
+      .map((record) => [record.enquiryNo, record.id])
+  );
   for (const link of links) {
     const match = /^(?:ENQ|Q)([1-9]\d*)$/u.exec(link.remoteName);
     const number = match ? Number(match[1]) : NaN;
     if (!Number.isSafeInteger(number) || number > 2147483647)
       throw AppError.conflict(`Frappe enquiry ${link.remoteName} has an unsupported number.`);
+    const protectedOwner = protectedNumbers.get(number);
+    if (protectedIds.has(link.enquiryId) || (protectedOwner && protectedOwner !== link.enquiryId))
+      continue;
     if (owners.has(number) && owners.get(number) !== link.enquiryId)
       throw AppError.conflict(
         `Frappe names share enquiry number ${number}. Resolve the Q/ENQ collision before renumbering.`
@@ -53,7 +62,7 @@ export function planEnquiryNumbers(
 export class EnquiryNumbering {
   constructor(private readonly database: Kysely<EnquiryDatabase>) {}
 
-  async reconcile(links: EnquiryNumberLink[]) {
+  async reconcile(links: EnquiryNumberLink[], protectedIds: ReadonlySet<number> = new Set()) {
     if (!links.length) return;
     return this.database.transaction().execute(async (transaction) => {
       const sequence = await transaction
@@ -68,7 +77,7 @@ export class EnquiryNumbering {
         .orderBy("id")
         .forUpdate()
         .execute();
-      const plan = planEnquiryNumbers(records, links, sequence.next_no);
+      const plan = planEnquiryNumbers(records, links, sequence.next_no, protectedIds);
       for (const move of plan.moves)
         await transaction
           .updateTable("crm_enquiries")

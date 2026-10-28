@@ -20,13 +20,16 @@ import {
   migrateFrappeTenantDatabase,
   type FrappeDatabase
 } from "../../apps/frappe/api/src/modules/connection/index.js";
-import { FrappeContactImportService } from "../../apps/frappe/api/src/modules/contact-import/contact-import.service.js";
+import {
+  FrappeContactImportService,
+  findEnquiryCustomerIdentity
+} from "../../apps/frappe/api/src/modules/contact-import/contact-import.service.js";
 import { frappeContactImportModule } from "../../apps/frappe/api/src/modules/contact-import/index.js";
 import { FrappeConnectionRepository } from "../../apps/frappe/api/src/modules/connection/connection.repository.js";
 
 test(
   "Mobile Contact Customer imports preserve customer identities and mobile associations",
-  { timeout: 60_000 },
+  { timeout: 120_000 },
   async (suite) => {
     assert.equal(env.NODE_ENV, "development");
     const name = `codexsun_mobile_customer_e2e_${randomUUID().replaceAll("-", "").slice(0, 16)}`;
@@ -265,6 +268,47 @@ test(
     assert.ok(
       (await service.preview(1, lookups)).items.every((row) => row.identityStatus === "matched")
     );
+    pairs.push({
+      name: "PAIR-NAME",
+      mobile_contact: "9999001234",
+      customer: "Customer With Spaces",
+      customer_name: "Customer With Spaces"
+    });
+    const named = await service.pull("PAIR-NAME", lookups.findContactById);
+    await sql`UPDATE core_contacts SET code='CUSTOMER-WITH-SPACES' WHERE id=${named.localId}`.execute(
+      db
+    );
+    const namedKey = createHash("sha256")
+      .update(
+        JSON.stringify([
+          "https://frappe.test",
+          "Mobile Contact Customer",
+          "customer",
+          "Customer With Spaces"
+        ])
+      )
+      .digest("hex");
+    const linkedId = await findEnquiryCustomerIdentity(db, namedKey, "Customer With Spaces");
+    assert.equal(linkedId, named.localId);
+    const reused = await resolveContact({
+      externalKey: namedKey,
+      externalCode: "Customer With Spaces",
+      name: "Customer With Spaces",
+      mobile: "9999001234",
+      existingContactId: named.localId
+    });
+    assert.equal(reused.id, named.localId);
+    assert.equal(reused.code, "CUSTOMER-WITH-SPACES");
+    await assert.rejects(
+      findEnquiryCustomerIdentity(db, "a".repeat(64), "Customer With Spaces"),
+      /another source/
+    );
+    const namedPreview = (await service.preview(1, lookups)).items.find(
+      (row) => row.name === "PAIR-NAME"
+    );
+    assert.equal(namedPreview?.localContactId, named.localId);
+    assert.equal(namedPreview?.identityStatus, "matched");
+    pairs.pop();
     const concurrent = await Promise.all([
       resolveContact({
         externalKey: "e".repeat(64),

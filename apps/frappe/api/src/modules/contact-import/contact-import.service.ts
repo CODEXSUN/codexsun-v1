@@ -113,7 +113,9 @@ export class FrappeContactImportService {
                 ? identityId
                   ? ("mismatch" as const)
                   : ("new" as const)
-                : local.code === item.customer
+                : (identity?.remote_name === item.customer &&
+                      identity.local_contact_id === local.id) ||
+                    local.code === item.customer
                   ? ("matched" as const)
                   : ("mismatch" as const)
           };
@@ -277,6 +279,30 @@ export class FrappeContactImportService {
       throw AppError.conflict("Verify the Frappe connection before importing mobile customers.");
     return settings;
   }
+}
+
+export async function findEnquiryCustomerIdentity(
+  database: Kysely<FrappeDatabase>,
+  sourceKey: string,
+  remoteName: string
+) {
+  const identities = await database
+    .selectFrom("frappe_contact_customer_identity")
+    .select(["source_key", "remote_name", "local_contact_id"])
+    .where((expression) =>
+      expression.or([
+        expression("source_key", "=", sourceKey),
+        expression("remote_name", "=", remoteName)
+      ])
+    )
+    .execute();
+  if (
+    identities.some(
+      (identity) => identity.source_key !== sourceKey || identity.remote_name !== remoteName
+    )
+  )
+    throw AppError.conflict("The Frappe Customer identity belongs to another source.");
+  return identities[0]?.local_contact_id ?? null;
 }
 
 export async function linkEnquiryCustomerIdentity(

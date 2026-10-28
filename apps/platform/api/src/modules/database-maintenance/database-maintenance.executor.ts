@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { AppError } from "@codexsun/framework/errors";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { createConnection } from "mysql2/promise";
+import { createConnection, type RowDataPacket } from "mysql2/promise";
 import { env } from "../../env.js";
 import { assertDatabaseName, quoteIdentifier } from "../../database/database-utils.js";
 import { databaseBackupPath } from "../storage-manager/storage-manager.paths.js";
@@ -292,12 +292,9 @@ async function createSqlDump(target: DatabaseExecutionTarget) {
   });
 
   try {
-    const [tableRows] = await connection.query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
-    const tableNames = Array.isArray(tableRows)
-      ? tableRows
-          .map((row) => String(Object.values(row as Record<string, unknown>)[0]))
-          .filter(Boolean)
-      : [];
+    const tableNames = await validateBackupCoverage(connection, databaseName);
+    await connection.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+    await connection.query("START TRANSACTION WITH CONSISTENT SNAPSHOT");
     const chunks = [
       `-- CODEXSUN database backup`,
       `-- database: ${databaseName}`,
@@ -331,11 +328,45 @@ async function createSqlDump(target: DatabaseExecutionTarget) {
       }
     }
 
+    const after = await validateBackupCoverage(connection, databaseName);
+    if (JSON.stringify(tableNames) !== JSON.stringify(after)) {
+      throw AppError.validation("Database tables changed while the backup was being created.");
+    }
+    await connection.commit();
     chunks.push("SET FOREIGN_KEY_CHECKS=1;", "");
     return chunks.join("\n");
+  } catch (error) {
+    await connection.rollback().catch(() => undefined);
+    throw error;
   } finally {
     await connection.end();
   }
+}
+
+async function validateBackupCoverage(
+  connection: Awaited<ReturnType<typeof createConnection>>,
+  databaseName: string
+) {
+  const [objects] = await connection.query<Array<RowDataPacket & { kind: string; object_name: string }>>(
+    `SELECT 'view' AS kind, TABLE_NAME AS object_name FROM information_schema.TABLES WHERE TABLE_SCHEMA=? AND TABLE_TYPE='VIEW'
+     UNION ALL SELECT 'trigger', TRIGGER_NAME FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA=?
+     UNION ALL SELECT 'routine', ROUTINE_NAME FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA=?
+     UNION ALL SELECT 'event', EVENT_NAME FROM information_schema.EVENTS WHERE EVENT_SCHEMA=?`,
+    [databaseName, databaseName, databaseName, databaseName]
+  );
+  if (objects.length) {
+    throw AppError.validation(`SQL backup cannot include ${objects[0]?.kind} ${objects[0]?.object_name}. Use a complete external backup.`);
+  }
+  const [tables] = await connection.query<Array<RowDataPacket & { table_name: string; engine: string | null }>>(
+    "SELECT TABLE_NAME AS table_name, ENGINE AS engine FROM information_schema.TABLES WHERE TABLE_SCHEMA=? AND TABLE_TYPE='BASE TABLE' ORDER BY TABLE_NAME",
+    [databaseName]
+  );
+  const unsupported = tables.find((table) => table.engine?.toLowerCase() !== "innodb");
+  if (unsupported) {
+    throw AppError.validation(`SQL backup requires InnoDB; ${unsupported.table_name} uses ${unsupported.engine || "an unknown engine"}.`);
+  }
+  if (!tables.length) throw AppError.validation("SQL backup requires at least one base table.");
+  return tables.map((table) => assertDatabaseName(table.table_name, "table name"));
 }
 
 function sqlValue(value: unknown) {
