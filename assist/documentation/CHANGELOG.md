@@ -57,6 +57,10 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Update deployment promotion and recovery checks for the retained Data Bridge volume.
 - Update database migration operations guidance and repository documentation.
 - Record the local Docker audit: pending tenant migrations blocked application replacement. Redis and MariaDB were retained.
+- Limit repeated CRM lead count requests after an authorization failure and share the enquiry summary query.
+- Add cancellation and timeouts to the three Core reads that block tenant workspace startup.
+- Pass CRM and Platform web typechecks and two focused request tests. An isolated database queue fixture completed a synthetic job.
+- Keep the full browser check and running business-worker process verification open. No release acceptance is claimed for these changes.
 
 ## v-1.1.82
 

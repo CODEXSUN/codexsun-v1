@@ -10,6 +10,7 @@ import {
 } from "./lead.services";
 import type { LeadFilters } from "./lead.types";
 import { useLeadQueryScope } from "./lead.query-scope";
+import { CrmHttpError } from "../../crm-request";
 export const useLeads = () =>
   useQuery({
     queryKey: ["crm", "leads", useLeadQueryScope()],
@@ -50,7 +51,12 @@ export function useLeadNavigationCount(enabled: boolean) {
     queryFn: async () =>
       (await listLeadPage({ search: "", status: "active", page: 1, pageSize: 1 }, scope)).total,
     enabled,
-    refetchInterval: 15000
+    retry: (count, error) => !(error instanceof CrmHttpError && error.status === 403) && count < 1,
+    retryOnMount: false,
+    refetchInterval: (query) =>
+      query.state.error instanceof CrmHttpError && query.state.error.status === 403 ? false : 15000,
+    refetchOnMount: (query) =>
+      !(query.state.error instanceof CrmHttpError && query.state.error.status === 403)
   });
   return query.data ?? 0;
 }

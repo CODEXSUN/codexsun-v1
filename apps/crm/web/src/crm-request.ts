@@ -2,6 +2,15 @@ type Envelope<T> = { data: T; success: true } | { error: { message: string }; su
 
 export class CrmResponseFormatError extends Error {}
 
+export class CrmHttpError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 export async function crmRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const baseUrl = (window as Window & { __CODEXSUN_RUNTIME_CONFIG__?: Record<string, string> })
     .__CODEXSUN_RUNTIME_CONFIG__?.VITE_PLATFORM_API_URL;
@@ -46,7 +55,10 @@ export async function crmRequest<T>(path: string, options: RequestInit = {}): Pr
     );
   }
   if (!response.ok || !result.success) {
-    throw new Error(result.success ? "CRM request failed." : result.error.message);
+    throw new CrmHttpError(
+      result.success ? "CRM request failed." : result.error.message,
+      response.status
+    );
   }
   return result.data;
 }

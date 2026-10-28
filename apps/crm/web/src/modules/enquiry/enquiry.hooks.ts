@@ -35,7 +35,7 @@ export const enquiryLocationsQueryKey = (id: string) =>
 
 export const useEnquirySummary = (enabled = true) =>
   useQuery({
-    queryKey: enquirySummaryQueryKey,
+    queryKey: [...enquirySummaryQueryKey, localToday()],
     queryFn: () => getEnquirySummary(localToday()),
     enabled
   });
@@ -122,11 +122,7 @@ export const useEnquiryOptions = (enabled = true) =>
 export const useEnquiryUsers = (enabled = true) =>
   useQuery({ queryKey: enquiryUsersQueryKey, queryFn: listTenantUsers, enabled });
 export function useCrmNavigationCounts(_email: string, enabled: boolean) {
-  const summary = useQuery({
-    queryKey: ["crm", "enquiries", "navigation-summary", localToday()],
-    queryFn: () => getEnquirySummary(localToday()),
-    enabled
-  });
+  const summary = useEnquirySummary(enabled);
   return {
     assigned: summary.data?.assigned.active ?? 0,
     created: summary.data?.created.active ?? 0,

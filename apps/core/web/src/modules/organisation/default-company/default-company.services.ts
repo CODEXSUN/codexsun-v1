@@ -28,7 +28,8 @@ async function request<T>(suffix = "", options: RequestInit = {}) {
     throw new Error(body.success ? "Default company request failed." : body.error.message);
   return body.data;
 }
-export const getDefaultCompany = () => request<DefaultCompanyRecord | null>();
+export const getDefaultCompany = (signal?: AbortSignal) =>
+  request<DefaultCompanyRecord | null>("", signal ? { signal } : {});
 export const saveDefaultCompany = (payload: DefaultCompanySavePayload) =>
   request<DefaultCompanyRecord>("", { method: "PUT", body: JSON.stringify(payload) });
 export const listDefaultCompanyLookups = async () => {

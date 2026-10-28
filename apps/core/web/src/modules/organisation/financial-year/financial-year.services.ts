@@ -24,7 +24,8 @@ async function request<T>(suffix = "", options: RequestInit = {}) {
     throw new Error(body.success ? "Financial year request failed." : body.error.message);
   return body.data;
 }
-export const listFinancialYears = () => request<FinancialYearRecord[]>();
+export const listFinancialYears = (signal?: AbortSignal) =>
+  request<FinancialYearRecord[]>("", signal ? { signal } : {});
 export const createFinancialYear = (payload: FinancialYearSavePayload) =>
   request<FinancialYearRecord>("", { method: "POST", body: JSON.stringify(payload) });
 export const updateFinancialYear = (id: number, payload: FinancialYearSavePayload) =>

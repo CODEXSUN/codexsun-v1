@@ -1042,7 +1042,8 @@ export function AppDesk() {
   });
   const companiesQuery = useQuery({
     enabled: Boolean(runtimeQuery.data?.tenant?.uuid),
-    queryFn: () => listCompanies(),
+    queryFn: ({ signal }) =>
+      listCompanies("", AbortSignal.any([signal, AbortSignal.timeout(10_000)])),
     queryKey: ["core", "organisation", "companies", runtimeQuery.data?.tenant?.uuid],
     retry: retryWorkspaceBootstrap,
     retryDelay: workspaceBootstrapRetryDelay,
@@ -1050,7 +1051,8 @@ export function AppDesk() {
   });
   const financialYearsQuery = useQuery({
     enabled: Boolean(runtimeQuery.data?.tenant?.uuid),
-    queryFn: listFinancialYears,
+    queryFn: ({ signal }) =>
+      listFinancialYears(AbortSignal.any([signal, AbortSignal.timeout(10_000)])),
     queryKey: ["core", "organisation", "financial-years", runtimeQuery.data?.tenant?.uuid],
     retry: retryWorkspaceBootstrap,
     retryDelay: workspaceBootstrapRetryDelay,
@@ -1058,7 +1060,8 @@ export function AppDesk() {
   });
   const defaultCompanyQuery = useQuery({
     enabled: Boolean(runtimeQuery.data?.tenant?.uuid),
-    queryFn: getDefaultCompany,
+    queryFn: ({ signal }) =>
+      getDefaultCompany(AbortSignal.any([signal, AbortSignal.timeout(10_000)])),
     queryKey: [...defaultCompanyQueryKey, runtimeQuery.data?.tenant?.uuid],
     retry: retryWorkspaceBootstrap,
     retryDelay: workspaceBootstrapRetryDelay,

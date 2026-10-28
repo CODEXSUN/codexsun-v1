@@ -87,8 +87,11 @@ async function platformRequest<T>(path: string) {
   return body.data;
 }
 
-export const listCompanies = (search = "") =>
-  request<CompanyRecord[]>(`${companyPath}?search=${encodeURIComponent(search)}`);
+export const listCompanies = (search = "", signal?: AbortSignal) =>
+  request<CompanyRecord[]>(
+    `${companyPath}?search=${encodeURIComponent(search)}`,
+    signal ? { signal } : {}
+  );
 export const getCompany = (id: number) => request<CompanyRecord>(`${companyPath}/${id}`);
 export const createCompany = (payload: CompanySavePayload) =>
   request<CompanyRecord>(companyPath, { body: JSON.stringify(payload), method: "POST" });
