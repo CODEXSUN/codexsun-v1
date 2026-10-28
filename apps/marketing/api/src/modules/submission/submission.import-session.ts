@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { sql, type Kysely } from "kysely";
 import { AppError } from "@codexsun/framework/errors";
 import type { MarketingContext, MarketingDatabase } from "../../context.js";
@@ -62,8 +62,8 @@ export class SubmissionImportSession {
         throw AppError.notFound("Capture form was not found.");
     }
     const uuid = randomBytes(4).toString("hex");
-    await sql`INSERT INTO marketing_submission_imports(uuid,company_id,actor_email,filename,mapping_json,rows_json,total)
-      VALUES(${uuid},${this.context.companyId},${this.context.actorEmail},${filename},${JSON.stringify(mapping)},${JSON.stringify(rows)},${rows.length})`.execute(
+    await sql`INSERT INTO marketing_submission_imports(uuid,company_id,actor_email,filename,mapping_json,rows_json,total,created_by)
+      VALUES(${uuid},${this.context.companyId},${this.context.actorEmail},${filename},${JSON.stringify(mapping)},${JSON.stringify(rows)},${rows.length},${this.context.actorEmail})`.execute(
       this.context.database
     );
     return this.get(uuid);
@@ -107,8 +107,8 @@ export class SubmissionImportSession {
         ...this.deps,
         enqueue: async (_ctx, submissionUuid) => { pending.push(submissionUuid); }
       }).accept(row);
-      await sql`INSERT INTO marketing_submission_import_receipts(import_uuid,row_index,submission_uuid)
-        VALUES(${uuid},${session.completed},${saved.uuid}) ON DUPLICATE KEY UPDATE submission_uuid=submission_uuid`.execute(database);
+      await sql`INSERT INTO marketing_submission_import_receipts(uuid,import_uuid,row_index,submission_uuid,created_by)
+        VALUES(${randomUUID()},${uuid},${session.completed},${saved.uuid},${this.context.actorEmail}) ON DUPLICATE KEY UPDATE submission_uuid=submission_uuid`.execute(database);
       await sql`UPDATE marketing_submission_imports SET rows_json=IF(completed+1>=total,'[]',rows_json),mapping_json=IF(completed+1>=total,'{}',mapping_json),completed=completed+1 WHERE uuid=${uuid}`.execute(database);
       return locked.summary({ ...session, completed: session.completed + 1 });
     });

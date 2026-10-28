@@ -7,7 +7,7 @@ import { upgradeConnectionIntegrity } from "./modules/connection/index.js";
 import { migrateCaptureLimits } from "./modules/capture/index.js";
 import { migrateConnectionAuthorization } from "./modules/connection/index.js";
 import { submissionModule, migrateSubmission, seedSubmission } from "./modules/submission/index.js";
-import { migrateSubmissionImport } from "./modules/submission/index.js";
+import { migrateSubmissionImport, migrateSubmissionImportContract } from "./modules/submission/index.js";
 import type { SubmissionDependencies } from "./modules/submission/index.js";
 import type { FastifyInstance } from "fastify";
 import { AppError } from "@codexsun/framework/errors";
@@ -207,6 +207,13 @@ export const marketingMigrationBatch = {
       description: "Durable submission import sessions and receipts.",
       version: 15,
       up: migrateSubmissionImport
+    },
+    {
+      name: "marketing.submission.import.contract.v1",
+      checksum: "marketing.submission.import.contract.v1",
+      description: "Add standard identity and audit fields to import records.",
+      version: 18,
+      up: migrateSubmissionImportContract
     }
   ]
 };
