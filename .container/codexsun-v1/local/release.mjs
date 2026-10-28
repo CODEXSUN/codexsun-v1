@@ -300,8 +300,8 @@ export async function verifyRuntime(docker, model) {
   await verifyStorefront(`${shop}/api/platform/storefront/bootstrap`);
 }
 
-export async function verifyStorefront(url) {
-  const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
+export async function verifyStorefront(url, options = {}) {
+  const response = await fetchReady(url, { ...options, acceptStatuses: [404] });
   const body = await response.json();
   if (
     response.status === 404 &&

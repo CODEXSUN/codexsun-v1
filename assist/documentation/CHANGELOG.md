@@ -53,6 +53,7 @@ Records UI, API, service logic, tooling, packaging, and documentation changes.
 - Allow two local updates to reuse a verified backup made on the same day with `--nobackup`.
 - Reject VPS `--nobackup` until its backup and restore verification covers the required data.
 - Keep VPS application writers stopped for review if a deployment fails after migrations may have changed data.
+- Retry temporary storefront proxy errors during local startup verification.
 
 ## v-1.1.86
 

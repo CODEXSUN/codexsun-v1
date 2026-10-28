@@ -22,6 +22,20 @@ test("storefront check accepts only the expected unmapped-domain denial", async 
   }
 });
 
+test("storefront check retries a transient proxy failure", async () => {
+  let attempts = 0;
+  await verifyStorefront("http://127.0.0.1/bootstrap", {
+    request: async () => {
+      attempts += 1;
+      return attempts === 1
+        ? new Response("upstream unavailable", { status: 502 })
+        : new Response(JSON.stringify({ success: true }), { status: 200 });
+    },
+    pause: async () => {}
+  });
+  assert.equal(attempts, 2);
+});
+
 test("failed local update uses the saved app model without database recovery", async () => {
   const base = resolve(import.meta.dirname, "../../../dist/deployment-local-recovery-tests");
   await mkdir(base, { recursive: true });

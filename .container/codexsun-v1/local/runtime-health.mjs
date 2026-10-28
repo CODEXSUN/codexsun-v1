@@ -9,7 +9,7 @@ export async function fetchReady(url, options = {}) {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
       const response = await request(url, { signal: AbortSignal.timeout(5000) });
-      if (response.status === 200) return response;
+      if (response.status === 200 || options.acceptStatuses?.includes(response.status)) return response;
       if (![502, 503, 504].includes(response.status)) {
         assert.fail(`Local endpoint failed: ${new URL(url).pathname} (HTTP ${response.status})`);
       }
